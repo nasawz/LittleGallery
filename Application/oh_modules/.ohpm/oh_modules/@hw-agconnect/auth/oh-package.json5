@@ -1,0 +1,1 @@
+{"name":"@hw-agconnect/auth","version":"1.0.2","description":"AppGalleryConnectSDK auth for HarmonyOS Next.","main":"Index.js","author":{"name":"huawei"},"license":"ISC","dependencies":{},"types":"Index.d.ets","artifactType":"obfuscation","metadata":{"sourceRoots":["./src/main"],"debug":false},"compatibleSdkVersion":11,"compatibleSdkType":"HarmonyOS","obfuscated":true}

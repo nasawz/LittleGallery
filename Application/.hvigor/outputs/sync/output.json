@@ -1,0 +1,180 @@
+{
+  "ohos-module-entry": {
+    "SELECT_TARGET": "default",
+    "MODULE_BUILD_DIR": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build",
+    "DEPENDENCY_INFO": {
+      "@lidary/markdown": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@lidary+markdown@1.0.16/oh_modules/@lidary/markdown",
+      "@hw-agconnect/auth": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth",
+      "@ohos/photoview": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@ohos+photoview@2.1.0/oh_modules/@ohos/photoview"
+    },
+    "TARGETS": {
+      "default": {
+        "SOURCE_ROOT": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main",
+        "RESOURCES_PATH": [
+          "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/resources"
+        ],
+        "BUILD_PATH": {
+          "OUTPUT_PATH": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/outputs/default",
+          "INTERMEDIA_PATH": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates",
+          "JS_ASSETS_PATH": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/loader_out/default",
+          "JS_LITE_ASSETS_PATH": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/loader_out_lite/default",
+          "RES_PATH": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/res/default",
+          "RES_PROFILE_PATH": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/res/default/resources/base/profile",
+          "ETS_SUPER_VISUAL_PATH": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/cache/default/default@CompileArkTS/esmodule",
+          "JS_SUPER_VISUAL_PATH": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/cache/default/default@CompileJS/jsbundle",
+          "WORKER_LOADER": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/loader/default/loader.json",
+          "MANIFEST_JSON": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/manifest/default",
+          "OUTPUT_METADATA_JSON": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/hap_metadata/default/output_metadata.json"
+        },
+        "BUILD_OPTION": {
+          "debuggable": true
+        }
+      }
+    },
+    "BUILD_OPTION": {
+      "default-default": {
+        "debuggable": true,
+        "copyFrom": "default",
+        "strictMode": {
+          "caseSensitiveCheck": true,
+          "useNormalizedOHMUrl": true
+        },
+        "name": "debug"
+      }
+    },
+    "BUILD_PROFILE_OPT": {
+      "apiType": "stageMode",
+      "buildOption": {},
+      "buildOptionSet": [
+        {
+          "name": "release",
+          "arkOptions": {
+            "obfuscation": {
+              "ruleOptions": {
+                "enable": false,
+                "files": [
+                  "./obfuscation-rules.txt"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "name": "default"
+        },
+        {
+          "name": "debug"
+        }
+      ],
+      "targets": [
+        {
+          "name": "default"
+        }
+      ]
+    }
+  },
+  "ohos-project": {
+    "SELECT_PRODUCT_NAME": "default",
+    "MODULE_BUILD_DIR": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/build",
+    "BUNDLE_NAME": "com.atomicservice.5765880207856138875",
+    "BUILD_PATH": {
+      "OUTPUT_PATH": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/build/outputs/default"
+    },
+    "MODULES": [
+      {
+        "name": "entry",
+        "srcPath": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry",
+        "targets": [
+          {
+            "name": "default",
+            "applyToProducts": [
+              "default"
+            ]
+          }
+        ],
+        "belongProjectPath": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application"
+      }
+    ],
+    "PROFILE_OPT": {
+      "app": {
+        "signingConfigs": [
+          {
+            "name": "default",
+            "type": "HarmonyOS",
+            "material": {
+              "storePassword": "000000181D417D740120BE2D11BBD8C322237F76F5958F382E9765A7A6FEFDBED6CBC08B0BDD248A",
+              "certpath": "/Users/wangzhe/ohos/key/ohos_debug_cert.cer",
+              "keyAlias": "ohos_debug",
+              "keyPassword": "00000018B4E28F028AAB4BB41CD1658FA1CC1DE17FEB87064B869141132C06BDDAFCCF3F368E6C1D",
+              "profile": "/Users/wangzhe/ohos/key/little_gallery_profileDebug.p7b",
+              "signAlg": "SHA256withECDSA",
+              "storeFile": "/Users/wangzhe/ohos/key/ohos_debug.p12"
+            }
+          },
+          {
+            "name": "release",
+            "type": "HarmonyOS",
+            "material": {
+              "storePassword": "000000181DF566B5A1717680765264EB032AA25B90E023B79908F42C167A2999C2613DD3B7CF5287",
+              "certpath": "/Users/wangzhe/ohos/key/ohos_cert.cer",
+              "keyAlias": "ohos_release",
+              "keyPassword": "0000001801368FCB314BE42578312225592B843527B287DFFE4B5243144563EA57F01547A5772EF1",
+              "profile": "/Users/wangzhe/ohos/key/little_gallery_release_profileRelease.p7b",
+              "signAlg": "SHA256withECDSA",
+              "storeFile": "/Users/wangzhe/ohos/key/ohos_release.p12"
+            }
+          }
+        ],
+        "products": [
+          {
+            "name": "default",
+            "signingConfig": "release",
+            "compatibleSdkVersion": "5.0.1(13)",
+            "runtimeOS": "HarmonyOS",
+            "buildOption": {
+              "strictMode": {
+                "caseSensitiveCheck": true,
+                "useNormalizedOHMUrl": true
+              }
+            },
+            "output": {
+              "artifactName": "little-gallery-release"
+            },
+            "vendor": "xiangshikeji"
+          }
+        ],
+        "buildModeSet": [
+          {
+            "name": "debug"
+          },
+          {
+            "name": "release"
+          }
+        ]
+      },
+      "modules": [
+        {
+          "name": "entry",
+          "srcPath": "./entry",
+          "targets": [
+            {
+              "name": "default",
+              "applyToProducts": [
+                "default"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "CONFIG_PROPERTIES": {
+      "enableSignTask": true,
+      "skipNativeIncremental": false,
+      "hvigor.keepDependency": true
+    },
+    "OVERALL_PROJECT_PATHS": [
+      "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application"
+    ]
+  },
+  "version": 1
+}

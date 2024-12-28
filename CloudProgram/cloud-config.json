@@ -1,0 +1,18 @@
+{
+  "appSelected": {
+    "appId": "5765880207856138875",
+    "appName": "小小画廊",
+    "deviceTypes": [
+      {
+        "deviceType": 4
+      }
+    ],
+    "enableSites": "CN",
+    "installationFree": 1,
+    "packageType": 7,
+    "projectId": "461323198429114747",
+    "projectName": "小小画廊",
+    "siteId": "CN"
+  },
+  "teamId": "30086000632980487"
+}

@@ -1,0 +1,14 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/AddChild",
+    "pages/AddCategory",
+    "pages/AddAlbum",
+    "pages/AddPicture",
+    "pages/AlbumDetail",
+    "pages/ListChild",
+    "pages/ListCategory",
+    "pages/ListAlbum",
+    "pages/PictureDetail"
+  ]
+}

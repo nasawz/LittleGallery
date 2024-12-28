@@ -1,0 +1,597 @@
+Ôr@Ÿªassertions¤code´customTransformCache¬dependencies¢id¤meta±moduleSideEffects¬originalCode±originalSourcemap«resolvedIds®sourcemapChainµsyntheticNamedExportsµtransformDependencies®transformFiles¨cacheAstÔrAÚ?úvar __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+if (!("finalizeConstruction" in ViewPU.prototype)) {
+    Reflect.set(ViewPU.prototype, "finalizeConstruction", () => { });
+}
+/**
+ * Copyright (c) 2024 é£å(QQ:12446006)
+ *
+ * æ­¤ä»£ç ä»…ä¾›å­¦ä¹ ä½¿ç”¨,ç¦æ­¢:
+ * 1. åœ¨åä¸ºåº”ç”¨å•†åº—å‘å¸ƒ
+ * 2. é”€å”®æˆ–ç”¨äºå•†ä¸šç”¨é€”
+ * 3. ç”¨äºä»»ä½•ç›ˆåˆ©ç›®çš„
+ *
+ * ç”»å†Œè¯¦æƒ…é¡µé¢
+ * åŠŸèƒ½:
+ * - å±•ç¤ºç”»å†Œä¸­çš„ç…§ç‰‡
+ * - ç€‘å¸ƒæµå¸ƒå±€å±•ç¤º
+ * - æ·»åŠ æ–°ç…§ç‰‡
+ * - ç…§ç‰‡ç®¡ç†(æŸ¥çœ‹ã€åˆ é™¤)
+ */
+import { AppStorageV2, promptAction } from "@kit.ArkUI";
+import { MainStat } from "../common/MainStat";
+import { Album } from "../module/Album";
+import { WaterFlowDataSource } from "../common/WaterFlowDataSource";
+import CoreService from "../services/CoreService";
+import { PictureItem } from "../components/PictureItem";
+import { WindowUtils } from '../utils/WindowUtils';
+export function PageBuilder(name, param, parent = null) {
+    {
+        (parent ? parent : this).observeComponentCreation2((elmtId, isInitialRender) => {
+            if (isInitialRender) {
+                let componentCall = new AlbumDetail(parent ? parent : this, {}, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/AlbumDetail.ets", line: 31, col: 3 });
+                ViewV2.create(componentCall);
+                let paramsLambda = () => {
+                    return {};
+                };
+                componentCall.paramsGenerator_ = paramsLambda;
+            }
+            else {
+                (parent ? parent : this).updateStateVarsOfChildByElmtId(elmtId, {});
+            }
+        }, { name: "AlbumDetail" });
+    }
+}
+class AlbumDetail extends ViewV2 {
+    constructor(parent, params, __localStorage, elmtId = -1, paramsLambda, extraInfo) {
+        super(parent, elmtId, extraInfo);
+        this.prop = AppStorageV2.connect(MainStat, () => new MainStat());
+        this.info = new Album();
+        this.pictures = [];
+        this.loaded = false;
+        this.pageInfos = new NavPathStack();
+        this.minSize = 80;
+        this.maxSize = 180;
+        this.fontSize = 24;
+        this.colors = [0xFFC0CB, 0xDA70D6, 0x6B8E23, 0x6A5ACD, 0x00FFFF, 0x00FF7F];
+        this.dataSource = new WaterFlowDataSource();
+        this.itemWidthArray = [];
+        this.itemHeightArray = [];
+        this.currentOffset = 0;
+        this.limit = 20;
+        this.finalizeConstruction();
+    }
+    // è®¡ç®—FlowItemå®½/é«˜
+    getSize() {
+        let ret = Math.floor(Math.random() * this.maxSize);
+        return (ret > this.minSize ? ret : this.minSize);
+    }
+    // è®¾ç½®FlowItemçš„å®½/é«˜æ•°ç»„
+    setItemSizeArray() {
+        for (let i = 0; i < 100; i++) {
+            this.itemWidthArray.push(this.getSize());
+            this.itemHeightArray.push(this.getSize());
+        }
+    }
+    itemFoot(parent = null) {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Column.create();
+        }, Column);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create(`Footer`);
+            Text.fontSize(10);
+            Text.backgroundColor(Color.Red);
+            Text.width(50);
+            Text.height(50);
+            Text.align(Alignment.Center);
+            Text.margin({ top: 2 });
+        }, Text);
+        Text.pop();
+        Column.pop();
+    }
+    // é¡µé¢å³å°†å‡ºç°æ—¶è°ƒç”¨
+    aboutToAppear() {
+        this.setItemSizeArray();
+        setTimeout(async () => {
+            this.info = this.pageInfos.getParamByName('albumDetail')[0];
+            await this.loadPictures();
+        }, 100);
+    }
+    // å¼‚æ­¥åŠ è½½å›¾ç‰‡
+    async loadPictures() {
+        console.log('littleGallery', 'loadPictures', JSON.stringify(this.info));
+        try {
+            console.log('littleGallery', 'loadPictures', this.info.id, this.limit, this.currentOffset);
+            const coreService = CoreService.getService();
+            const pictures = await coreService.getPictures(this.info.id, this.limit, this.currentOffset);
+            this.pictures = pictures;
+            this.loaded = true;
+            console.log('littleGallery', 'loadPictures pictures', JSON.stringify(pictures));
+            if (this.currentOffset === 0) {
+                this.dataSource.setData(pictures); // é¦–æ¬¡åŠ è½½ä½¿ç”¨ setData
+            }
+            else {
+                this.dataSource.appendData(pictures); // åŠ è½½æ›´å¤šæ—¶ä½¿ç”¨ appendData
+            }
+            this.currentOffset += this.limit;
+        }
+        catch (error) {
+            console.log('littleGallery', 'loadPictures error', JSON.stringify(error));
+        }
+    }
+    // è·³è½¬åˆ°æ·»åŠ å›¾ç‰‡é¡µé¢
+    goAddPicture() {
+        this.pageInfos.pushPathByName('addPicture', { "action": "add", "album": this.info }, (popInfo) => {
+            if (popInfo.result.count == 1) {
+                this.currentOffset = 0;
+                this.loadPictures();
+            }
+        });
+    }
+    // åˆ é™¤å›¾ç‰‡å¤„ç†
+    async deleteHandle(id, index) {
+        let succ = await CoreService.getService().deletePicture(id);
+        if (succ) {
+            promptAction.showToast({
+                message: 'åˆ é™¤æˆåŠŸ ' + id,
+                duration: 2000
+            });
+            this.currentOffset = 0;
+            this.loadPictures();
+        }
+        else {
+            promptAction.showToast({
+                message: 'åˆ é™¤å¤±è´¥',
+                duration: 2000
+            });
+        }
+    }
+    // è·³è½¬åˆ°å›¾ç‰‡è¯¦æƒ…é¡µé¢
+    goPictureDetail(url) {
+        this.pageInfos.pushPathByName('pictureDetail', url, (popInfo) => {
+        });
+    }
+    addPictureButton(parent = null) {
+    }
+    // æ„å»ºé¡µé¢
+    initialRender() {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            NavDestination.create(() => {
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    If.create();
+                    if (this.pictures.length > 0 && this.loaded) {
+                        this.ifElseBranchUpdateFunction(0, () => {
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Stack.create({ alignContent: Alignment.BottomEnd });
+                                Stack.width('100%');
+                                Stack.height('100%');
+                            }, Stack);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                WaterFlow.create();
+                                WaterFlow.columnsTemplate("1fr 1fr");
+                                WaterFlow.columnsGap(10);
+                                WaterFlow.rowsGap(5);
+                                WaterFlow.width('100%');
+                                WaterFlow.height('100%');
+                                WaterFlow.padding({ left: 8, right: 8 });
+                                WaterFlow.edgeEffect(EdgeEffect.Spring);
+                                WaterFlow.onReachStart(() => {
+                                });
+                                WaterFlow.onReachEnd(() => {
+                                });
+                                WaterFlow.onScrollFrameBegin((offset, state) => {
+                                    console.info('waterFlow scrollFrameBegin offset: ' + offset + ' state: ' + state.toString());
+                                    return { offsetRemain: offset };
+                                });
+                            }, WaterFlow);
+                            {
+                                const __lazyForEachItemGenFunction = (_item, index) => {
+                                    const item = _item;
+                                    {
+                                        this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                            if (isInitialRender) {
+                                                let componentCall = new PictureItem(this, { picture: item, maxWidth: (px2vp(WindowUtils.windowWidth_px) - 5 - 16) / 2, onDelete: () => {
+                                                        this.deleteHandle(item.id, index);
+                                                    }, onGoDetail: (url) => {
+                                                        this.goPictureDetail(url);
+                                                    } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/AlbumDetail.ets", line: 162, col: 15 });
+                                                ViewV2.create(componentCall);
+                                                let paramsLambda = () => {
+                                                    return {
+                                                        picture: item,
+                                                        maxWidth: (px2vp(WindowUtils.windowWidth_px) - 5 - 16) / 2,
+                                                        onDelete: () => {
+                                                            this.deleteHandle(item.id, index);
+                                                        },
+                                                        onGoDetail: (url) => {
+                                                            this.goPictureDetail(url);
+                                                        }
+                                                    };
+                                                };
+                                                componentCall.paramsGenerator_ = paramsLambda;
+                                            }
+                                            else {
+                                                this.updateStateVarsOfChildByElmtId(elmtId, {
+                                                    picture: item, maxWidth: (px2vp(WindowUtils.windowWidth_px) - 5 - 16) / 2, onDelete: () => {
+                                                        this.deleteHandle(item.id, index);
+                                                    }, onGoDetail: (url) => {
+                                                        this.goPictureDetail(url);
+                                                    }
+                                                });
+                                            }
+                                        }, { name: "PictureItem" });
+                                    }
+                                };
+                                const __lazyForEachItemIdFunc = (item) => item.id;
+                                LazyForEach.create("1", this, this.dataSource, __lazyForEachItemGenFunction, __lazyForEachItemIdFunc);
+                                LazyForEach.pop();
+                            }
+                            WaterFlow.pop();
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Row.create();
+                                Row.margin({ bottom: 20, right: 20 });
+                            }, Row);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Button.createWithChild({ type: ButtonType.Circle, stateEffect: true });
+                                Button.width(55);
+                                Button.height(55);
+                                Button.backgroundColor(0x317aff);
+                                Button.onClick(() => {
+                                    this.goAddPicture();
+                                });
+                            }, Button);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Image.create({ "id": 16777325, "type": 20000, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" });
+                                Image.fillColor(Color.White);
+                                Image.width(24);
+                                Image.height(24);
+                            }, Image);
+                            Button.pop();
+                            Row.pop();
+                            Stack.pop();
+                        });
+                    }
+                    else if (this.pictures.length == 0 && this.loaded) {
+                        this.ifElseBranchUpdateFunction(1, () => {
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Column.create();
+                                Column.width('100%');
+                                Column.height('100%');
+                                Column.justifyContent(FlexAlign.Center);
+                            }, Column);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Column.create({ space: 20 });
+                                Column.padding({ bottom: 200 });
+                            }, Column);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Image.create({ "id": 16777323, "type": 20000, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" });
+                                Image.width(160);
+                                Image.height(160);
+                                Image.opacity(0.6);
+                            }, Image);
+                            this.addPictureButton.bind(this)();
+                            Column.pop();
+                            Column.pop();
+                        });
+                    }
+                    else {
+                        this.ifElseBranchUpdateFunction(2, () => {
+                        });
+                    }
+                }, If);
+                If.pop();
+            }, { moduleName: "entry", pagePath: "entry/src/main/ets/pages/AlbumDetail" });
+            NavDestination.title(this.info?.name);
+            NavDestination.onBackPressed(() => {
+                const popDestinationInfo = this.pageInfos.pop();
+                console.log('pop' + 'è¿”å›å€¼' + JSON.stringify(popDestinationInfo));
+                return true;
+            });
+            NavDestination.onReady((context) => {
+                this.pageInfos = context.pathStack;
+            });
+        }, NavDestination);
+        NavDestination.pop();
+    }
+    rerender() {
+        this.updateDirtyElements();
+    }
+    static getEntryName() {
+        return "AlbumDetail";
+    }
+}
+__decorate([
+    Local
+], AlbumDetail.prototype, "prop", void 0);
+__decorate([
+    Local
+], AlbumDetail.prototype, "info", void 0);
+__decorate([
+    Local
+], AlbumDetail.prototype, "pictures", void 0);
+__decorate([
+    Local
+], AlbumDetail.prototype, "loaded", void 0);
+__decorate([
+    Local
+], AlbumDetail.prototype, "minSize", void 0);
+__decorate([
+    Local
+], AlbumDetail.prototype, "maxSize", void 0);
+__decorate([
+    Local
+], AlbumDetail.prototype, "fontSize", void 0);
+__decorate([
+    Local
+], AlbumDetail.prototype, "colors", void 0);
+registerNamedRoute(() => new AlbumDetail(undefined, {}), "", { bundleName: "com.atomicservice.5765880207856138875", moduleName: "entry", pagePath: "pages/AlbumDetail", pageFullPath: "entry/src/main/ets/pages/AlbumDetail", integratedHsp: "false", moduleType: "followWithHap" });
+(function () {
+    if (typeof NavigationBuilderRegister === "function") {
+        NavigationBuilderRegister("albumDetail", wrapBuilder(PageBuilder));
+    }
+})();
+//# sourceMappingURL=AlbumDetail.js.mapÂ—Ùh hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_kits_@kit.ArkUI.d.tsÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/common/MainStat.etsÙ`/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/module/Album.tsÙo/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/common/WaterFlowDataSource.etsÙi/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/services/CoreService.etsÙk/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/components/PictureItem.etsÙf/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/utils/WindowUtils.etsÙf/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AlbumDetail.etsÔrB›ªmoduleName±isLocalDependency¯isNodeEntryFile§pkgPath±belongProjectPath§pkgNameªpkgVersion±dependencyPkgInfo°belongModulePath¬shouldEmitJs¯hostModulesInfo¥entryÃÂÙC/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entryÙ=/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application¥entry¥1.0.0Ô  ÙC/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entryÃÃÚ?/**
+ * Copyright (c) 2024 é£å(QQ:12446006)
+ * 
+ * æ­¤ä»£ç ä»…ä¾›å­¦ä¹ ä½¿ç”¨,ç¦æ­¢:
+ * 1. åœ¨åä¸ºåº”ç”¨å•†åº—å‘å¸ƒ
+ * 2. é”€å”®æˆ–ç”¨äºå•†ä¸šç”¨é€”
+ * 3. ç”¨äºä»»ä½•ç›ˆåˆ©ç›®çš„
+ * 
+ * ç”»å†Œè¯¦æƒ…é¡µé¢
+ * åŠŸèƒ½:
+ * - å±•ç¤ºç”»å†Œä¸­çš„ç…§ç‰‡
+ * - ç€‘å¸ƒæµå¸ƒå±€å±•ç¤º
+ * - æ·»åŠ æ–°ç…§ç‰‡
+ * - ç…§ç‰‡ç®¡ç†(æŸ¥çœ‹ã€åˆ é™¤)
+ */
+
+import { AppStorageV2, promptAction } from "@kit.ArkUI"
+import { cloudDatabase } from '@kit.CloudFoundationKit';
+import { Child } from "../module/Child";
+import util from "@ohos.util";
+import { MainStat, resultClass } from "../common/MainStat";
+import { Album } from "../module/Album";
+import { WaterFlowDataSource } from "../common/WaterFlowDataSource";
+import { Picture } from "../module/Picture";
+import CoreService from "../services/CoreService";
+import { PictureItem } from "../components/PictureItem";
+import { WindowUtils } from '../utils/WindowUtils';
+
+@Builder
+export function PageBuilder(name: string, param: Object) {
+  AlbumDetail()
+}
+
+@Entry
+@ComponentV2
+struct AlbumDetail {
+  @Local prop: MainStat = AppStorageV2.connect(MainStat, () => new MainStat())!;
+  @Local info: Album = new Album();
+  @Local pictures: Picture[] = []
+  @Local loaded: boolean = false;
+  pageInfos: NavPathStack = new NavPathStack()
+
+  @Local minSize: number = 80
+  @Local maxSize: number = 180
+  @Local fontSize: number = 24
+  @Local colors: number[] = [0xFFC0CB, 0xDA70D6, 0x6B8E23, 0x6A5ACD, 0x00FFFF, 0x00FF7F]
+  dataSource: WaterFlowDataSource = new WaterFlowDataSource()
+  private itemWidthArray: number[] = []
+  private itemHeightArray: number[] = []
+  private currentOffset: number = 0;
+  private limit: number = 20;
+
+  // è®¡ç®—FlowItemå®½/é«˜
+  getSize() {
+    let ret = Math.floor(Math.random() * this.maxSize)
+    return (ret > this.minSize ? ret : this.minSize)
+  }
+
+  // è®¾ç½®FlowItemçš„å®½/é«˜æ•°ç»„
+  setItemSizeArray() {
+    for (let i = 0; i < 100; i++) {
+      this.itemWidthArray.push(this.getSize())
+      this.itemHeightArray.push(this.getSize())
+    }
+  }
+
+  @Builder
+  itemFoot() {
+    Column() {
+      Text(`Footer`)
+        .fontSize(10)
+        .backgroundColor(Color.Red)
+        .width(50)
+        .height(50)
+        .align(Alignment.Center)
+        .margin({ top: 2 })
+    }
+  }
+
+  // é¡µé¢å³å°†å‡ºç°æ—¶è°ƒç”¨
+  aboutToAppear() {
+    this.setItemSizeArray()
+    setTimeout(async () => {
+      this.info = this.pageInfos.getParamByName('albumDetail')[0] as Album
+      await this.loadPictures()
+    }, 100)
+  }
+
+  // å¼‚æ­¥åŠ è½½å›¾ç‰‡
+  async loadPictures() {
+    console.log('littleGallery', 'loadPictures', JSON.stringify(this.info));
+    try {
+      console.log('littleGallery', 'loadPictures', this.info.id, this.limit, this.currentOffset);
+      const coreService = CoreService.getService();
+      const pictures = await coreService.getPictures(this.info.id, this.limit, this.currentOffset);
+      this.pictures = pictures;
+      this.loaded = true;
+      console.log('littleGallery', 'loadPictures pictures', JSON.stringify(pictures));
+      if (this.currentOffset === 0) {
+        this.dataSource.setData(pictures); // é¦–æ¬¡åŠ è½½ä½¿ç”¨ setData
+      } else {
+        this.dataSource.appendData(pictures); // åŠ è½½æ›´å¤šæ—¶ä½¿ç”¨ appendData
+      }
+      this.currentOffset += this.limit;
+    } catch (error) {
+      console.log('littleGallery', 'loadPictures error', JSON.stringify(error));
+    }
+  }
+
+  // è·³è½¬åˆ°æ·»åŠ å›¾ç‰‡é¡µé¢
+  goAddPicture() {
+    this.pageInfos.pushPathByName('addPicture', { "action": "add", "album": this.info }, (popInfo: PopInfo) => {
+      if ((popInfo.result as resultClass).count == 1) {
+        this.currentOffset = 0;
+        this.loadPictures();
+      }
+    });
+  }
+
+  // åˆ é™¤å›¾ç‰‡å¤„ç†
+  async deleteHandle(id: string, index: number) {
+    let succ = await CoreService.getService().deletePicture(id)
+    if (succ) {
+      promptAction.showToast({
+        message: 'åˆ é™¤æˆåŠŸ ' + id,
+        duration: 2000
+      })
+      this.currentOffset = 0;
+      this.loadPictures();
+    } else {
+      promptAction.showToast({
+        message: 'åˆ é™¤å¤±è´¥',
+        duration: 2000
+      })
+    }
+  }
+
+  // è·³è½¬åˆ°å›¾ç‰‡è¯¦æƒ…é¡µé¢
+  goPictureDetail(url: string) {
+    this.pageInfos.pushPathByName('pictureDetail', url, (popInfo: PopInfo) => {
+    });
+  }
+
+  @Builder
+  addPictureButton() {
+    // Button('æ·»åŠ å­©å­çš„ä½œå“', { buttonStyle: ButtonStyleMode.NORMAL, role: ButtonRole.NORMAL })
+    //   .fontColor($r('sys.color.font_secondary'))
+    //   .onClick(() => {
+    //     this.goAddPicture();
+    //   })
+
+  }
+
+
+  // æ„å»ºé¡µé¢
+  build() {
+    NavDestination() {
+      if (this.pictures.length > 0 && this.loaded) {
+        Stack({ alignContent: Alignment.BottomEnd }) {
+          WaterFlow() {
+            LazyForEach(this.dataSource, (item: Picture, index) => {
+              PictureItem({ picture: item, maxWidth: (px2vp(WindowUtils.windowWidth_px)-5-16) / 2, onDelete: () => {
+                this.deleteHandle(item.id, index);
+              }, onGoDetail: (url: string) => {
+                this.goPictureDetail(url);
+              }})
+            }, (item: Picture) => item.id)
+          }
+          .columnsTemplate("1fr 1fr")
+          .columnsGap(10)
+          .rowsGap(5)
+          .width('100%')
+          .height('100%')
+          .padding({left:8,right:8})
+          .edgeEffect(EdgeEffect.Spring)
+          .onReachStart(() => {
+          })
+          .onReachEnd(() => {
+          })
+          .onScrollFrameBegin((offset: number, state: ScrollState) => {
+            console.info('waterFlow scrollFrameBegin offset: ' + offset + ' state: ' + state.toString())
+            return { offsetRemain: offset }
+          })
+          Row() {
+            Button({ type: ButtonType.Circle, stateEffect: true }) {
+              Image($r('app.media.plus')).fillColor(Color.White).width(24).height(24)
+            }.width(55).height(55).backgroundColor(0x317aff).onClick(() => {
+              this.goAddPicture();
+            })
+          }.margin({ bottom: 20, right: 20 })
+        }.width('100%').height('100%')
+      } else if (this.pictures.length == 0 && this.loaded) {
+        Column() {
+          Column({ space: 20 }) {
+            Image($r('app.media.palette')).width(160).height(160).opacity(0.6)
+            this.addPictureButton()
+          }.padding({ bottom: 200 })
+        }.width('100%').height('100%').justifyContent(FlexAlign.Center)
+      }
+    }.title(this.info?.name)
+      .onBackPressed(() => {
+        const popDestinationInfo = this.pageInfos.pop()
+        console.log('pop' + 'è¿”å›å€¼' + JSON.stringify(popDestinationInfo))
+        return true
+      }).onReady((context: NavDestinationContext) => {
+        this.pageInfos = context.pathStack
+      })
+  }
+}ÀÔrC—ª@kit.ArkUI²../common/MainStat¯../module/Album½../common/WaterFlowDataSource·../services/CoreService¹../components/PictureItem´../utils/WindowUtilsÔrD—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙh hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_kits_@kit.ArkUI.d.tsAÃªoh-resolveÂDAÂÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/common/MainStat.etsAÃªoh-resolveÂDAÂÙ`/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/module/Album.tsAÃªoh-resolveÂDAÂÙo/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/common/WaterFlowDataSource.etsAÃªoh-resolveÂDAÂÙi/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/services/CoreService.etsAÃªoh-resolveÂDAÂÙk/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/components/PictureItem.etsAÃªoh-resolveÂDAÂÙf/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/utils/WindowUtils.etsAÃªoh-resolveÂ’ÔrE–§version¤fileªsourceRoot§sources¥names¨mappings®AlbumDetail.js ‘¯AlbumDetail.etsÜJ‘”    ‘” š”   ” ”	 	” ” ”# #”% %”+ +”7 7”8 7˜”   ” ”	 	” ”  ” &”- :”. ;˜”   ” ”	 	” ” ” ”' '”( (˜”   ” ”	 	” ” ”$ $”ÌC ÌC”ÌD ÌD–”   ” ” ” ”1 1”2 2˜”   ” ”	 	” ” ” ”7 7”8 8˜”   ” ”	 	” ” ” ”2 2”3 3˜”   ” ” ” ” ”  (”" *”' 7’”( ”3 ‘” ’” #” #‘” ! ” $”  $&”! $'”( $.”) $/”1 $7”3 $9”6 $<”8 $>”9 $?”= $ÌC”ÌE $ÌK”ÌG $ÌM”ÌH $ÌO”” %” %” % ” %"’” &” &!’” '” ' ”” (” ( ”) (,”+ (.’” *” *’” +” +’” ,” ,” -” -” -%”! -'”) -/”+ -1”3 -9”5 -;”= -ÌC”? -ÌE”ÌG -ÌM”ÌI -ÌO”ÌQ -ÌW”ÌR -ÌX”” .$” .(”1 .;”3 .=’” /%”  /'’” 0&”! 0(’” 1"” 1#’” 2” 2‘” ’” 4” 4’” 5” 5	Ü ” 6” 6” 6” 6” 6” 6” 6” 6”! 6”" 6”( 6$”* 6&”- 6)”1 6-”2 6.”9 65”: 66”; 66Ü ” 7” 7” 7” 7” 7” 7” 7”" 7”# 7”$ 7 ”% 7!”( 7$”) 7%”* 7&”+ 7'”/ 7+”0 7,”7 73”8 74”9 74’” 8” 8’” :” :’” ;” ;” <” <	” <” <” <” <” <” <” <” <”! <”" <”$ < ”& <"” =” =
+” =” =”  =”$ =”% =”) =#”* =$”1 =+”3 =-”4 =.”5 =.” >” >
+” >”  >”! >”% >”& > ”* >$”+ >%”2 >,”4 >.”5 >/”6 >/‘”	 ?’” Ì@” Ì@’” ÌC” ÌC
+’” ÌD” ÌD
+”” ÌE” ÌE
+” ÌE”  ÌE–” ÌE” ÌE
+” ÌF	” ÌF” ÌF” ÌF˜” ÌE” ÌE
+” ÌG	”  ÌG”! ÌG”& ÌG”' ÌG”* ÌG"–” ÌE” ÌE
+” ÌH	” ÌH” ÌH” ÌH–” ÌE” ÌE
+” ÌI	” ÌI” ÌI” ÌI˜” ÌE” ÌE
+” ÌJ	” ÌJ” ÌJ”  ÌJ”! ÌJ”' ÌJš” ÌE” ÌE
+” ÌK	” ÌK” ÌK” ÌK” ÌK” ÌK”  ÌK”" ÌK’” ÌE” ÌE
+’” ÌD” ÌD
+‘” ÌM’” ÌO” ÌO’” ÌP” ÌP–” ÌQ” ÌQ” ÌQ	” ÌQ” ÌQ”  ÌQ–” ÌR” ÌR” ÌR” ÌR” ÌR” ÌRÜ ” ÌS” ÌS
+” ÌS” ÌS” ÌS” ÌS” ÌS”& ÌS ”' ÌS!”5 ÌS/”6 ÌS0”ÌC ÌS=”ÌD ÌS>”ÌE ÌS?”ÌF ÌSÌ@”ÌG ÌSÌJ”ÌH ÌSÌJ—” ÌT” ÌT” ÌT” ÌT”# ÌT”% ÌT”& ÌT–” ÌU”	 ÌU” ÌU” ÌU
+” ÌU” ÌU’” ÌV” ÌV’” ÌX” ÌX”” ÌY”	 ÌY”
+ ÌY” ÌYÜ ” ÌZ” ÌZ” ÌZ” ÌZ” ÌZ”# ÌZ”% ÌZ!”3 ÌZ/”5 ÌZ1”9 ÌZ5”: ÌZ6”ÌC ÌZ?”ÌD ÌZÌ@”ÌH ÌZÌD”ÌI ÌZÌE”ÌM ÌZÌI”ÌN ÌZÌJ”ÌO ÌZÌK”ÌP ÌZÌL’” Ì[” Ì[Ü ” Ì\” Ì\” Ì\” Ì\” Ì\”' Ì\!”) Ì\#”7 Ì\1”9 Ì\3”= Ì\7”> Ì\8”ÌB Ì\<”ÌC Ì\=”ÌE Ì\?”ÌG Ì\ÌA”ÌK Ì\ÌE”ÌL Ì\ÌF”ÌQ Ì\ÌK”ÌS Ì\ÌM”ÌW Ì\ÌQ”ÌX Ì\ÌR”Ìe Ì\Ì_”Ìf Ì\Ì`”Ìg Ì\Ìa™” Ì]” Ì]” Ì]”  Ì]”+ Ì]%”, Ì]&”6 Ì]0”8 Ì]2”9 Ì]3Ü ” Ì^” Ì^” Ì^” Ì^”# Ì^”. Ì^(”/ Ì^)”: Ì^4”; Ì^5”? Ì^9”Ì@ Ì^:”ÌD Ì^>”ÌE Ì^?”ÌG Ì^ÌA”ÌI Ì^ÌC”ÌM Ì^ÌG”ÌN Ì^ÌH”ÌS Ì^ÌM”ÌU Ì^ÌO”ÌY Ì^ÌS”ÌZ Ì^ÌT”Ìg Ì^Ìa”Ìh Ì^Ìb”Ìi Ì^Ìc—” Ì_” Ì_
+” Ì_” Ì_” Ì_”$ Ì_”% Ì_—” Ì`” Ì`
+” Ì`” Ì`” Ì`” Ì`” Ì`Ü ” Ìa” Ìa” Ìa” Ìa” Ìa”' Ìa!”) Ìa#”Ì@ Ìa:”ÌB Ìa<”ÌF ÌaÌ@”ÌG ÌaÌA”ÌP ÌaÌJ”ÌQ ÌaÌK”ÌY ÌaÌS”ÌZ ÌaÌT”Ì[ ÌaÌU”Ì\ ÌaÌV˜” Ìb” Ìb
+” Ìb” Ìb”" Ìb”' Ìb!”( Ìb"”* Ìb$œ” Ìc” Ìc” Ìc” Ìc”  Ìc”' Ìc”( Ìc ”0 Ìc(”1 Ìc)”2 Ìc*”3 Ìc+”ÌD Ìc<‘” Ìd‘” Ìdœ” Ìe” Ìe” Ìe” Ìe”  Ìe”* Ìe"”+ Ìe#”3 Ìe+”4 Ìe,”5 Ìe-”6 Ìe.”ÌK ÌeÌC‘” Ìf™” Ìg” Ìg
+” Ìg” Ìg”" Ìg”& Ìg ”' Ìg!”, Ìg&”- Ìg'‘”	 Ìh”” Ìh” Ìh” Ìh” ÌhÜ ” Ìi” Ìi” Ìi” Ìi” Ìi”' Ìi!”) Ìi#”= Ìi7”? Ìi9”ÌC Ìi=”ÌD Ìi>”ÌM ÌiÌG”ÌN ÌiÌH”ÌS ÌiÌM”ÌT ÌiÌN”ÌU ÌiÌO”ÌV ÌiÌP‘”	 Ìj’” Ìk” Ìk’” Ìm” Ìm’” Ìn” ÌnÜ ” Ìo” Ìo” Ìo	” Ìo” Ìo”% Ìo!”& Ìo"”2 Ìo.”4 Ìo0”6 Ìo2”> Ìo:”Ì@ Ìo<”ÌE ÌoÌA”ÌG ÌoÌC”ÌN ÌoÌJ”ÌP ÌoÌL”ÌT ÌoÌP”ÌU ÌoÌQ”ÌY ÌoÌU”Ì[ ÌoÌW”Ì] ÌoÌY”Ì^ ÌoÌZ”Ìe ÌoÌj”Ìg ÌoÌl”Ìi ÌoÌnš” Ìp” Ìp” Ìp” Ìp” Ìp)” Ìp*”$ Ìp/”( Ìp3”) Ìp4”+ Ìp6—” Ìq” Ìq” Ìq”" Ìq”% Ìq”& Ìq”' Ìq–” Ìr” Ìr” Ìr”! Ìr”# Ìr”$ Ìr‘” Ìs”” Ìt”	 Ìt”
+ Ìt” Ìt’” Ìu” Ìu’” Ìw” Ìw˜” Ìx”	 Ìx”
+ Ìx” Ìx” Ìx” Ìx” Ìx!”  Ìx.Ÿ” Ìy” Ìy” Ìy” Ìy” Ìy”$ Ìy ”% Ìy!”/ Ìy+”1 Ìy-”2 Ìy.”? Ìy;”Ì@ Ìy<”ÌB Ìy>”ÌC Ìy?”ÌD Ìy?”” Ìz” Ìz” Ìz” Ìz•” Ì{” Ì{” Ì{”" Ì{”# Ì{–” Ì|” Ì|” Ì|”  Ì|”# Ì|”% Ì|”” Ì}” Ì}” Ì}” Ì}“” Ì~” Ì~” Ì~—” Ì” Ì
+” Ì” Ì”! Ì”" Ì”# Ì–” Ì€” Ì€
+” Ì€” Ì€” Ì€”  Ì€‘”	 Ì‘” Ì•” Ì‚” Ì‚” Ì‚”" Ì‚”# Ì‚”” Ìƒ” Ìƒ” Ìƒ” Ìƒ”” Ì„” Ì„” Ì„” Ì„“” Ì…” Ì…” Ì…‘”	 Ì†’” Ì‡” Ì‡’” Ì‰” Ì‰”” ÌŠ” ÌŠ” ÌŠ” ÌŠŸ” Ì‹” Ì‹” Ì‹	” Ì‹” Ì‹”% Ì‹!”& Ì‹"”5 Ì‹1”7 Ì‹3”: Ì‹6”< Ì‹8”= Ì‹9”ÌD Ì‹ÌI”ÌF Ì‹ÌK”ÌH Ì‹ÌM”” ÌŒ”	 ÌŒ”
+ ÌŒ” ÌŒ’” Ì” Ì’” Ì” Ì‘” Ì—’” Ìš” Ìš	‘” Ì›” Ì” Ì
+” Ì” Ì”% Ì”& Ì”, Ì”/ Ì!”0 Ì"”4 Ì&”8 Ì*”9 Ì+”? Ì1”ÌA Ì3š”  Ì”% Ì”- Ì”/ Ì”; Ì”= Ì”ÌF Ì'”ÌG Ì(”ÌP Ì1”ÌR Ì3–”  Ì”% Ì”& Ì¾
+”+ Ì¾”, Ì¾”2 Ì¾–”  Ì”% Ì”& Ì¾”, Ì¾”- Ì¾”3 Ì¾%’”  ÌŸ
+”) ÌŸ–”  ÌŸ
+”) ÌŸ”* Ì¨”9 Ì¨”: Ì¨”ÌC Ì¨$–”  ÌŸ
+”) ÌŸ”* Ì©”4 Ì©”5 Ì©”7 Ì©–”  ÌŸ
+”) ÌŸ”* Ìª”1 Ìª”2 Ìª”3 Ìª–”  ÌŸ
+”) ÌŸ”* Ì«”/ Ì«”0 Ì«”6 Ì«–”  ÌŸ
+”) ÌŸ”* Ì¬”0 Ì¬”1 Ì¬”7 Ì¬”  ÌŸ
+”) ÌŸ”* Ì­”1 Ì­”2 Ì­”4 Ì­”8 Ì­”: Ì­”; Ì­”= Ì­”ÌB Ì­ ”ÌD Ì­!”ÌE Ì­"”ÌG Ì­#˜”  ÌŸ
+”) ÌŸ”* Ì®”4 Ì®”5 Ì®”? Ì® ”Ì@ Ì®!”ÌF Ì®'—”  ÌŸ
+”) ÌŸ”* Ì¯”6 Ì¯”7 Ì¯”: Ì¯”< Ì¯’”  Ì°
+”! Ì°—”  ÌŸ
+”) ÌŸ”* Ì±”4 Ì±”5 Ì±”8 Ì±”: Ì±’”  Ì²
+”! Ì²›”  ÌŸ
+”) ÌŸ”* Ì³”< Ì³”= Ì³”> Ì³”ÌD Ì³-”ÌF Ì³/”ÌK Ì³ÌA”ÌM Ì³ÌC”ÌO Ì³ÌEÜ ”$ Ì´”+ Ì´”, Ì´”0 Ì´”1 Ì´”ÌV Ì´>”ÌY Ì´ÌA”Ì_ Ì´ÌG”Ìb Ì´ÌJ”Ìl Ì´ÌT”Ìo Ì´ÌW”Ìt Ì´Ì\”Ìu Ì´Ì]”Ì} Ì´Ìe”Ì Ì´Ìg”Ì€ Ì´Ìh”Ì Ì´Ìh˜”$ Ìµ”+ Ìµ”- Ìµ”9 Ìµ!”; Ìµ#”ÌA Ìµ)”ÌC Ìµ+”ÌD Ìµ+’”  Ì¶
+”! Ì¶’”ÌM Ì 9”ÌR Ì >Ü ”ÌH Ì¡”ÌS Ì¡”ÌZ Ì¡”Ì\ Ì¡”Ìc Ì¡#”Ìe Ì¡%”Ìi Ì¡)”Ìk Ì¡+”Ìs Ì¡3”Ìu Ì¡5”Ìv Ì¡6”Ì{ Ì¡;”Ì| Ì¡<”Ì‡ Ì¡ÌG”Ìˆ Ì¡ÌH”Ì– Ì¡ÌV”Ì— Ì¡ÌW”Ìš Ì¡ÌX”Ì› Ì¡ÌY”Ì Ì¡ÌZ”Ì  Ì¡Ì\”Ì¡ Ì¡Ì]”Ì¤ Ì¡Ì`”Ì¥ Ì¡Ìa”Ì§ Ì¡Ìc”Ì¯ Ì¡Ìk”Ì± Ì¡Ìm”Ì´ Ì¡Ìp”Ì¶ Ì¡Ìrœ”8 Ì¢”< Ì¢”= Ì¢”ÌI Ì¢!”ÌJ Ì¢"”ÌN Ì¢&”ÌO Ì¢'”ÌQ Ì¢)”ÌS Ì¢+”ÌX Ì¢0”ÌY Ì¢1”ÌZ Ì¢2™”4 Ì£”5 Ì£”7 Ì£”ÌA Ì£”ÌC Ì£”ÌD Ì£”ÌG Ì£)”ÌI Ì£+”ÌK Ì£-˜”8 Ì¤”< Ì¤”= Ì¤”ÌL Ì¤$”ÌM Ì¤%”ÌP Ì¤(”ÌQ Ì¤)”ÌR Ì¤*“”4 Ì¥”5 Ì¥”7 Ì¥””8 Ì¡”? Ì¡#”ÌA Ì¡%”ÌE Ì¡)Ü ”8 Ì¡+”Ì@ Ì¡3”ÌB Ì¡5”ÌC Ì¡6”ÌH Ì¡;”ÌI Ì¡<”ÌT Ì¡ÌG”ÌU Ì¡ÌH”Ìc Ì¡ÌV”Ìd Ì¡ÌW”Ìg Ì¡ÌX”Ìh Ì¡ÌY”Ìk Ì¡ÌZ”Ìm Ì¡Ì\”Ìn Ì¡Ì]”Ìq Ì¡Ì`”Ìr Ì¡Ìa•”8 Ì¡Ìc”Ì@ Ì¡Ìk”ÌB Ì¡Ìm”ÌE Ì¡Ìp”ÌG Ì¡Ìrœ”< Ì¢”Ì@ Ì¢”ÌA Ì¢”ÌM Ì¢!”ÌN Ì¢"”ÌR Ì¢&”ÌS Ì¢'”ÌU Ì¢)”ÌW Ì¢+”Ì\ Ì¢0”Ì] Ì¢1”Ì^ Ì¢2’”8 Ì£”9 Ì£—”8 Ì£”ÌB Ì£”ÌD Ì£”ÌE Ì£”ÌH Ì£)”ÌJ Ì£+”ÌL Ì£-˜”< Ì¤”Ì@ Ì¤”ÌA Ì¤”ÌP Ì¤$”ÌQ Ì¤%”ÌT Ì¤(”ÌU Ì¤)”ÌV Ì¤*’”8 Ì¥”9 Ì¥Ü ”4 Ì¡”; Ì¡#”= Ì¡%”ÌA Ì¡)”ÌC Ì¡+”ÌK Ì¡3”ÌM Ì¡5”ÌN Ì¡6”ÌS Ì¡;”ÌT Ì¡<”Ì_ Ì¡ÌG”Ì` Ì¡ÌH”Ìn Ì¡ÌV”Ìo Ì¡ÌW”Ìr Ì¡ÌX”Ìs Ì¡ÌY”Ìv Ì¡ÌZ”Ìx Ì¡Ì\”Ìy Ì¡Ì]”Ì| Ì¡Ì`”Ì} Ì¡Ìa”Ì Ì¡Ìc”Ì‡ Ì¡Ìk”Ì‰ Ì¡Ìm”ÌŒ Ì¡Ìp”Ì Ì¡Ìrœ”8 Ì¢”< Ì¢”= Ì¢”ÌI Ì¢!”ÌJ Ì¢"”ÌN Ì¢&”ÌO Ì¢'”ÌQ Ì¢)”ÌS Ì¢+”ÌX Ì¢0”ÌY Ì¢1”ÌZ Ì¢2™”4 Ì£”5 Ì£”7 Ì£”ÌA Ì£”ÌC Ì£”ÌD Ì£”ÌG Ì£)”ÌI Ì£+”ÌK Ì£-˜”8 Ì¤”< Ì¤”= Ì¤”ÌL Ì¤$”ÌM Ì¤%”ÌP Ì¤(”ÌQ Ì¤)”ÌR Ì¤*’”4 Ì¥”5 Ì¥™”Ì@ Ì¦”ÌA Ì¦”ÌE Ì¦”ÌG Ì¦”ÌI Ì¦!”ÌJ Ì¦"”ÌN Ì¦&”ÌO Ì¦'”ÌQ Ì¦)””> Ì ”ÌB Ì ”ÌC Ì ”ÌM Ì '’”  Ì ”+ Ì ’” ÌŸ
+”% ÌŸ’”  Ì·
+”# Ì·”  Ì·
+”# Ì·”$ Ì½”* Ì½”+ Ì½”- Ì½”3 Ì½”5 Ì½”7 Ì½”9 Ì½!”> Ì½&”Ì@ Ì½(”ÌB Ì½*”ÌD Ì½,”  Ì¸”& Ì¸”7 Ì¸”9 Ì¸”= Ì¸”? Ì¸”ÌI Ì¸%”ÌJ Ì¸&”ÌP Ì¸,”ÌR Ì¸.”Ì] Ì¸9”Ì_ Ì¸;”Ìc Ì¸?”Ìe Ì¸ÌA–”  Ì¸”& Ì¸”' Ìº”, Ìº”- Ìº”/ Ìº–”  Ì¸”& Ì¸”' Ìº”- Ìº”. Ìº”0 Ìº!–”  Ì¸”& Ì¸”' Ìº#”6 Ìº2”7 Ìº3”? Ìº;—”  Ì¸”& Ì¸”' Ìº=”. ÌºÌD”/ ÌºÌE”2 ÌºÌH”4 ÌºÌJ–”$ Ì»”( Ì»”) Ì»”5 Ì»”7 Ì»!”8 Ì»"’”  Ì¼”! Ì¼’”  Ì¹”% Ì¹˜”  Ì¹”% Ì¹”& Ì¹*”/ Ì¹3”0 Ì¹4”5 Ì¹9”6 Ì¹:”; Ì¹?–”  Ì¹”% Ì¹”& Ì¹ÌA”+ Ì¹ÌF”, Ì¹ÌG”. Ì¹ÌI–”  Ì¹”% Ì¹”& Ì¹ÌK”, Ì¹ÌQ”- Ì¹ÌR”/ Ì¹ÌT’” Ì¸”" Ì¸’” Ì·
+” Ì·’” Ì”! Ì‘” Ì¿” Ì¿” Ì¿”! Ì¿”" Ì¿”* Ì¿”+ Ì¿”1 Ì¿%”5 Ì¿)”6 Ì¿*”: Ì¿.”> Ì¿2”? Ì¿3”ÌE Ì¿9”ÌG Ì¿;’”  ÌÀ”& ÌÀ–”  ÌÀ”& ÌÀ”' ÌÅ
+”, ÌÅ”- ÌÅ”3 ÌÅ–”  ÌÀ”& ÌÀ”' ÌÅ”- ÌÅ”. ÌÅ”4 ÌÅ%˜”  ÌÀ”& ÌÀ”' ÌÅ'”5 ÌÅ5”6 ÌÅ6”? ÌÅ?”Ì@ ÌÅÌ@”ÌF ÌÅÌF˜”  ÌÁ
+”& ÌÁ”. ÌÁ”0 ÌÁ”5 ÌÁ”7 ÌÁ”9 ÌÁ”; ÌÁš”  ÌÁ
+”& ÌÁ”' ÌÄ”. ÌÄ”/ ÌÄ”1 ÌÄ”7 ÌÄ”9 ÌÄ”< ÌÄ!”> ÌÄ#’”  ÌÂ”% ÌÂ–”  ÌÂ”% ÌÂ”& ÌÂ+”+ ÌÂ0”, ÌÂ1”/ ÌÂ4–”  ÌÂ”% ÌÂ”& ÌÂ6”, ÌÂ<”- ÌÂ=”0 ÌÂÌ@–”  ÌÂ”% ÌÂ”& ÌÂÌB”- ÌÂÌI”. ÌÂÌJ”1 ÌÂÌM•” ÌÃ”  ÌÃ”! ÌÃ”1 ÌÃ!”> ÌÃ#’” ÌÁ
+”" ÌÁ’” ÌÀ”" ÌÀ‘” ÌÆ‘” ÌÆ˜” ÌÇ”  ÌÇ”! ÌÇ”% ÌÇ”& ÌÇ”* ÌÇ”, ÌÇ”0 ÌÇ•” ÌÈ”( ÌÈ”) ÌÈ”, ÌÈ”. ÌÈ›” ÌÉ” ÌÉ”( ÌÉ ”+ ÌÉ#”/ ÌÉ'”0 ÌÉ(”9 ÌÉ1”: ÌÉ2”= ÌÉ5”? ÌÉ7”Ì@ ÌÉ7Ü ” ÌÊ” ÌÊ” ÌÊ” ÌÊ” ÌÊ”! ÌÊ”$ ÌÊ”) ÌÊ!”, ÌÊ$”0 ÌÊ(”1 ÌÊ)”: ÌÊ2”; ÌÊ3”ÌM ÌÊÌE”ÌN ÌÊÌF”ÌO ÌÊÌG”ÌP ÌÊÌG”” ÌË” ÌË” ÌË” ÌË’” ÌÌ” ÌÌ—” ÌÌ	”" ÌÌ”# ÌÌ”$ ÌÌ”+ ÌÌ0”- ÌÌ2”/ ÌÌ4™” ÌÍ” ÌÍ” ÌÍ” ÌÍ”! ÌÍ”( ÌÍ ”) ÌÍ!”2 ÌÍ*”3 ÌÍ*’” ÌÎ” ÌÎ‘” ÌÏ‘”  $	’” $”	 $‘”) $ÌP‘”  %	’” %”	 %‘”) %#‘”  &	’” &”	 &‘”- &!‘”  '	’” '”	 '‘”+ '!‘”  *	’” *”	 *‘”, *‘”  +	’” +”	 +‘”, +‘”  ,	’” ,”	 ,‘”- ,‘”  -	’” -”	 -‘”+ -ÌXÔrF–§version¤file§sources®sourcesContent¥names¨mappingsÀ‘À‘ÀÜQ‘”    ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”  	 ‘”  
+ ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”    ‘”  ! ‘”  " ‘”  # ‘”  $ ‘”  % ‘”  & ‘”  ' ‘”  ( ‘”  ) ‘”  * ‘”  + ‘”  , ‘”  - ‘”  . ‘”  / ‘”  0 ‘”  1 ‘”  2 ‘”  3 ‘”  4 ‘”  5 ‘”  6 ‘”  7 ‘”  8 ‘”  9 ‘”  : ‘”  ; ‘”  < ‘”  = ‘”  > ‘”  ? ‘”  Ì@ ‘”  ÌA ‘”  ÌB ‘”  ÌC ‘”  ÌD ‘”  ÌE ‘”  ÌF ‘”  ÌG ‘”  ÌH ‘”  ÌI ‘”  ÌJ ‘”  ÌK ‘”  ÌL ‘”  ÌM ‘”  ÌN ‘”  ÌO ‘”  ÌP ‘”  ÌQ ‘”  ÌR ‘”  ÌS ‘”  ÌT ‘”  ÌU ‘”  ÌV ‘”  ÌW ‘”  ÌX ‘”  ÌY ‘”  ÌZ ‘”  Ì[ ‘”  Ì\ ‘”  Ì] ‘”  Ì^ ‘”  Ì_ ‘”  Ì` ‘”  Ìa ‘”  Ìb ‘”  Ìc ‘”  Ìd ‘”  Ìe ‘”  Ìf ‘”  Ìg ‘”  Ìh ‘”  Ìi ‘”  Ìj ‘”  Ìk ‘”  Ìl ‘”  Ìm ‘”  Ìn ‘”  Ìo ‘”  Ìp ‘”  Ìq ‘”  Ìr ‘”  Ìs ‘”  Ìt ‘”  Ìu ‘”  Ìv ‘”  Ìw ‘”  Ìx ‘”  Ìy ‘”  Ìz ‘”  Ì{ ‘”  Ì| ‘”  Ì} ‘”  Ì~ ‘”  Ì ‘”  Ì€ ‘”  Ì ‘”  Ì‚ ‘”  Ìƒ ‘”  Ì„ ‘”  Ì… ‘”  Ì† ‘”  Ì‡ ‘”  Ìˆ ‘”  Ì‰ ‘”  ÌŠ ‘”  Ì‹ ‘”  ÌŒ ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì‘ ‘”  Ì’ ‘”  Ì“ ‘”  Ì” ‘”  Ì• ‘”  Ì– ‘”  Ì— ‘”  Ì˜ ‘”  Ì™ ‘”  Ìš ‘”  Ì› ‘”  Ìœ ‘”  Ì ‘”  Ì ‘”  ÌŸ ‘”  Ì  ‘”  Ì¡ ‘”  Ì¢ ‘”  Ì£ ‘”  Ì¤ ‘”  Ì¥ ‘”  Ì¦ ‘”  Ì§ ‘”  Ì¨ ‘”  Ì© ‘”  Ìª ‘”  Ì« ‘”  Ì¬ ‘”  Ì­ ‘”  Ì® ‘”  Ì¯ ‘”  Ì° ‘”  Ì± ‘”  Ì² ‘”  Ì³ ‘”  Ì´ ‘”  Ìµ ‘”  Ì¶ ‘”  Ì· ‘”  Ì¸ ‘”  Ì¹ ‘”  Ìº ‘”  Ì» ‘”  Ì¼ ‘”  Ì½ ‘”  Ì¾ ‘”  Ì¿ ‘”  ÌÀ ‘”  ÌÁ ‘”  ÌÂ ‘”  ÌÃ ‘”  ÌÄ ‘”  ÌÅ ‘”  ÌÆ ‘”  ÌÇ ‘”  ÌÈ ‘”  ÌÉ ‘”  ÌÊ ‘”  ÌË ‘”  ÌÌ ‘”  ÌÍ ‘”  ÌÎ ‘”  ÌÏ ‘”  ÌĞ ‘”  ÌÑ ‘”  ÌÒ ‘”  ÌÓ ‘”  ÌÔ ‘”  ÌÕ ‘”  ÌÖ ‘”  Ì× ‘”  ÌØ ‘”  ÌÙ ‘”  ÌÚ ‘”  ÌÛ ‘”  ÌÜ ‘”  Ìİ ‘”  ÌŞ ‘”  Ìß ‘”  Ìà ‘”  Ìá ‘”  Ìâ ‘”  Ìã ‘”  Ìä ‘”  Ìå ‘”  Ìæ ‘”  Ìç ‘”  Ìè ‘”  Ìé ‘”  Ìê ‘”  Ìë ‘”  Ìì ‘”  Ìí ‘”  Ìî ‘”  Ìï ‘”  Ìğ ‘”  Ìñ ‘”  Ìò ‘”  Ìó ‘”  Ìô ‘”  Ìõ ‘”  Ìö ‘”  Ì÷ ‘”  Ìø ‘”  Ìù ‘”  Ìú ‘”  Ìû ‘”  Ìü ‘”  Ìı ‘”  Ìş ‘”  Ìÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ÂÔ  ÔrG”²dynamicImportCache¹exportAllDeclarationCache»exportNamedDeclarationCache«importCache‘ÔrH–¤type¥start£end«declarationªspecifiers¦source¶ExportNamedDeclarationÍ
+ÍÔrI™¤type¥start£end¢idªexpression©generator¥async¦params¤body³FunctionDeclarationÍÍÔrJ”¤type¥start£end¤nameªIdentifierÍÍ%«PageBuilderÂÂÂ“JªIdentifierÍ&Í*¤nameJªIdentifierÍ,Í1¥paramÔrK•¤type¥start£end¤left¥right±AssignmentPatternÍ3Í@JªIdentifierÍ3Í9¦parentÔrL•¤type¥start£end¥value£raw§LiteralÍ<Í@À¤nullÔrM”¤type¥start£end¤body®BlockStatementÍBÍ‘M®BlockStatementÍIÍ‘ÔrN”¤type¥start£endªexpression³ExpressionStatementÍTÍşÔrO–¤type¥start£end¦callee©arguments¨optional®CallExpressionÍTÍıÔrP—¤type¥start£end¦object¨property¨computed¨optional°MemberExpressionÍTÍ†ÔrQ–¤type¥start£end¤testªconsequent©alternateµConditionalExpressionÍUÍkJªIdentifierÍUÍ[¦parentJªIdentifierÍ^Íd¦parentÔrR“¤type¥start£end®ThisExpressionÍgÍkJªIdentifierÍmÍ†¹observeComponentCreation2ÂÂ’I·ArrowFunctionExpressionÍ‡ÍãÀÂÂÂ’JªIdentifierÍˆÍ¦elmtIdJªIdentifierÍÍŸ¯isInitialRenderM®BlockStatementÍ¤Íã‘Q«IfStatementÍ³ÍØJªIdentifierÍ·ÍÆ¯isInitialRenderM®BlockStatementÍÈÍ_”ÔrS•¤type¥start£end¬declarations¤kind³VariableDeclarationÍÛÍ‘ÔrT•¤type¥start£end¢id¤init²VariableDeclaratorÍßÍ€JªIdentifierÍßÍì­componentCallÔrU•¤type¥start£end¦callee©arguments­NewExpressionÍïÍ€JªIdentifierÍóÍş«AlbumDetail–QµConditionalExpressionÍÿÍJªIdentifierÍÿÍ¦parentJªIdentifierÍÍ¦parentR®ThisExpressionÍÍÔrV”¤type¥start£endªproperties°ObjectExpressionÍÍJªIdentifierÍÍ$©undefinedJªIdentifierÍ&Í,¦elmtIdI·ArrowFunctionExpressionÍ.Í7ÀÂÂÂM®BlockStatementÍ4Í7V°ObjectExpressionÍ9Í“ÔrW™¤type¥start£end¦method©shorthand¨computed£key¥value¤kind¨PropertyÍ;ÍkÂÂÂJªIdentifierÍ;Í?¤pageL§LiteralÍAÍkÙ(entry/src/main/ets/pages/AlbumDetail.etsÙ*"entry/src/main/ets/pages/AlbumDetail.ets"¤initW¨PropertyÍmÍuÂÂÂJªIdentifierÍmÍq¤lineL§LiteralÍsÍu¢31¤initW¨PropertyÍwÍ}ÂÂÂJªIdentifierÍwÍz£colL§LiteralÍ|Í}¡3¤init£letN³ExpressionStatementÍ“Í°O®CallExpressionÍ“Í¯P°MemberExpressionÍ“Í JªIdentifierÍ“Í™¦ViewV2JªIdentifierÍšÍ ¦createÂÂ‘JªIdentifierÍ¡Í®­componentCallÂS³VariableDeclarationÍÂÍ‘T²VariableDeclaratorÍÆÍJªIdentifierÍÆÍÒ¬paramsLambdaI·ArrowFunctionExpressionÍÕÍÀÂÂÂM®BlockStatementÍÛÍ‘ÔrX”¤type¥start£end¨argument¯ReturnStatementÍòÍüV°ObjectExpressionÍùÍû£letN³ExpressionStatementÍ"ÍPÔrY–¤type¥start£end¨operator¤left¥right´AssignmentExpressionÍ"ÍO¡=P°MemberExpressionÍ"Í@JªIdentifierÍ"Í/­componentCallJªIdentifierÍ0Í@°paramsGenerator_ÂÂJªIdentifierÍCÍO¬paramsLambdaM®BlockStatementÍrÍØ‘N³ExpressionStatementÍ…ÍÉO®CallExpressionÍ…ÍÈP°MemberExpressionÍ…Í¼QµConditionalExpressionÍ†ÍœJªIdentifierÍ†ÍŒ¦parentJªIdentifierÍÍ•¦parentR®ThisExpressionÍ˜ÍœJªIdentifierÍÍ¼¾updateStateVarsOfChildByElmtIdÂÂ’JªIdentifierÍ½ÍÃ¦elmtIdV°ObjectExpressionÍÅÍÇÂV°ObjectExpressionÍåÍü‘W¨PropertyÍçÍúÂÂÂJªIdentifierÍçÍë¤nameL§LiteralÍíÍú«AlbumDetail­"AlbumDetail"¤initÂÀ—ÔrZ•¤type¥start£endªspecifiers¦source±ImportDeclarationÍÍÅ’Ôr[•¤type¥start£end¨imported¥local¯ImportSpecifierÍ–Í¢JªIdentifierÍ–Í¢¬AppStorageV2JªIdentifierÍ–Í¢¬AppStorageV2[¯ImportSpecifierÍ¤Í°JªIdentifierÍ¤Í°¬promptActionJªIdentifierÍ¤Í°¬promptActionL§LiteralÍ¸ÍÄª@kit.ArkUI¬"@kit.ArkUI"Z±ImportDeclarationÍÇÍõ‘[¯ImportSpecifierÍĞÍØJªIdentifierÍĞÍØ¨MainStatJªIdentifierÍĞÍØ¨MainStatL§LiteralÍàÍô²../common/MainStat´"../common/MainStat"Z±ImportDeclarationÍ÷Í‘[¯ImportSpecifierÍ ÍJªIdentifierÍ Í¥AlbumJªIdentifierÍ Í¥AlbumL§LiteralÍÍ¯../module/Album±"../module/Album"Z±ImportDeclarationÍ!Íe‘[¯ImportSpecifierÍ*Í=JªIdentifierÍ*Í=³WaterFlowDataSourceJªIdentifierÍ*Í=³WaterFlowDataSourceL§LiteralÍEÍd½../common/WaterFlowDataSource¿"../common/WaterFlowDataSource"Z±ImportDeclarationÍgÍ™‘Ôr\”¤type¥start£end¥local¶ImportDefaultSpecifierÍnÍyJªIdentifierÍnÍy«CoreServiceL§LiteralÍÍ˜·../services/CoreService¹"../services/CoreService"Z±ImportDeclarationÍ›ÍÓ‘[¯ImportSpecifierÍ¤Í¯JªIdentifierÍ¤Í¯«PictureItemJªIdentifierÍ¤Í¯«PictureItemL§LiteralÍ·ÍÒ¹../components/PictureItem»"../components/PictureItem"Z±ImportDeclarationÍÕÍ‘[¯ImportSpecifierÍŞÍéJªIdentifierÍŞÍé«WindowUtilsJªIdentifierÍŞÍé«WindowUtilsL§LiteralÍñÍ´../utils/WindowUtils¶'../utils/WindowUtils'

@@ -1,0 +1,76 @@
+import { AuthUser, AuthUserExtra, CredentialInfo, EmailInfo, PasswordInfo, PhoneInfo, ProviderType, SignInParam, SignInResult, TokenResult, UserProfileInfo } from "../b";
+import { ReauthenticateResponse } from "../e/m/a4";
+import { UserRawData } from "./p4";
+import { AuthBackend } from "../e/f";
+import { Interceptor } from "../e1/p1/c2/b3";
+import { UserStored } from "../j1/k1";
+export declare class AuthDefaultUser implements AuthUser {
+    anonymous: boolean;
+    uid: string;
+    displayName: string;
+    photoUrl: string;
+    email: string;
+    phone: string;
+    providerId: string;
+    emailVerified: number;
+    passwordSetted: number;
+    providerService: r7;
+    tokenService: q7;
+    storeManager: UserStored | undefined;
+    authBackend: AuthBackend | undefined;
+    static fromRawData(info: UserRawData): AuthDefaultUser;
+    setStoreManager(v9: UserStored): void;
+    setAuthBackend(u9: AuthBackend): void;
+    toRawData(): UserRawData;
+    getUid(): string;
+    getEmail(): string;
+    getPhone(): string;
+    getDisplayName(): string;
+    getPhotoUrl(): string;
+    getProviderId(): string;
+    isAnonymous(): boolean;
+    getProviderInfo(): Map<string, string>[];
+    getToken(o9: boolean): Promise<TokenResult>;
+    getUserExtra(): Promise<AuthUserExtra>;
+    getAccessToken(): string;
+    getRefreshToken(): string;
+    getEmailVerified(): boolean;
+    getPasswordSetted(): boolean;
+    updateProfile(userProfile: UserProfileInfo): Promise<void>;
+    userReauthenticate(param: SignInParam): Promise<SignInResult>;
+    reConfigUserFrom(response: ReauthenticateResponse): void;
+    link(credentialInfo: CredentialInfo): Promise<SignInResult>;
+    unlink(type: ProviderType): Promise<SignInResult>;
+    updateEmail(m8: EmailInfo): Promise<void>;
+    updatePhone(i8: PhoneInfo): Promise<void>;
+    updatePassword(e8: PasswordInfo): Promise<void>;
+    dispose(): Promise<void>;
+    syncToStorage(): Promise<void>;
+    createTokenInterceptor(): Interceptor;
+    private updateAnonymousUserInfo;
+    private userInfoToMap;
+    private convertProvider;
+}
+declare class q7 {
+    accessToken: string;
+    accessTokenValidPeriod: number;
+    refreshToken: string;
+    b1: number;
+    startTime: number;
+    private readonly c1;
+    getAccessToken(): string;
+    getRefreshToken(): string;
+    j(): boolean;
+    m(): TokenResult;
+    o(): Promise<void>;
+}
+declare class r7 {
+    providerInfo: Array<Map<string, string>>;
+    t(info: Map<string, string>): void;
+    d1(x7: number, key: string, value: string): void;
+    updateEmail(w7: string): void;
+    updatePhone(v7: string): void;
+    u(u7: string): void;
+    a1(s7: string): number | undefined;
+}
+export {};

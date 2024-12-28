@@ -1,0 +1,569 @@
+Ôr@Ÿªassertions¤code´customTransformCache¬dependencies¢id¤meta±moduleSideEffects¬originalCode±originalSourcemap«resolvedIds®sourcemapChainµsyntheticNamedExportsµtransformDependencies®transformFiles¨cacheAstÔrAÚNèvar __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+if (!("finalizeConstruction" in ViewPU.prototype)) {
+    Reflect.set(ViewPU.prototype, "finalizeConstruction", () => { });
+}
+/**
+ * Copyright (c) 2024 é£å(QQ:12446006)
+ *
+ * æ­¤ä»£ç ä»…ä¾›å­¦ä¹ ä½¿ç”¨,ç¦æ­¢:
+ * 1. åœ¨åä¸ºåº”ç”¨å•†åº—å‘å¸ƒ
+ * 2. é”€å”®æˆ–ç”¨äºå•†ä¸šç”¨é€”
+ * 3. ç”¨äºä»»ä½•ç›ˆåˆ©ç›®çš„
+ *
+ * å­©å­åˆ—è¡¨é¡µé¢
+ * åŠŸèƒ½:
+ * - å±•ç¤ºæ‰€æœ‰å­©å­
+ * - æ·»åŠ æ–°å­©å­
+ * - ç¼–è¾‘å­©å­ä¿¡æ¯
+ * - åˆ é™¤å­©å­æ¡£æ¡ˆ
+ */
+import { AppStorageV2, promptAction } from "@kit.ArkUI";
+import { cloudDatabase } from '@kit.CloudFoundationKit';
+import { MainStat, resultClass } from '../common/MainStat';
+import CoreService from "../services/CoreService";
+import { AppConfig } from '../utils/AppConfig';
+export function PageBuilder(name, param, parent = null) {
+    {
+        (parent ? parent : this).observeComponentCreation2((elmtId, isInitialRender) => {
+            if (isInitialRender) {
+                let componentCall = new ListChild(parent ? parent : this, {}, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/ListChild.ets", line: 27, col: 3 });
+                ViewV2.create(componentCall);
+                let paramsLambda = () => {
+                    return {};
+                };
+                componentCall.paramsGenerator_ = paramsLambda;
+            }
+            else {
+                (parent ? parent : this).updateStateVarsOfChildByElmtId(elmtId, {});
+            }
+        }, { name: "ListChild" });
+    }
+}
+class ListChild extends ViewV2 {
+    constructor(parent, params, __localStorage, elmtId = -1, paramsLambda, extraInfo) {
+        super(parent, elmtId, extraInfo);
+        this.prop = AppStorageV2.connect(MainStat, () => new MainStat());
+        this.flag = 1;
+        this.toDelId = '';
+        this.pageInfos = new NavPathStack();
+        this.agcDataBase = undefined;
+        this.finalizeConstruction();
+    }
+    // ç”Ÿå‘½å‘¨æœŸæ–¹æ³•ï¼šç»„ä»¶å³å°†å‡ºç°æ—¶è°ƒç”¨
+    aboutToAppear() {
+        this.agcDataBase = cloudDatabase.zone(AppConfig.dbZone);
+    }
+    // ä»æœåŠ¡åŠ è½½å­©å­æ•°æ®
+    loadChild() {
+        CoreService.getService().getMyChild().then((child) => {
+            console.log('littleGallery', 'getMyChild', JSON.stringify(child));
+            this.prop.child = child;
+            this.forceReload();
+        });
+    }
+    // é€šè¿‡å¢åŠ æ ‡å¿—å¼ºåˆ¶UIé‡æ–°åŠ è½½
+    forceReload() {
+        this.flag++;
+    }
+    // æ ¹æ®ç”Ÿæ—¥è®¡ç®—å¹´é¾„
+    calculateAge(birthday) {
+        const today = new Date();
+        let age = today.getFullYear() - birthday.getFullYear();
+        const monthDifference = today.getMonth() - birthday.getMonth();
+        if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthday.getDate())) {
+            age--;
+        }
+        return age;
+    }
+    addChildButton(parent = null) {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            // æ·»åŠ å­©å­æŒ‰é’®
+            Button.createWithLabel('æ·»åŠ æ‚¨çš„å­©å­', { buttonStyle: ButtonStyleMode.NORMAL, role: ButtonRole.NORMAL });
+            // æ·»åŠ å­©å­æŒ‰é’®
+            Button.fontColor({ "id": 125830983, "type": 10001, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" });
+            // æ·»åŠ å­©å­æŒ‰é’®
+            Button.onClick(() => {
+                this.pageInfos.pushPathByName('addChild', null, (popInfo) => {
+                    if (popInfo.result.count == 1) {
+                        this.loadChild();
+                    }
+                });
+            });
+        }, Button);
+        // æ·»åŠ å­©å­æŒ‰é’®
+        Button.pop();
+    }
+    // æ ¹æ®IDåˆ é™¤å­©å­
+    async deleteChild(id) {
+        let succ = await CoreService.getService().deleteChild(id);
+        if (succ) {
+            promptAction.showToast({
+                message: 'åˆ é™¤æˆåŠŸ ' + id,
+                duration: 2000
+            });
+            this.loadChild();
+        }
+        else {
+            promptAction.showToast({
+                message: 'æœ‰å…³è”çš„è®°å½•ï¼Œæ— æ³•åˆ é™¤ï¼',
+                duration: 2000
+            });
+        }
+        this.toDelId = '';
+    }
+    DeleteMenuBuilder(parent = null) {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            // åˆ é™¤èœå•æ„å»ºå™¨
+            Menu.create();
+        }, Menu);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            MenuItem.create({ startIcon: { "id": 16777327, "type": 20000, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" }, content: "ç¡®è®¤åˆ é™¤" });
+            MenuItem.onClick(() => {
+                this.deleteChild(this.toDelId);
+            });
+            MenuItem.foregroundColor(Color.Red);
+        }, MenuItem);
+        MenuItem.pop();
+        // åˆ é™¤èœå•æ„å»ºå™¨
+        Menu.pop();
+    }
+    // æ„å»ºUI
+    initialRender() {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            NavDestination.create(() => {
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    If.create();
+                    if (this.prop.child.length == 0) {
+                        this.ifElseBranchUpdateFunction(0, () => {
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Column.create();
+                                Column.width('100%');
+                                Column.height('100%');
+                                Column.justifyContent(FlexAlign.Center);
+                            }, Column);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Column.create({ space: 20 });
+                                Column.padding({ bottom: 200 });
+                            }, Column);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Image.create({ "id": 16777309, "type": 20000, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" });
+                                Image.width(160);
+                                Image.height(160);
+                                Image.opacity(0.6);
+                            }, Image);
+                            this.addChildButton.bind(this)();
+                            Column.pop();
+                            Column.pop();
+                        });
+                    }
+                    else {
+                        this.ifElseBranchUpdateFunction(1, () => {
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                List.create({ space: 16, initialIndex: 0 });
+                                List.width('90%');
+                                List.scrollBar(BarState.Off);
+                            }, List);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                ForEach.create();
+                                const forEachItemGenFunction = _item => {
+                                    const child = _item;
+                                    {
+                                        const itemCreation = (elmtId, isInitialRender) => {
+                                            ViewStackProcessor.StartGetAccessRecordingFor(elmtId);
+                                            itemCreation2(elmtId, isInitialRender);
+                                            if (!isInitialRender) {
+                                                ListItem.pop();
+                                            }
+                                            ViewStackProcessor.StopGetAccessRecording();
+                                        };
+                                        const itemCreation2 = (elmtId, isInitialRender) => {
+                                            ListItem.create(deepRenderFunction, true);
+                                        };
+                                        const deepRenderFunction = (elmtId, isInitialRender) => {
+                                            itemCreation(elmtId, isInitialRender);
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Row.create({ space: 16 });
+                                                Row.width('100%');
+                                                Row.padding({ top: 8, bottom: 8, left: 16, right: 16 });
+                                                Row.justifyContent(FlexAlign.SpaceBetween);
+                                                Row.borderRadius(10);
+                                                Row.backgroundColor({ "id": 125833506, "type": 10001, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" });
+                                            }, Row);
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Row.create();
+                                            }, Row);
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Row.create();
+                                            }, Row);
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                If.create();
+                                                if (child.gender == 'ç”·å­©') {
+                                                    this.ifElseBranchUpdateFunction(0, () => {
+                                                        this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                            Image.create({ "id": 16777302, "type": 20000, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" });
+                                                            Image.width(30);
+                                                            Image.height(30);
+                                                            Image.opacity(0.6);
+                                                        }, Image);
+                                                    });
+                                                }
+                                                else {
+                                                    this.ifElseBranchUpdateFunction(1, () => {
+                                                        this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                            Image.create({ "id": 16777308, "type": 20000, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" });
+                                                            Image.width(30);
+                                                            Image.height(30);
+                                                            Image.opacity(0.6);
+                                                        }, Image);
+                                                    });
+                                                }
+                                            }, If);
+                                            If.pop();
+                                            Row.pop();
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Column.create({ space: 2 });
+                                                Column.alignItems(HorizontalAlign.Start);
+                                            }, Column);
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Text.create(child.name);
+                                                Text.fontSize(16);
+                                            }, Text);
+                                            Text.pop();
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Text.create(this.calculateAge(child.birthday) + 'å²');
+                                                Text.fontSize(12);
+                                                Text.opacity(0.6);
+                                            }, Text);
+                                            Text.pop();
+                                            Column.pop();
+                                            Row.pop();
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Row.create({ space: 8 });
+                                            }, Row);
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Button.createWithChild({ type: ButtonType.Circle, stateEffect: true, buttonStyle: ButtonStyleMode.TEXTUAL });
+                                                Button.width(36);
+                                                Button.height(36);
+                                                Button.onClick(() => {
+                                                    this.pageInfos.pushPathByName('addChild', child, (popInfo) => {
+                                                        if (popInfo.result.count == 1) {
+                                                            this.loadChild();
+                                                        }
+                                                    });
+                                                });
+                                            }, Button);
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Image.create({ "id": 16777324, "type": 20000, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" });
+                                                Image.width(15);
+                                                Image.height(15);
+                                            }, Image);
+                                            Button.pop();
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Button.createWithChild({ type: ButtonType.Circle, stateEffect: true, buttonStyle: ButtonStyleMode.TEXTUAL });
+                                                Button.width(36);
+                                                Button.height(36);
+                                                Button.onClick(() => this.toDelId = child.id);
+                                                Button.bindMenu({ builder: this.DeleteMenuBuilder.bind(this) });
+                                            }, Button);
+                                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                                Image.create({ "id": 16777327, "type": 20000, params: [], "bundleName": "com.atomicservice.5765880207856138875", "moduleName": "entry" });
+                                                Image.width(15);
+                                                Image.height(15);
+                                            }, Image);
+                                            Button.pop();
+                                            Row.pop();
+                                            Row.pop();
+                                            ListItem.pop();
+                                        };
+                                        this.observeComponentCreation2(itemCreation2, ListItem);
+                                        ListItem.pop();
+                                    }
+                                };
+                                this.forEachUpdateFunction(elmtId, this.prop.child, forEachItemGenFunction, (child) => `${child.id}-${this.flag}`, false, false);
+                            }, ForEach);
+                            ForEach.pop();
+                            {
+                                const itemCreation = (elmtId, isInitialRender) => {
+                                    ViewStackProcessor.StartGetAccessRecordingFor(elmtId);
+                                    itemCreation2(elmtId, isInitialRender);
+                                    if (!isInitialRender) {
+                                        ListItem.pop();
+                                    }
+                                    ViewStackProcessor.StopGetAccessRecording();
+                                };
+                                const itemCreation2 = (elmtId, isInitialRender) => {
+                                    ListItem.create(deepRenderFunction, true);
+                                };
+                                const deepRenderFunction = (elmtId, isInitialRender) => {
+                                    itemCreation(elmtId, isInitialRender);
+                                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                        Column.create();
+                                        Column.width('100%');
+                                    }, Column);
+                                    this.addChildButton.bind(this)();
+                                    Column.pop();
+                                    ListItem.pop();
+                                };
+                                this.observeComponentCreation2(itemCreation2, ListItem);
+                                ListItem.pop();
+                            }
+                            List.pop();
+                        });
+                    }
+                }, If);
+                If.pop();
+            }, { moduleName: "entry", pagePath: "entry/src/main/ets/pages/ListChild" });
+            NavDestination.title('å­©å­');
+            NavDestination.onBackPressed(() => {
+                this.pageInfos.pop(new resultClass(0));
+                return true;
+            });
+            NavDestination.onReady((context) => {
+                this.pageInfos = context.pathStack;
+            });
+        }, NavDestination);
+        NavDestination.pop();
+    }
+    rerender() {
+        this.updateDirtyElements();
+    }
+    static getEntryName() {
+        return "ListChild";
+    }
+}
+__decorate([
+    Local
+], ListChild.prototype, "prop", void 0);
+__decorate([
+    Local
+], ListChild.prototype, "flag", void 0);
+registerNamedRoute(() => new ListChild(undefined, {}), "", { bundleName: "com.atomicservice.5765880207856138875", moduleName: "entry", pagePath: "pages/ListChild", pageFullPath: "entry/src/main/ets/pages/ListChild", integratedHsp: "false", moduleType: "followWithHap" });
+(function () {
+    if (typeof NavigationBuilderRegister === "function") {
+        NavigationBuilderRegister("listChild", wrapBuilder(PageBuilder));
+    }
+})();
+//# sourceMappingURL=ListChild.js.mapÂ•Ùh hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_kits_@kit.ArkUI.d.tsÙm hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_hms_ets_kits_@kit.CloudFoundationKit.d.tsÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/common/MainStat.etsÙi/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/services/CoreService.etsÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/utils/AppConfig.etsÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/ListChild.etsÔrB›ªmoduleName±isLocalDependency¯isNodeEntryFile§pkgPath±belongProjectPath§pkgNameªpkgVersion±dependencyPkgInfo°belongModulePath¬shouldEmitJs¯hostModulesInfo¥entryÃÂÙC/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entryÙ=/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application¥entry¥1.0.0Ô  ÙC/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entryÃÃÚ/**
+ * Copyright (c) 2024 é£å(QQ:12446006)
+ * 
+ * æ­¤ä»£ç ä»…ä¾›å­¦ä¹ ä½¿ç”¨,ç¦æ­¢:
+ * 1. åœ¨åä¸ºåº”ç”¨å•†åº—å‘å¸ƒ
+ * 2. é”€å”®æˆ–ç”¨äºå•†ä¸šç”¨é€”
+ * 3. ç”¨äºä»»ä½•ç›ˆåˆ©ç›®çš„
+ * 
+ * å­©å­åˆ—è¡¨é¡µé¢
+ * åŠŸèƒ½:
+ * - å±•ç¤ºæ‰€æœ‰å­©å­
+ * - æ·»åŠ æ–°å­©å­
+ * - ç¼–è¾‘å­©å­ä¿¡æ¯
+ * - åˆ é™¤å­©å­æ¡£æ¡ˆ
+ */
+
+import { AppStorageV2, promptAction } from "@kit.ArkUI"
+import { cloudDatabase } from '@kit.CloudFoundationKit';
+import { Child } from "../module/Child";
+import util from "@ohos.util";
+import { MainStat, resultClass } from '../common/MainStat';
+import CoreService from "../services/CoreService";
+import { AppConfig } from '../utils/AppConfig';
+
+@Builder
+export function PageBuilder(name: string, param: Object) {
+  ListChild()
+}
+
+@Entry
+@ComponentV2
+struct ListChild {
+  @Local prop: MainStat = AppStorageV2.connect(MainStat, () => new MainStat())!;
+  @Local flag:number=1;
+  toDelId = '';
+
+  pageInfos: NavPathStack = new NavPathStack()
+  agcDataBase: cloudDatabase.DatabaseZone | undefined = undefined;
+
+  // ç”Ÿå‘½å‘¨æœŸæ–¹æ³•ï¼šç»„ä»¶å³å°†å‡ºç°æ—¶è°ƒç”¨
+  aboutToAppear() {
+    this.agcDataBase = cloudDatabase.zone(AppConfig.dbZone);
+  }
+
+  // ä»æœåŠ¡åŠ è½½å­©å­æ•°æ®
+  loadChild() {
+    CoreService.getService().getMyChild().then((child) => {
+      console.log('littleGallery', 'getMyChild', JSON.stringify(child));
+      this.prop.child = child;
+      this.forceReload();
+    });
+  }
+
+  // é€šè¿‡å¢åŠ æ ‡å¿—å¼ºåˆ¶UIé‡æ–°åŠ è½½
+  forceReload(){
+    this.flag++;
+  }
+
+  // æ ¹æ®ç”Ÿæ—¥è®¡ç®—å¹´é¾„
+  calculateAge(birthday: Date): number {
+    const today = new Date();
+    let age = today.getFullYear() - birthday.getFullYear();
+    const monthDifference = today.getMonth() - birthday.getMonth();
+    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthday.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  @Builder
+  addChildButton(){
+    // æ·»åŠ å­©å­æŒ‰é’®
+    Button('æ·»åŠ æ‚¨çš„å­©å­', { buttonStyle: ButtonStyleMode.NORMAL, role: ButtonRole.NORMAL })
+      .fontColor($r('sys.color.font_secondary'))
+      .onClick(()=>{
+        this.pageInfos.pushPathByName('addChild', null, (popInfo: PopInfo) => {
+          if ((popInfo.result as resultClass).count == 1) {
+            this.loadChild();
+          }
+        });
+    })
+  }
+
+  // æ ¹æ®IDåˆ é™¤å­©å­
+  async deleteChild(id:string){
+    let succ = await CoreService.getService().deleteChild(id);
+
+    if(succ){
+      promptAction.showToast({
+        message: 'åˆ é™¤æˆåŠŸ ' + id,
+        duration: 2000
+      })
+      this.loadChild();
+    }else{
+      promptAction.showToast({
+        message: 'æœ‰å…³è”çš„è®°å½•ï¼Œæ— æ³•åˆ é™¤ï¼',
+        duration: 2000
+      })
+    }
+    this.toDelId = ''
+  }
+
+  @Builder
+  DeleteMenuBuilder() {
+    // åˆ é™¤èœå•æ„å»ºå™¨
+    Menu() {
+      MenuItem({ startIcon: $r("app.media.trash"), content: "ç¡®è®¤åˆ é™¤" })
+        .onClick(() => {
+          this.deleteChild(this.toDelId)
+        })
+        .foregroundColor(Color.Red)
+    }
+  }
+
+  // æ„å»ºUI
+  build() {
+    NavDestination() {
+      if(this.prop.child.length == 0){
+        Column(){
+          Column({space: 20}){
+            Image($r('app.media.holding_child')).width(160).height(160).opacity(0.6)
+            this.addChildButton()
+          }.padding({bottom: 200})
+        }.width('100%').height('100%').justifyContent(FlexAlign.Center)
+      }else{
+        List({ space: 16, initialIndex: 0 }) {
+          ForEach(this.prop.child, (child: Child) => {
+            ListItem() {
+              Row({space: 16}){
+                Row(){
+                  Row(){
+                    if(child.gender == 'ç”·å­©'){
+                      Image($r('app.media.boy')).width(30).height(30).opacity(0.6)
+                    }else{
+                      Image($r('app.media.girl')).width(30).height(30).opacity(0.6)
+                    }
+                  }
+                  Column({space: 2}){
+                    Text(child.name).fontSize(16)
+                    Text(this.calculateAge(child.birthday) + 'å²').fontSize(12).opacity(0.6)
+                  }.alignItems(HorizontalAlign.Start)
+                }
+                Row({space: 8}){
+                  Button({ type: ButtonType.Circle, stateEffect: true, buttonStyle: ButtonStyleMode.TEXTUAL }) {
+                    Image($r('app.media.pen')).width(15).height(15)
+                  }.width(36).height(36).onClick(()=>{
+                    this.pageInfos.pushPathByName('addChild', child, (popInfo: PopInfo) => {
+                      if ((popInfo.result as resultClass).count == 1) {
+                        this.loadChild();
+                      }
+                    });
+                  })
+
+                  Button({ type: ButtonType.Circle, stateEffect: true, buttonStyle: ButtonStyleMode.TEXTUAL }) {
+                    Image($r('app.media.trash')).width(15).height(15)
+                  }.width(36).height(36)
+                  .onClick(()=>this.toDelId = child.id)
+                  .bindMenu(this.DeleteMenuBuilder)
+                }
+              }.width('100%')
+              .padding({top: 8, bottom: 8, left: 16, right: 16})
+              .justifyContent(FlexAlign.SpaceBetween)
+              .borderRadius(10)
+              .backgroundColor($r('sys.color.color_sidebarcontainer_sub_bg'))
+            }
+          }, (child: Child) => `${child.id}-${this.flag}`)
+          ListItem(){
+            Column(){
+              this.addChildButton()
+            }.width('100%')
+          }
+        }.width('90%')
+        .scrollBar(BarState.Off)
+      }
+    }
+    .title('å­©å­')
+    .onBackPressed(() => {
+      this.pageInfos.pop(new resultClass(0));
+      return true;
+    })
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack;
+    });
+  }
+}ÀÔrC•ª@kit.ArkUI·@kit.CloudFoundationKit²../common/MainStat·../services/CoreService²../utils/AppConfigÔrD—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙh hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_kits_@kit.ArkUI.d.tsAÃªoh-resolveÂDAÃÙm hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_hms_ets_kits_@kit.CloudFoundationKit.d.tsAÃªoh-resolveÂDAÂÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/common/MainStat.etsAÃªoh-resolveÂDAÂÙi/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/services/CoreService.etsAÃªoh-resolveÂDAÂÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/utils/AppConfig.etsAÃªoh-resolveÂ’ÔrE–§version¤fileªsourceRoot§sources¥names¨mappings¬ListChild.js ‘­ListChild.etsÜX‘”    ‘” š”   ” ”	 	” ” ”# #”% %”+ +”7 7”8 7˜”   ” ”	 	” ” ” ”7 7”8 8š”   ” ”	 	” ” ” ”   ”& &”: :”; ;–”   ” ” ” ”1 1”2 2˜”   ” ”	 	” ” ” ”. .”/ /˜”   ” ” ” ” ”  (”" *”' 7’”( ”1 ‘” ’” ” ‘”  ”  ”   &”!  '”(  .”)  /”1  7”3  9”6  <”8  >”9  ?”=  ÌC”ÌE  ÌK”ÌG  ÌM”ÌH  ÌO’” !” !’” "” "”” $” $ ”) $,”+ $.’” %8”$ %ÌA‘” ’” '” '’” (” (” )” )” )	” )” )”( )$”) )%”- ))”. )*”7 )3”8 )4”> ):”? );”Ì@ )<’” *” *’” ,” ,’” -” -Ÿ” .” .” .” .”  .”! .”+ .'”- .)”. .*”2 ..”3 ./”4 .0”9 .5”; .7”= .9Ü ” /” /” /” /” /”' /!”) /#”5 //”7 /1”; /5”< /6”ÌE /?”ÌF /Ì@”ÌK /ÌE”ÌL /ÌF”ÌM /ÌG”ÌN /ÌH™” 0” 0
+” 0” 0” 0” 0” 0”# 0”$ 0–” 1” 1
+” 1” 1” 1” 1”” 2”	 2”
+ 2” 2’” 3” 3’” 5” 5’” 6” 6–” 7” 7” 7	” 7” 7” 7’” 8” 8’” :” :”” ;” ;” ;” ;˜” <” <
+” <” <” <” <”  <”! <” =” =” =” =” =” =”# =”% =!”( =$”0 =,”1 =-”< =8”> =:”? =;” >” >
+” >”  >”% >!”& >"”. >*”0 >,”3 >/”; >7”< >8”ÌD >Ì@”ÌF >ÌB”ÌG >ÌCÜ ” ?” ?” ?” ?” ?”# ?”$ ? ”3 ?/”8 ?4”9 ?5”= ?9”ÌB ?>”ÌC ??”ÌJ ?ÌF”ÌL ?ÌH”ÌO ?ÌK”ÌW ?ÌS”ÌX ?ÌT”Ì_ ?Ì[”Ìa ?Ì]”Ìb ?Ì^”Ìd ?Ì`”” Ì@” Ì@	” Ì@” Ì@‘”	 ÌA”” ÌB” ÌB” ÌB” ÌB’” ÌC” ÌC’” ÌF” ÌF’” ÌG” ÌGÜ ” ÌH” ÌH
+”# ÌH”+ ÌH”- ÌH”/ ÌH”: ÌH"”< ÌH$”ÌK ÌH3”ÌL ÌH4”ÌR ÌH:”ÌT ÌH<”ÌX ÌHÌ@”ÌZ ÌHÌB”Ìd ÌHÌL”Ìe ÌHÌM”Ìk ÌHÌS”Ìm ÌHÌU’” ÌG” ÌG”” ÌH” ÌH
+” ÌI” ÌI’” ÌG” ÌG—” ÌH” ÌH
+” ÌJ” ÌJ” ÌJ” ÌJ”  ÌJŸ” ÌK” ÌK” ÌK” ÌK” ÌK”- ÌK%”. ÌK&”8 ÌK0”: ÌK2”> ÌK6”Ì@ ÌK8”ÌA ÌK9”ÌH ÌKÌI”ÌJ ÌKÌK”ÌL ÌKÌMš” ÌL
+” ÌL” ÌL”  ÌL”& ÌL-”' ÌL.”, ÌL3”0 ÌL7”1 ÌL8”3 ÌL:–” ÌM” ÌM” ÌM”& ÌM”( ÌM”) ÌM‘” ÌN”” ÌO” ÌO	” ÌO
+” ÌO’” ÌP” ÌP’” ÌG” ÌG’” ÌH” ÌH
+‘” ÌQ’” ÌS” ÌS–” ÌT”	 ÌT”
+ ÌT” ÌT” ÌT” ÌTŸ” ÌU” ÌU” ÌU” ÌU” ÌU”$ ÌU ”% ÌU!”/ ÌU+”1 ÌU-”2 ÌU.”= ÌU9”> ÌU:”Ì@ ÌU<”ÌA ÌU=”ÌB ÌU>”” ÌW” ÌW” ÌW” ÌW•” ÌX” ÌX” ÌX”" ÌX”# ÌX–” ÌY” ÌY” ÌY”  ÌY”# ÌY”% ÌY”” ÌZ” ÌZ” ÌZ” ÌZ“” Ì[” Ì[” Ì[–” Ì\” Ì\
+” Ì\” Ì\” Ì\” Ì\‘”	 Ì]‘” Ì]	•” Ì^” Ì^” Ì^”" Ì^”# Ì^”” Ì_” Ì_” Ì_”' Ì_”” Ì`” Ì`” Ì`” Ì`“” Ìa” Ìa” Ìa‘”	 Ìb—” Ìc” Ìc” Ìc	” Ìc” Ìc” Ìc” Ìc’” Ìd” Ìd’” Ìg” Ìg’” Ìh” Ìh’” Ìi” Ìi›” Ìj” Ìj” Ìj” Ìj”' Ìj”Ì¤ Ìj1”Ì¦ Ìj3”Ì­ Ìj:”Ì¯ Ìj<”Ìµ ÌjÌB”Ì· ÌjÌD—” Ìj” Ìj” Ìk	” Ìk” Ìk”  Ìk”" Ìkš” Ìl
+” Ìl” Ìl”  Ìl”! Ìl”% Ìl”& Ìl ”- Ìl'”. Ìl(”/ Ìl(’” Ìm” Ìm	˜” Ìj” Ìj” Ìn	”$ Ìn”% Ìn”* Ìn”+ Ìn”. Ìn"’” Ìj” Ìj’” Ìh” Ìh’” Ìi” Ìi‘” Ìp’” Ìr” Ìr	‘” Ìsœ” Ìu” Ìu	” Ìu” Ìu”! Ìu”" Ìu”' Ìu”( Ìu”. Ìu”2 Ìu#”3 Ìu$”5 Ìu%’”  Ìv”& Ìv–”  Ìv”& Ìv”' Ì{
+”, Ì{”- Ì{”3 Ì{–”  Ìv”& Ìv”' Ì{”- Ì{”. Ì{”4 Ì{%˜”  Ìv”& Ìv”' Ì{'”5 Ì{5”6 Ì{6”? Ì{?”Ì@ Ì{Ì@”ÌF Ì{ÌF˜”  Ìw
+”& Ìw”. Ìw”0 Ìw”5 Ìw”7 Ìw”9 Ìw”; Ìwš”  Ìw
+”& Ìw”' Ìz”. Ìz”/ Ìz”1 Ìz”7 Ìz”9 Ìz”< Ìz ”> Ìz!’”  Ìx”% Ìx–”  Ìx”% Ìx”& Ìx1”+ Ìx6”, Ìx7”/ Ìx:–”  Ìx”% Ìx”& Ìx<”, ÌxÌB”- ÌxÌC”0 ÌxÌF–”  Ìx”% Ìx”& ÌxÌH”- ÌxÌO”. ÌxÌP”1 ÌxÌS•” Ìy”  Ìy”! Ìy”/ Ìy”< Ìy!’” Ìw
+”" Ìw’” Ìv”" Ìv‘” Ì|‘” Ì|œ”  Ì}”$ Ì}”, Ì}”. Ì}”3 Ì}”5 Ì}”7 Ì}”9 Ì}”ÌE Ì}&”ÌG Ì}(”ÌH Ì})”ÌJ Ì}+–”  Ì}”$ Ì}”% Ì«
+”* Ì«”+ Ì«”0 Ì«˜”  Ì}”$ Ì}”% Ì¬	”. Ì¬”/ Ì¬”7 Ì¬”8 Ì¬”; Ì¬’”  Ì~
+”' Ì~’”0 Ì”8 Ì˜”0 Ì€”3 Ì€”; Ì€”= Ì€”ÌB Ì€”ÌD Ì€”ÌF Ì€”ÌH Ì€–”0 Ì€”3 Ì€”4 ÌŸ”9 ÌŸ”: ÌŸ”Ì@ ÌŸÜ ”0 Ì€”3 Ì€”4 Ì ”; Ì ”< Ì ”> Ì ”ÌA Ì ”ÌC Ì ”ÌD Ì ”ÌF Ì  ”ÌL Ì &”ÌN Ì (”ÌO Ì )”ÌQ Ì +”ÌU Ì /”ÌW Ì 1”ÌY Ì 3”Ì[ Ì 5”Ì` Ì :”Ìb Ì <”Ìd Ì >”Ìf Ì ?˜”0 Ì€”3 Ì€”4 Ì¡”ÌB Ì¡”ÌC Ì¡”ÌL Ì¡'”ÌM Ì¡(”ÌY Ì¡4–”0 Ì€”3 Ì€”4 Ì¢”Ì@ Ì¢”ÌA Ì¢”ÌC Ì¢””0 Ì€”3 Ì€”4 Ì£”ÌC Ì£’”0 Ì”3 Ì’”0 Ì‚”3 Ì‚˜”0 Ìƒ”4 Ìƒ”9 Ìƒ”: Ìƒ”Ì@ Ìƒ#”ÌD Ìƒ'”ÌH Ìƒ+”ÌJ Ìƒ,’”< Ì„”ÌA Ì„–”< Ì„”ÌA Ì„”ÌB Ì„1”ÌG Ì„6”ÌH Ì„7”ÌJ Ì„9–”< Ì„”ÌA Ì„”ÌB Ì„;”ÌH Ì„ÌA”ÌI Ì„ÌB”ÌK Ì„ÌD–”< Ì„”ÌA Ì„”ÌB Ì„ÌF”ÌI Ì„ÌM”ÌJ Ì„ÌN”ÌM Ì„ÌQ‘”1 Ì…‘”5 Ì…’”< Ì†”ÌA Ì†–”< Ì†”ÌA Ì†”ÌB Ì†2”ÌG Ì†7”ÌH Ì†8”ÌJ Ì†:–”< Ì†”ÌA Ì†”ÌB Ì†<”ÌH Ì†ÌB”ÌI Ì†ÌC”ÌK Ì†ÌE–”< Ì†”ÌA Ì†”ÌB Ì†ÌG”ÌI Ì†ÌN”ÌJ Ì†ÌO”ÌM Ì†ÌR‘”1 Ì‡’”, Ì‚”/ Ì‚˜”0 Ì‰”6 Ì‰”> Ì‰”Ì@ Ì‰”ÌE Ì‰”ÌG Ì‰!”ÌH Ì‰"”ÌJ Ì‰#˜”0 Ì‰”6 Ì‰”7 ÌŒ”ÌA ÌŒ”ÌB ÌŒ”ÌQ ÌŒ.”ÌR ÌŒ/”ÌW ÌŒ4–”0 ÌŠ”4 ÌŠ”< ÌŠ”ÌA ÌŠ”ÌB ÌŠ”ÌF ÌŠ#–”0 ÌŠ”4 ÌŠ”5 ÌŠ%”= ÌŠ-”> ÌŠ.”Ì@ ÌŠ0’”, ÌŠ”0 ÌŠ”0 Ì‹”4 Ì‹”< Ì‹”Ì@ Ì‹”ÌA Ì‹”ÌM Ì‹*”ÌN Ì‹+”ÌS Ì‹0”ÌT Ì‹1”Ì\ Ì‹9”Ì] Ì‹:”Ì` Ì‹=”Ìc Ì‹Ì@–”0 Ì‹”4 Ì‹”5 Ì‹ÌB”= Ì‹ÌJ”> Ì‹ÌK”Ì@ Ì‹ÌM–”0 Ì‹”4 Ì‹”5 Ì‹ÌO”< Ì‹ÌV”= Ì‹ÌW”Ì@ Ì‹ÌZ’”, Ì‹”0 Ì‹’”, Ì‰”2 Ì‰’”, Ì”/ Ì˜”0 Ì”3 Ì”; Ì”= Ì”ÌB Ì”ÌD Ì”ÌE Ì”ÌG ÌÜ ”0 Ì”6 Ì”ÌG Ì”ÌI Ì”ÌM Ì”ÌO Ì!”ÌY Ì+”ÌZ Ì,”Ì` Ì2”Ìb Ì4”Ìm Ì?”Ìo ÌÌA”Ìs ÌÌE”Ìu ÌÌG”Ì€ ÌÌR”Ì‚ ÌÌT”Ì‘ ÌÌc”Ì’ ÌÌd”Ì™ ÌÌk”Ì› ÌÌm–”0 Ì”6 Ì”7 Ì‘”< Ì‘”= Ì‘”? Ì‘–”0 Ì”6 Ì”7 Ì‘”= Ì‘$”> Ì‘%”Ì@ Ì‘'—”0 Ì”6 Ì”7 Ì‘)”> Ì‘0”? Ì‘1”ÌB Ì‘3”ÌD Ì‘5Ÿ”4 Ì’”8 Ì’”9 Ì’”ÌB Ì’"”ÌC Ì’#”ÌQ Ì’1”ÌR Ì’2”Ì\ Ì’<”Ì^ Ì’>”Ìc Ì’ÌC”Ìe Ì’ÌE”Ìf Ì’ÌF”Ìm Ì’ÌV”Ìo Ì’ÌX”Ìq Ì’ÌZš”8 Ì“”< Ì“”ÌC Ì“"”ÌD Ì“#”ÌJ Ì“9”ÌK Ì“:”ÌP Ì“?”ÌT Ì“ÌC”ÌU Ì“ÌD”ÌW Ì“ÌF–”< Ì””Ì@ Ì””ÌA Ì””ÌJ Ì”&”ÌL Ì”(”ÌM Ì”)‘”9 Ì•””4 Ì–”5 Ì–”6 Ì–”7 Ì–’”0 Ì—”1 Ì—’”0 Ì”5 Ì–”0 Ì”5 Ì”6 Ì/”; Ì4”< Ì5”> Ì7–”0 Ì”5 Ì”6 Ì9”< Ì?”= ÌÌ@”? ÌÌB’”, Ì”2 ÌÜ ”0 Ì™”6 Ì™”ÌG Ì™”ÌI Ì™”ÌM Ì™”ÌO Ì™!”ÌY Ì™+”ÌZ Ì™,”Ì` Ì™2”Ìb Ì™4”Ìm Ì™?”Ìo Ì™ÌA”Ìs Ì™ÌE”Ìu Ì™ÌG”Ì€ Ì™ÌR”Ì‚ Ì™ÌT”Ì‘ Ì™Ìc”Ì’ Ì™Ìd”Ì™ Ì™Ìk”Ì› Ì™Ìm–”0 Ì™”6 Ì™”7 Ì›”< Ì›”= Ì›”? Ì›–”0 Ì™”6 Ì™”7 Ì›”= Ì›$”> Ì›%”Ì@ Ì›'Ÿ”0 Ì™”6 Ì™”7 Ìœ”> Ìœ”? Ìœ”ÌB Ìœ”ÌD Ìœ”ÌE Ìœ”ÌI Ìœ#”ÌJ Ìœ$”ÌQ Ìœ+”ÌT Ìœ.”ÌY Ìœ3”ÌZ Ìœ4”Ì\ Ìœ6˜”0 Ì™”6 Ì™”7 Ì”? Ì”ÌK Ì”ÌO Ì ”ÌP Ì!”Ìa Ì2’”0 Ìš”5 Ìš–”0 Ìš”5 Ìš”6 Ìš1”; Ìš6”< Ìš7”> Ìš9–”0 Ìš”5 Ìš”6 Ìš;”< ÌšÌA”= ÌšÌB”? ÌšÌD’”, Ì™”2 Ì™’”, Ì”/ Ì’”, Ì€”/ Ì€’”, Ì”4 Ì’”( Ì”0 ÌÜ ”ÌC Ì~”ÌG Ì~”ÌH Ì~”ÌL Ì~”ÌM Ì~”ÌR Ì~!”Ìl Ì¥”Ìm Ì¥”Ìr Ì¥”Ìt Ì¥”Ìv Ì¥”Ìw Ì¥”Ìz Ì¥"”Ì Ì¥'”Ì€ Ì¥(”Ì‚ Ì¥*”Ì† Ì¥.”ÌŠ Ì¥2”Ì‹ Ì¥3”Ì Ì¥7”Ì‘ Ì¥9’” Ì~
+”# Ì~’”( Ì¦
+”0 Ì¦’”( Ì§”. Ì§–”( Ì§”. Ì§”/ Ì©”4 Ì©”5 Ì©”; Ì©•”$ Ì¨”( Ì¨”) Ì¨”7 Ì¨!”ÌD Ì¨#’”$ Ì§”* Ì§’”$ Ì¦
+”, Ì¦’”  Ì¦
+”( Ì¦’” Ì}”  Ì}‘” Ì­”” Ì¯”  Ì¯
+”! Ì¯”% Ì¯•” Ì°”( Ì°”) Ì°”, Ì°”. Ì°” Ì±” Ì±
+” Ì±” Ì±” Ì±”" Ì±”# Ì±”' Ì±”2 Ì±(”3 Ì±)”4 Ì±*”5 Ì±+”6 Ì±,”7 Ì±-”” Ì²” Ì²” Ì²” Ì²’” Ì³” Ì³—” Ì´”" Ì´”# Ì´”$ Ì´”+ Ì´,”- Ì´.”/ Ì´0™” Ìµ” Ìµ
+” Ìµ” Ìµ”! Ìµ”( Ìµ”) Ìµ”2 Ìµ(”3 Ìµ)’” Ì¶” Ì¶‘” Ì·‘”   	’”  ”	  ‘”'  ÌP‘”  !	’” !”	 !‘”' !ÔrF–§version¤file§sources®sourcesContent¥names¨mappingsÀ‘À‘ÀÜ_‘”    ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”  	 ‘”  
+ ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”    ‘”  ! ‘”  " ‘”  # ‘”  $ ‘”  % ‘”  & ‘”  ' ‘”  ( ‘”  ) ‘”  * ‘”  + ‘”  , ‘”  - ‘”  . ‘”  / ‘”  0 ‘”  1 ‘”  2 ‘”  3 ‘”  4 ‘”  5 ‘”  6 ‘”  7 ‘”  8 ‘”  9 ‘”  : ‘”  ; ‘”  < ‘”  = ‘”  > ‘”  ? ‘”  Ì@ ‘”  ÌA ‘”  ÌB ‘”  ÌC ‘”  ÌD ‘”  ÌE ‘”  ÌF ‘”  ÌG ‘”  ÌH ‘”  ÌI ‘”  ÌJ ‘”  ÌK ‘”  ÌL ‘”  ÌM ‘”  ÌN ‘”  ÌO ‘”  ÌP ‘”  ÌQ ‘”  ÌR ‘”  ÌS ‘”  ÌT ‘”  ÌU ‘”  ÌV ‘”  ÌW ‘”  ÌX ‘”  ÌY ‘”  ÌZ ‘”  Ì[ ‘”  Ì\ ‘”  Ì] ‘”  Ì^ ‘”  Ì_ ‘”  Ì` ‘”  Ìa ‘”  Ìb ‘”  Ìc ‘”  Ìd ‘”  Ìe ‘”  Ìf ‘”  Ìg ‘”  Ìh ‘”  Ìi ‘”  Ìj ‘”  Ìk ‘”  Ìl ‘”  Ìm ‘”  Ìn ‘”  Ìo ‘”  Ìp ‘”  Ìq ‘”  Ìr ‘”  Ìs ‘”  Ìt ‘”  Ìu ‘”  Ìv ‘”  Ìw ‘”  Ìx ‘”  Ìy ‘”  Ìz ‘”  Ì{ ‘”  Ì| ‘”  Ì} ‘”  Ì~ ‘”  Ì ‘”  Ì€ ‘”  Ì ‘”  Ì‚ ‘”  Ìƒ ‘”  Ì„ ‘”  Ì… ‘”  Ì† ‘”  Ì‡ ‘”  Ìˆ ‘”  Ì‰ ‘”  ÌŠ ‘”  Ì‹ ‘”  ÌŒ ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì‘ ‘”  Ì’ ‘”  Ì“ ‘”  Ì” ‘”  Ì• ‘”  Ì– ‘”  Ì— ‘”  Ì˜ ‘”  Ì™ ‘”  Ìš ‘”  Ì› ‘”  Ìœ ‘”  Ì ‘”  Ì ‘”  ÌŸ ‘”  Ì  ‘”  Ì¡ ‘”  Ì¢ ‘”  Ì£ ‘”  Ì¤ ‘”  Ì¥ ‘”  Ì¦ ‘”  Ì§ ‘”  Ì¨ ‘”  Ì© ‘”  Ìª ‘”  Ì« ‘”  Ì¬ ‘”  Ì­ ‘”  Ì® ‘”  Ì¯ ‘”  Ì° ‘”  Ì± ‘”  Ì² ‘”  Ì³ ‘”  Ì´ ‘”  Ìµ ‘”  Ì¶ ‘”  Ì· ‘”  Ì¸ ‘”  Ì¹ ‘”  Ìº ‘”  Ì» ‘”  Ì¼ ‘”  Ì½ ‘”  Ì¾ ‘”  Ì¿ ‘”  ÌÀ ‘”  ÌÁ ‘”  ÌÂ ‘”  ÌÃ ‘”  ÌÄ ‘”  ÌÅ ‘”  ÌÆ ‘”  ÌÇ ‘”  ÌÈ ‘”  ÌÉ ‘”  ÌÊ ‘”  ÌË ‘”  ÌÌ ‘”  ÌÍ ‘”  ÌÎ ‘”  ÌÏ ‘”  ÌĞ ‘”  ÌÑ ‘”  ÌÒ ‘”  ÌÓ ‘”  ÌÔ ‘”  ÌÕ ‘”  ÌÖ ‘”  Ì× ‘”  ÌØ ‘”  ÌÙ ‘”  ÌÚ ‘”  ÌÛ ‘”  ÌÜ ‘”  Ìİ ‘”  ÌŞ ‘”  Ìß ‘”  Ìà ‘”  Ìá ‘”  Ìâ ‘”  Ìã ‘”  Ìä ‘”  Ìå ‘”  Ìæ ‘”  Ìç ‘”  Ìè ‘”  Ìé ‘”  Ìê ‘”  Ìë ‘”  Ìì ‘”  Ìí ‘”  Ìî ‘”  Ìï ‘”  Ìğ ‘”  Ìñ ‘”  Ìò ‘”  Ìó ‘”  Ìô ‘”  Ìõ ‘”  Ìö ‘”  Ì÷ ‘”  Ìø ‘”  Ìù ‘”  Ìú ‘”  Ìû ‘”  Ìü ‘”  Ìı ‘”  Ìş ‘”  Ìÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ‘”  ÍQ ‘”  ÍR ‘”  ÍS ‘”  ÍT ‘”  ÍU ‘”  ÍV ‘”  ÍW ‘”  ÍX ‘”  ÍY ‘”  ÍZ ‘”  Í[ ‘”  Í\ ‘”  Í] ‘”  Í^ ÂÔ  ÔrG”²dynamicImportCache¹exportAllDeclarationCache»exportNamedDeclarationCache«importCache‘ÔrH–¤type¥start£end«declarationªspecifiers¦source¶ExportNamedDeclarationÍ›Í“ÔrI™¤type¥start£end¢idªexpression©generator¥async¦params¤body³FunctionDeclarationÍ¢Í“ÔrJ”¤type¥start£end¤nameªIdentifierÍ«Í¶«PageBuilderÂÂÂ“JªIdentifierÍ·Í»¤nameJªIdentifierÍ½ÍÂ¥paramÔrK•¤type¥start£end¤left¥right±AssignmentPatternÍÄÍÑJªIdentifierÍÄÍÊ¦parentÔrL•¤type¥start£end¥value£raw§LiteralÍÍÍÑÀ¤nullÔrM”¤type¥start£end¤body®BlockStatementÍÓÍ“‘M®BlockStatementÍÚÍ‘ÔrN”¤type¥start£endªexpression³ExpressionStatementÍåÍ‰ÔrO–¤type¥start£end¦callee©arguments¨optional®CallExpressionÍåÍˆÔrP—¤type¥start£end¦object¨property¨computed¨optional°MemberExpressionÍåÍÔrQ–¤type¥start£end¤testªconsequent©alternateµConditionalExpressionÍæÍüJªIdentifierÍæÍì¦parentJªIdentifierÍïÍõ¦parentÔrR“¤type¥start£end®ThisExpressionÍøÍüJªIdentifierÍşÍ¹observeComponentCreation2ÂÂ’I·ArrowFunctionExpressionÍÍpÀÂÂÂ’JªIdentifierÍÍ¦elmtIdJªIdentifierÍ!Í0¯isInitialRenderM®BlockStatementÍ5Íp‘Q«IfStatementÍDÍeJªIdentifierÍHÍW¯isInitialRenderM®BlockStatementÍYÍì”ÔrS•¤type¥start£end¬declarations¤kind³VariableDeclarationÍlÍ‘ÔrT•¤type¥start£end¢id¤init²VariableDeclaratorÍpÍJªIdentifierÍpÍ}­componentCallÔrU•¤type¥start£end¦callee©arguments­NewExpressionÍ€ÍJªIdentifierÍ„Í©ListChild–QµConditionalExpressionÍÍ¤JªIdentifierÍÍ”¦parentJªIdentifierÍ—Í¦parentR®ThisExpressionÍ Í¤ÔrV”¤type¥start£endªproperties°ObjectExpressionÍ¦Í¨JªIdentifierÍªÍ³©undefinedJªIdentifierÍµÍ»¦elmtIdI·ArrowFunctionExpressionÍ½ÍÆÀÂÂÂM®BlockStatementÍÃÍÆV°ObjectExpressionÍÈÍ“ÔrW™¤type¥start£end¦method©shorthand¨computed£key¥value¤kind¨PropertyÍÊÍøÂÂÂJªIdentifierÍÊÍÎ¤pageL§LiteralÍĞÍøÙ&entry/src/main/ets/pages/ListChild.etsÙ("entry/src/main/ets/pages/ListChild.ets"¤initW¨PropertyÍúÍÂÂÂJªIdentifierÍúÍş¤lineL§LiteralÍ Í¢27¤initW¨PropertyÍÍ
+ÂÂÂJªIdentifierÍÍ£colL§LiteralÍ	Í
+¡3¤init£letN³ExpressionStatementÍ Í=O®CallExpressionÍ Í<P°MemberExpressionÍ Í-JªIdentifierÍ Í&¦ViewV2JªIdentifierÍ'Í-¦createÂÂ‘JªIdentifierÍ.Í;­componentCallÂS³VariableDeclarationÍOÍ‘T²VariableDeclaratorÍSÍœJªIdentifierÍSÍ_¬paramsLambdaI·ArrowFunctionExpressionÍbÍœÀÂÂÂM®BlockStatementÍhÍœ‘ÔrX”¤type¥start£end¨argument¯ReturnStatementÍÍ‰V°ObjectExpressionÍ†Íˆ£letN³ExpressionStatementÍ¯ÍİÔrY–¤type¥start£end¨operator¤left¥right´AssignmentExpressionÍ¯ÍÜ¡=P°MemberExpressionÍ¯ÍÍJªIdentifierÍ¯Í¼­componentCallJªIdentifierÍ½ÍÍ°paramsGenerator_ÂÂJªIdentifierÍĞÍÜ¬paramsLambdaM®BlockStatementÍÿÍe‘N³ExpressionStatementÍÍVO®CallExpressionÍÍUP°MemberExpressionÍÍIQµConditionalExpressionÍÍ)JªIdentifierÍÍ¦parentJªIdentifierÍÍ"¦parentR®ThisExpressionÍ%Í)JªIdentifierÍ+ÍI¾updateStateVarsOfChildByElmtIdÂÂ’JªIdentifierÍJÍP¦elmtIdV°ObjectExpressionÍRÍTÂV°ObjectExpressionÍrÍ‡‘W¨PropertyÍtÍ…ÂÂÂJªIdentifierÍtÍx¤nameL§LiteralÍzÍ…©ListChild«"ListChild"¤initÂÀ•ÔrZ•¤type¥start£endªspecifiers¦source±ImportDeclarationÍ…Í½’Ôr[•¤type¥start£end¨imported¥local¯ImportSpecifierÍÍšJªIdentifierÍÍš¬AppStorageV2JªIdentifierÍÍš¬AppStorageV2[¯ImportSpecifierÍœÍ¨JªIdentifierÍœÍ¨¬promptActionJªIdentifierÍœÍ¨¬promptActionL§LiteralÍ°Í¼ª@kit.ArkUI¬"@kit.ArkUI"Z±ImportDeclarationÍ¿Í÷‘[¯ImportSpecifierÍÈÍÕJªIdentifierÍÈÍÕ­cloudDatabaseJªIdentifierÍÈÍÕ­cloudDatabaseL§LiteralÍİÍö·@kit.CloudFoundationKit¹'@kit.CloudFoundationKit'Z±ImportDeclarationÍùÍ4’[¯ImportSpecifierÍÍ
+JªIdentifierÍÍ
+¨MainStatJªIdentifierÍÍ
+¨MainStat[¯ImportSpecifierÍÍJªIdentifierÍÍ«resultClassJªIdentifierÍÍ«resultClassL§LiteralÍÍ3²../common/MainStat´'../common/MainStat'Z±ImportDeclarationÍ6Íh‘Ôr\”¤type¥start£end¥local¶ImportDefaultSpecifierÍ=ÍHJªIdentifierÍ=ÍH«CoreServiceL§LiteralÍNÍg·../services/CoreService¹"../services/CoreService"Z±ImportDeclarationÍjÍ™‘[¯ImportSpecifierÍsÍ|JªIdentifierÍsÍ|©AppConfigJªIdentifierÍsÍ|©AppConfigL§LiteralÍ„Í˜²../utils/AppConfig´'../utils/AppConfig'

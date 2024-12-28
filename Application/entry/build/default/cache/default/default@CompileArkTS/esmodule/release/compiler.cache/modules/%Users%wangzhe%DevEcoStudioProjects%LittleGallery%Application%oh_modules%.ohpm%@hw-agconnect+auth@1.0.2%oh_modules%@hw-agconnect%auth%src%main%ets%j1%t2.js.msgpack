@@ -1,0 +1,1530 @@
+Ôr@Ÿªassertions¤code´customTransformCache¬dependencies¢id¤meta±moduleSideEffects¬originalCode±originalSourcemap«resolvedIds®sourcemapChainµsyntheticNamedExportsµtransformDependencies®transformFiles¨cacheAstÔrAÚ=Æimport huks from "@ohos.security.huks";
+import { AuthImpl } from "../a";
+export class HuksManager {
+    constructor() {
+        this.deriveHkdfInData = 'deriveHkdfIndata';
+        this.handle = undefined;
+        this.huksKeyDeriveKeySize = 32;
+        this.huksOptions = undefined;
+        this.finishOptions = undefined;
+        this.initOptions = undefined;
+    }
+    static getKeyAlies() {
+        return 'agconnect_auth_keyAlies' + AuthImpl.getInstance().getRegion();
+    }
+    static stringToUint8Array(str) {
+        let arr = new Array();
+        for (let c7 = 0, d7 = str.length; c7 < d7; ++c7) {
+            arr.push(str.charCodeAt(c7));
+        }
+        return new Uint8Array(arr);
+    }
+    static uint8ArrayToString(z6) {
+        let a7 = '';
+        for (let b7 = 0; b7 < z6.length; b7++) {
+            a7 += String.fromCharCode(z6[b7]);
+        }
+        return a7;
+    }
+    async publicGenKeyFunc(keyAlias) {
+        console.info(`enter promise generateKeyItem`);
+        let w6 = { i: false };
+        try {
+            await this.generateKeyItem(keyAlias, this.huksOptions, w6)
+                .then((data) => {
+                console.info(`promise: generateKeyItem success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (w6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: generateKeyItem failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: generateKeyItem input arg invalid` + error);
+        }
+    }
+    async publicInitFunc(keyAlias) {
+        console.info(`enter promise doInit`);
+        let t6 = { i: false };
+        try {
+            await this.initSession(keyAlias, this.initOptions, t6)
+                .then((data) => {
+                console.info(`promise: doInit success, data = ${JSON.stringify(data)}`);
+                this.handle = data.handle;
+            })
+                .catch((error) => {
+                if (t6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: doInit failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: doInit input arg invalid` + error);
+        }
+    }
+    async publicUpdateFunc() {
+        console.info(`enter promise doUpdate`);
+        let q6 = { i: false };
+        try {
+            await this.updateSession(this.handle, this.initOptions, q6)
+                .then((data) => {
+                console.info(`promise: doUpdate success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (q6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: doUpdate failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: doUpdate input arg invalid` + error);
+        }
+    }
+    async publicFinishFunc() {
+        console.info(`enter promise doFinish`);
+        let n6 = { i: false };
+        try {
+            await this.finishSession(this.handle, this.finishOptions, n6)
+                .then((data) => {
+                console.info(`promise: doFinish success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (n6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: doFinish failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: doFinish input arg invalid` + error);
+        }
+    }
+    async publicDeleteKeyFunc(keyAlias) {
+        console.info(`enter promise deleteKeyItem`);
+        let k6 = { i: false };
+        let huksOptions = {
+            properties: []
+        };
+        try {
+            await this.deleteKeyItem(keyAlias, huksOptions, k6)
+                .then((data) => {
+                console.info(`promise: deleteKeyItem key success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (k6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: deleteKeyItem failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: deleteKeyItem input arg invalid` + error);
+        }
+    }
+    async initDeriveKey(keyAlias) {
+        this.init(keyAlias);
+        await this.publicGenKeyFunc(keyAlias);
+        await this.publicInitFunc(keyAlias);
+        this.initOptions.inData = HuksManager.stringToUint8Array(this.deriveHkdfInData);
+        await this.publicUpdateFunc();
+        await this.publicFinishFunc();
+    }
+    getAesEncryptProperties(nonce, iv) {
+        let properties = new Array();
+        let index = 0;
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_256
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PADDING,
+            value: huks.HuksKeyPadding.HUKS_PADDING_NONE
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_BLOCK_MODE,
+            value: huks.HuksCipherMode.HUKS_MODE_GCM
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_IV,
+            value: HuksManager.stringToUint8Array(iv)
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_NONCE,
+            value: HuksManager.stringToUint8Array(nonce)
+        };
+        return properties;
+    }
+    getAesDecryptProperties(j6, nonce, iv) {
+        let properties = new Array();
+        let index = 0;
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_256
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PADDING,
+            value: huks.HuksKeyPadding.HUKS_PADDING_NONE
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_BLOCK_MODE,
+            value: huks.HuksCipherMode.HUKS_MODE_GCM
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_NONCE,
+            value: HuksManager.stringToUint8Array(nonce)
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_IV,
+            value: HuksManager.stringToUint8Array(iv)
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_AE_TAG,
+            value: j6.slice(j6.length - 16)
+        };
+        return properties;
+    }
+    async encryptData(plainText, keyAlias, nonce, iv) {
+        let hasKey = await this.hasKeyAlies(keyAlias);
+        if (!hasKey) {
+            await this.initDeriveKey(keyAlias);
+        }
+        let options = {
+            properties: this.getAesEncryptProperties(nonce, iv),
+            inData: HuksManager.stringToUint8Array(plainText)
+        };
+        await huks.initSession(keyAlias, options)
+            .then((data) => {
+            this.handle = data.handle;
+        }).catch((error) => {
+            console.error(`promise: init EncryptData failed` + error);
+        });
+        return new Promise((f6, g6) => {
+            huks.finishSession(this.handle, options)
+                .then((data) => {
+                console.info(`promise: encrypt data success, data is ` +
+                    HuksManager.uint8ArrayToString(data.outData));
+                if (data.outData) {
+                    f6(data.outData);
+                }
+            }).catch((error) => {
+                g6(error);
+            });
+        });
+    }
+    async decryptData(s5, keyAlias, nonce, iv) {
+        if (s5.length === 0) {
+            return Promise.resolve(null);
+        }
+        let t5 = this.getAesDecryptProperties(s5, nonce, iv);
+        let options = {
+            properties: t5,
+            inData: s5.slice(0, s5.length - 16)
+        };
+        return new Promise((v5, w5) => {
+            huks.initSession(keyAlias, options)
+                .then((data) => {
+                this.handle = data.handle;
+                huks.finishSession(this.handle, options)
+                    .then((data) => {
+                    if (data && data.outData) {
+                        let b6 = HuksManager.uint8ArrayToString(data.outData);
+                        v5(b6);
+                    }
+                    else {
+                        v5(null);
+                    }
+                }).catch((error) => {
+                    w5(error);
+                });
+            }).catch((error) => {
+                console.error(`promise: init DecryptData failed` + error);
+                v5(null);
+            });
+        });
+    }
+    async generateKeyItem(keyAlias, huksOptions, n5) {
+        return new Promise((p5, q5) => {
+            try {
+                huks.generateKeyItem(keyAlias, huksOptions, (error, data) => {
+                    if (error) {
+                        q5(error);
+                    }
+                    else {
+                        p5(data);
+                    }
+                });
+            }
+            catch (error) {
+                n5.i = true;
+                throw error;
+            }
+        });
+    }
+    async initSession(keyAlias, huksOptions, i5) {
+        return new Promise((k5, l5) => {
+            try {
+                huks.initSession(keyAlias, huksOptions, (error, data) => {
+                    if (error) {
+                        l5(error);
+                    }
+                    else {
+                        k5(data);
+                    }
+                });
+            }
+            catch (error) {
+                i5.i = true;
+                throw error;
+            }
+        });
+    }
+    async updateSession(handle, huksOptions, d5) {
+        return new Promise((f5, g5) => {
+            try {
+                huks.updateSession(handle, huksOptions, (error, data) => {
+                    if (error) {
+                        g5(error);
+                    }
+                    else {
+                        f5(data);
+                    }
+                });
+            }
+            catch (error) {
+                d5.i = true;
+                throw error;
+            }
+        });
+    }
+    async finishSession(handle, huksOptions, y4) {
+        return new Promise((a5, b5) => {
+            try {
+                huks.finishSession(handle, huksOptions, (error, data) => {
+                    if (error) {
+                        b5(error);
+                    }
+                    else {
+                        a5(data);
+                    }
+                });
+            }
+            catch (error) {
+                y4.i = true;
+                throw error;
+            }
+        });
+    }
+    async deleteKeyItem(keyAlias, huksOptions, t4) {
+        return new Promise((v4, w4) => {
+            try {
+                huks.deleteKeyItem(keyAlias, huksOptions, (error, data) => {
+                    if (error) {
+                        w4(error);
+                    }
+                    else {
+                        v4(data);
+                    }
+                });
+            }
+            catch (error) {
+                t4.i = true;
+                throw error;
+            }
+        });
+    }
+    init(keyAlias) {
+        let properties = new Array();
+        properties[0] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES,
+        };
+        properties[1] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DERIVE,
+        };
+        properties[2] = {
+            tag: huks.HuksTag.HUKS_TAG_DIGEST,
+            value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256,
+        };
+        properties[3] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_128,
+        };
+        properties[4] = {
+            tag: huks.HuksTag.HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAG,
+            value: huks.HuksKeyStorageType.HUKS_STORAGE_ONLY_USED_IN_HUKS,
+        };
+        this.huksOptions = {
+            properties: properties,
+            inData: new Uint8Array(new Array())
+        };
+        let r4 = new Array();
+        r4[0] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_HKDF,
+        };
+        r4[1] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DERIVE,
+        };
+        r4[2] = {
+            tag: huks.HuksTag.HUKS_TAG_DIGEST,
+            value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256,
+        };
+        r4[3] = {
+            tag: huks.HuksTag.HUKS_TAG_DERIVE_KEY_SIZE,
+            value: this.huksKeyDeriveKeySize,
+        };
+        this.initOptions = {
+            properties: r4,
+            inData: new Uint8Array(new Array())
+        };
+        let s4 = new Array();
+        s4[0] = {
+            tag: huks.HuksTag.HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAG,
+            value: huks.HuksKeyStorageType.HUKS_STORAGE_ONLY_USED_IN_HUKS,
+        };
+        s4[1] = {
+            tag: huks.HuksTag.HUKS_TAG_IS_KEY_ALIAS,
+            value: true,
+        };
+        s4[2] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES,
+        };
+        s4[3] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_256,
+        };
+        s4[4] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT |
+                huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT,
+        };
+        s4[5] = {
+            tag: huks.HuksTag.HUKS_TAG_DIGEST,
+            value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256,
+        };
+        s4[6] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_ALIAS,
+            value: HuksManager.stringToUint8Array(keyAlias),
+        };
+        s4[7] = {
+            tag: huks.HuksTag.HUKS_TAG_PADDING,
+            value: huks.HuksKeyPadding.HUKS_PADDING_NONE,
+        };
+        s4[8] = {
+            tag: huks.HuksTag.HUKS_TAG_BLOCK_MODE,
+            value: huks.HuksCipherMode.HUKS_MODE_GCM,
+        };
+        this.finishOptions = {
+            properties: s4,
+            inData: new Uint8Array(new Array())
+        };
+    }
+    async hasKeyAlies(m4) {
+        let huksOptions = {
+            properties: []
+        };
+        return new Promise((o4, p4) => {
+            try {
+                huks.hasKeyItem(m4, huksOptions, (error, data) => {
+                    if (error) {
+                        p4(error);
+                    }
+                    else {
+                        if (data !== null && data.valueOf() !== null) {
+                            o4(data.valueOf());
+                        }
+                    }
+                });
+            }
+            catch (error) {
+                p4(error);
+            }
+        });
+    }
+}
+class l4 {
+    constructor() {
+        this.i = false;
+    }
+}
+Â’Ùp hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_api_@ohos.security.huks.d.tsÙ—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/a.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/t2.jsÔrB™±isLocalDependency¯isNodeEntryFile§pkgPath§pkgNameªpkgVersion±belongProjectPath±dependencyPkgInfo¨commonjs¯hostModulesInfoÂÂÙ…/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth²@hw-agconnect/auth¥1.0.2Ù=/Users/wangzhe/DevEcoStudioProjects/LittleGallery/ApplicationÔrC’§pkgNameªpkgVersion²@hw-agconnect/auth¥1.0.2ÔrD’¯hasNamedExportsªisCommonJSÃÂÃÚ=Æimport huks from "@ohos.security.huks";
+import { AuthImpl } from "../a";
+export class HuksManager {
+    constructor() {
+        this.deriveHkdfInData = 'deriveHkdfIndata';
+        this.handle = undefined;
+        this.huksKeyDeriveKeySize = 32;
+        this.huksOptions = undefined;
+        this.finishOptions = undefined;
+        this.initOptions = undefined;
+    }
+    static getKeyAlies() {
+        return 'agconnect_auth_keyAlies' + AuthImpl.getInstance().getRegion();
+    }
+    static stringToUint8Array(str) {
+        let arr = new Array();
+        for (let c7 = 0, d7 = str.length; c7 < d7; ++c7) {
+            arr.push(str.charCodeAt(c7));
+        }
+        return new Uint8Array(arr);
+    }
+    static uint8ArrayToString(z6) {
+        let a7 = '';
+        for (let b7 = 0; b7 < z6.length; b7++) {
+            a7 += String.fromCharCode(z6[b7]);
+        }
+        return a7;
+    }
+    async publicGenKeyFunc(keyAlias) {
+        console.info(`enter promise generateKeyItem`);
+        let w6 = { i: false };
+        try {
+            await this.generateKeyItem(keyAlias, this.huksOptions, w6)
+                .then((data) => {
+                console.info(`promise: generateKeyItem success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (w6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: generateKeyItem failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: generateKeyItem input arg invalid` + error);
+        }
+    }
+    async publicInitFunc(keyAlias) {
+        console.info(`enter promise doInit`);
+        let t6 = { i: false };
+        try {
+            await this.initSession(keyAlias, this.initOptions, t6)
+                .then((data) => {
+                console.info(`promise: doInit success, data = ${JSON.stringify(data)}`);
+                this.handle = data.handle;
+            })
+                .catch((error) => {
+                if (t6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: doInit failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: doInit input arg invalid` + error);
+        }
+    }
+    async publicUpdateFunc() {
+        console.info(`enter promise doUpdate`);
+        let q6 = { i: false };
+        try {
+            await this.updateSession(this.handle, this.initOptions, q6)
+                .then((data) => {
+                console.info(`promise: doUpdate success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (q6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: doUpdate failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: doUpdate input arg invalid` + error);
+        }
+    }
+    async publicFinishFunc() {
+        console.info(`enter promise doFinish`);
+        let n6 = { i: false };
+        try {
+            await this.finishSession(this.handle, this.finishOptions, n6)
+                .then((data) => {
+                console.info(`promise: doFinish success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (n6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: doFinish failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: doFinish input arg invalid` + error);
+        }
+    }
+    async publicDeleteKeyFunc(keyAlias) {
+        console.info(`enter promise deleteKeyItem`);
+        let k6 = { i: false };
+        let huksOptions = {
+            properties: []
+        };
+        try {
+            await this.deleteKeyItem(keyAlias, huksOptions, k6)
+                .then((data) => {
+                console.info(`promise: deleteKeyItem key success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (k6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: deleteKeyItem failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: deleteKeyItem input arg invalid` + error);
+        }
+    }
+    async initDeriveKey(keyAlias) {
+        this.init(keyAlias);
+        await this.publicGenKeyFunc(keyAlias);
+        await this.publicInitFunc(keyAlias);
+        this.initOptions.inData = HuksManager.stringToUint8Array(this.deriveHkdfInData);
+        await this.publicUpdateFunc();
+        await this.publicFinishFunc();
+    }
+    getAesEncryptProperties(nonce, iv) {
+        let properties = new Array();
+        let index = 0;
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_256
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PADDING,
+            value: huks.HuksKeyPadding.HUKS_PADDING_NONE
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_BLOCK_MODE,
+            value: huks.HuksCipherMode.HUKS_MODE_GCM
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_IV,
+            value: HuksManager.stringToUint8Array(iv)
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_NONCE,
+            value: HuksManager.stringToUint8Array(nonce)
+        };
+        return properties;
+    }
+    getAesDecryptProperties(j6, nonce, iv) {
+        let properties = new Array();
+        let index = 0;
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_256
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PADDING,
+            value: huks.HuksKeyPadding.HUKS_PADDING_NONE
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_BLOCK_MODE,
+            value: huks.HuksCipherMode.HUKS_MODE_GCM
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_NONCE,
+            value: HuksManager.stringToUint8Array(nonce)
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_IV,
+            value: HuksManager.stringToUint8Array(iv)
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_AE_TAG,
+            value: j6.slice(j6.length - 16)
+        };
+        return properties;
+    }
+    async encryptData(plainText, keyAlias, nonce, iv) {
+        let hasKey = await this.hasKeyAlies(keyAlias);
+        if (!hasKey) {
+            await this.initDeriveKey(keyAlias);
+        }
+        let options = {
+            properties: this.getAesEncryptProperties(nonce, iv),
+            inData: HuksManager.stringToUint8Array(plainText)
+        };
+        await huks.initSession(keyAlias, options)
+            .then((data) => {
+            this.handle = data.handle;
+        }).catch((error) => {
+            console.error(`promise: init EncryptData failed` + error);
+        });
+        return new Promise((f6, g6) => {
+            huks.finishSession(this.handle, options)
+                .then((data) => {
+                console.info(`promise: encrypt data success, data is ` +
+                    HuksManager.uint8ArrayToString(data.outData));
+                if (data.outData) {
+                    f6(data.outData);
+                }
+            }).catch((error) => {
+                g6(error);
+            });
+        });
+    }
+    async decryptData(s5, keyAlias, nonce, iv) {
+        if (s5.length === 0) {
+            return Promise.resolve(null);
+        }
+        let t5 = this.getAesDecryptProperties(s5, nonce, iv);
+        let options = {
+            properties: t5,
+            inData: s5.slice(0, s5.length - 16)
+        };
+        return new Promise((v5, w5) => {
+            huks.initSession(keyAlias, options)
+                .then((data) => {
+                this.handle = data.handle;
+                huks.finishSession(this.handle, options)
+                    .then((data) => {
+                    if (data && data.outData) {
+                        let b6 = HuksManager.uint8ArrayToString(data.outData);
+                        v5(b6);
+                    }
+                    else {
+                        v5(null);
+                    }
+                }).catch((error) => {
+                    w5(error);
+                });
+            }).catch((error) => {
+                console.error(`promise: init DecryptData failed` + error);
+                v5(null);
+            });
+        });
+    }
+    async generateKeyItem(keyAlias, huksOptions, n5) {
+        return new Promise((p5, q5) => {
+            try {
+                huks.generateKeyItem(keyAlias, huksOptions, (error, data) => {
+                    if (error) {
+                        q5(error);
+                    }
+                    else {
+                        p5(data);
+                    }
+                });
+            }
+            catch (error) {
+                n5.i = true;
+                throw error;
+            }
+        });
+    }
+    async initSession(keyAlias, huksOptions, i5) {
+        return new Promise((k5, l5) => {
+            try {
+                huks.initSession(keyAlias, huksOptions, (error, data) => {
+                    if (error) {
+                        l5(error);
+                    }
+                    else {
+                        k5(data);
+                    }
+                });
+            }
+            catch (error) {
+                i5.i = true;
+                throw error;
+            }
+        });
+    }
+    async updateSession(handle, huksOptions, d5) {
+        return new Promise((f5, g5) => {
+            try {
+                huks.updateSession(handle, huksOptions, (error, data) => {
+                    if (error) {
+                        g5(error);
+                    }
+                    else {
+                        f5(data);
+                    }
+                });
+            }
+            catch (error) {
+                d5.i = true;
+                throw error;
+            }
+        });
+    }
+    async finishSession(handle, huksOptions, y4) {
+        return new Promise((a5, b5) => {
+            try {
+                huks.finishSession(handle, huksOptions, (error, data) => {
+                    if (error) {
+                        b5(error);
+                    }
+                    else {
+                        a5(data);
+                    }
+                });
+            }
+            catch (error) {
+                y4.i = true;
+                throw error;
+            }
+        });
+    }
+    async deleteKeyItem(keyAlias, huksOptions, t4) {
+        return new Promise((v4, w4) => {
+            try {
+                huks.deleteKeyItem(keyAlias, huksOptions, (error, data) => {
+                    if (error) {
+                        w4(error);
+                    }
+                    else {
+                        v4(data);
+                    }
+                });
+            }
+            catch (error) {
+                t4.i = true;
+                throw error;
+            }
+        });
+    }
+    init(keyAlias) {
+        let properties = new Array();
+        properties[0] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES,
+        };
+        properties[1] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DERIVE,
+        };
+        properties[2] = {
+            tag: huks.HuksTag.HUKS_TAG_DIGEST,
+            value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256,
+        };
+        properties[3] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_128,
+        };
+        properties[4] = {
+            tag: huks.HuksTag.HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAG,
+            value: huks.HuksKeyStorageType.HUKS_STORAGE_ONLY_USED_IN_HUKS,
+        };
+        this.huksOptions = {
+            properties: properties,
+            inData: new Uint8Array(new Array())
+        };
+        let r4 = new Array();
+        r4[0] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_HKDF,
+        };
+        r4[1] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DERIVE,
+        };
+        r4[2] = {
+            tag: huks.HuksTag.HUKS_TAG_DIGEST,
+            value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256,
+        };
+        r4[3] = {
+            tag: huks.HuksTag.HUKS_TAG_DERIVE_KEY_SIZE,
+            value: this.huksKeyDeriveKeySize,
+        };
+        this.initOptions = {
+            properties: r4,
+            inData: new Uint8Array(new Array())
+        };
+        let s4 = new Array();
+        s4[0] = {
+            tag: huks.HuksTag.HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAG,
+            value: huks.HuksKeyStorageType.HUKS_STORAGE_ONLY_USED_IN_HUKS,
+        };
+        s4[1] = {
+            tag: huks.HuksTag.HUKS_TAG_IS_KEY_ALIAS,
+            value: true,
+        };
+        s4[2] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES,
+        };
+        s4[3] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_256,
+        };
+        s4[4] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT |
+                huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT,
+        };
+        s4[5] = {
+            tag: huks.HuksTag.HUKS_TAG_DIGEST,
+            value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256,
+        };
+        s4[6] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_ALIAS,
+            value: HuksManager.stringToUint8Array(keyAlias),
+        };
+        s4[7] = {
+            tag: huks.HuksTag.HUKS_TAG_PADDING,
+            value: huks.HuksKeyPadding.HUKS_PADDING_NONE,
+        };
+        s4[8] = {
+            tag: huks.HuksTag.HUKS_TAG_BLOCK_MODE,
+            value: huks.HuksCipherMode.HUKS_MODE_GCM,
+        };
+        this.finishOptions = {
+            properties: s4,
+            inData: new Uint8Array(new Array())
+        };
+    }
+    async hasKeyAlies(m4) {
+        let huksOptions = {
+            properties: []
+        };
+        return new Promise((o4, p4) => {
+            try {
+                huks.hasKeyItem(m4, huksOptions, (error, data) => {
+                    if (error) {
+                        p4(error);
+                    }
+                    else {
+                        if (data !== null && data.valueOf() !== null) {
+                            o4(data.valueOf());
+                        }
+                    }
+                });
+            }
+            catch (error) {
+                p4(error);
+            }
+        });
+    }
+}
+class l4 {
+    constructor() {
+        this.i = false;
+    }
+}
+ÔrE•§version¨mappings¥names§sources®sourcesContentÜã‘”    ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”  	 ‘”  
+ ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”    ‘”  ! ‘”  " ‘”  # ‘”  $ ‘”  % ‘”  & ‘”  ' ‘”  ( ‘”  ) ‘”  * ‘”  + ‘”  , ‘”  - ‘”  . ‘”  / ‘”  0 ‘”  1 ‘”  2 ‘”  3 ‘”  4 ‘”  5 ‘”  6 ‘”  7 ‘”  8 ‘”  9 ‘”  : ‘”  ; ‘”  < ‘”  = ‘”  > ‘”  ? ‘”  Ì@ ‘”  ÌA ‘”  ÌB ‘”  ÌC ‘”  ÌD ‘”  ÌE ‘”  ÌF ‘”  ÌG ‘”  ÌH ‘”  ÌI ‘”  ÌJ ‘”  ÌK ‘”  ÌL ‘”  ÌM ‘”  ÌN ‘”  ÌO ‘”  ÌP ‘”  ÌQ ‘”  ÌR ‘”  ÌS ‘”  ÌT ‘”  ÌU ‘”  ÌV ‘”  ÌW ‘”  ÌX ‘”  ÌY ‘”  ÌZ ‘”  Ì[ ‘”  Ì\ ‘”  Ì] ‘”  Ì^ ‘”  Ì_ ‘”  Ì` ‘”  Ìa ‘”  Ìb ‘”  Ìc ‘”  Ìd ‘”  Ìe ‘”  Ìf ‘”  Ìg ‘”  Ìh ‘”  Ìi ‘”  Ìj ‘”  Ìk ‘”  Ìl ‘”  Ìm ‘”  Ìn ‘”  Ìo ‘”  Ìp ‘”  Ìq ‘”  Ìr ‘”  Ìs ‘”  Ìt ‘”  Ìu ‘”  Ìv ‘”  Ìw ‘”  Ìx ‘”  Ìy ‘”  Ìz ‘”  Ì{ ‘”  Ì| ‘”  Ì} ‘”  Ì~ ‘”  Ì ‘”  Ì€ ‘”  Ì ‘”  Ì‚ ‘”  Ìƒ ‘”  Ì„ ‘”  Ì… ‘”  Ì† ‘”  Ì‡ ‘”  Ìˆ ‘”  Ì‰ ‘”  ÌŠ ‘”  Ì‹ ‘”  ÌŒ ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì‘ ‘”  Ì’ ‘”  Ì“ ‘”  Ì” ‘”  Ì• ‘”  Ì– ‘”  Ì— ‘”  Ì˜ ‘”  Ì™ ‘”  Ìš ‘”  Ì› ‘”  Ìœ ‘”  Ì ‘”  Ì ‘”  ÌŸ ‘”  Ì  ‘”  Ì¡ ‘”  Ì¢ ‘”  Ì£ ‘”  Ì¤ ‘”  Ì¥ ‘”  Ì¦ ‘”  Ì§ ‘”  Ì¨ ‘”  Ì© ‘”  Ìª ‘”  Ì« ‘”  Ì¬ ‘”  Ì­ ‘”  Ì® ‘”  Ì¯ ‘”  Ì° ‘”  Ì± ‘”  Ì² ‘”  Ì³ ‘”  Ì´ ‘”  Ìµ ‘”  Ì¶ ‘”  Ì· ‘”  Ì¸ ‘”  Ì¹ ‘”  Ìº ‘”  Ì» ‘”  Ì¼ ‘”  Ì½ ‘”  Ì¾ ‘”  Ì¿ ‘”  ÌÀ ‘”  ÌÁ ‘”  ÌÂ ‘”  ÌÃ ‘”  ÌÄ ‘”  ÌÅ ‘”  ÌÆ ‘”  ÌÇ ‘”  ÌÈ ‘”  ÌÉ ‘”  ÌÊ ‘”  ÌË ‘”  ÌÌ ‘”  ÌÍ ‘”  ÌÎ ‘”  ÌÏ ‘”  ÌĞ ‘”  ÌÑ ‘”  ÌÒ ‘”  ÌÓ ‘”  ÌÔ ‘”  ÌÕ ‘”  ÌÖ ‘”  Ì× ‘”  ÌØ ‘”  ÌÙ ‘”  ÌÚ ‘”  ÌÛ ‘”  ÌÜ ‘”  Ìİ ‘”  ÌŞ ‘”  Ìß ‘”  Ìà ‘”  Ìá ‘”  Ìâ ‘”  Ìã ‘”  Ìä ‘”  Ìå ‘”  Ìæ ‘”  Ìç ‘”  Ìè ‘”  Ìé ‘”  Ìê ‘”  Ìë ‘”  Ìì ‘”  Ìí ‘”  Ìî ‘”  Ìï ‘”  Ìğ ‘”  Ìñ ‘”  Ìò ‘”  Ìó ‘”  Ìô ‘”  Ìõ ‘”  Ìö ‘”  Ì÷ ‘”  Ìø ‘”  Ìù ‘”  Ìú ‘”  Ìû ‘”  Ìü ‘”  Ìı ‘”  Ìş ‘”  Ìÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ‘”  ÍQ ‘”  ÍR ‘”  ÍS ‘”  ÍT ‘”  ÍU ‘”  ÍV ‘”  ÍW ‘”  ÍX ‘”  ÍY ‘”  ÍZ ‘”  Í[ ‘”  Í\ ‘”  Í] ‘”  Í^ ‘”  Í_ ‘”  Í` ‘”  Ía ‘”  Íb ‘”  Íc ‘”  Íd ‘”  Íe ‘”  Íf ‘”  Íg ‘”  Íh ‘”  Íi ‘”  Íj ‘”  Ík ‘”  Íl ‘”  Ím ‘”  Ín ‘”  Ío ‘”  Íp ‘”  Íq ‘”  Ír ‘”  Ís ‘”  Ít ‘”  Íu ‘”  Ív ‘”  Íw ‘”  Íx ‘”  Íy ‘”  Íz ‘”  Í{ ‘”  Í| ‘”  Í} ‘”  Í~ ‘”  Í ‘”  Í€ ‘”  Í ‘”  Í‚ ‘”  Íƒ ‘”  Í„ ‘”  Í… ‘”  Í† ‘”  Í‡ ‘”  Íˆ ‘”  Í‰ ‘”  ÍŠ ‘”  Í‹ ‘”  ÍŒ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í‘ ‘”  Í’ ‘”  Í“ ‘”  Í” ‘”  Í• ‘”  Í– ‘”  Í— ‘”  Í˜ ‘”  Í™ ‘”  Íš ‘”  Í› ‘”  Íœ ‘”  Í ‘”  Í ‘”  ÍŸ ‘”  Í  ‘”  Í¡ ‘”  Í¢ ‘”  Í£ ‘”  Í¤ ‘”  Í¥ ‘”  Í¦ ‘”  Í§ ‘”  Í¨ ‘”  Í© ‘”  Íª ‘”  Í« ‘”  Í¬ ‘”  Í­ ‘”  Í® ‘”  Í¯ ‘”  Í° ‘”  Í± ‘”  Í² ‘”  Í³ ‘”  Í´ ‘”  Íµ ‘”  Í¶ ‘”  Í· ‘”  Í¸ ‘”  Í¹ ‘”  Íº ‘”  Í» ‘”  Í¼ ‘”  Í½ ‘”  Í¾ ‘”  Í¿ ‘”  ÍÀ ‘”  ÍÁ ‘”  ÍÂ ‘”  ÍÃ ‘”  ÍÄ ‘”  ÍÅ ‘”  ÍÆ ‘”  ÍÇ ‘”  ÍÈ ‘”  ÍÉ ‘”  ÍÊ ‘”  ÍË ‘”  ÍÌ ‘”  ÍÍ ‘”  ÍÎ ‘”  ÍÏ ‘”  ÍĞ ‘”  ÍÑ ‘”  ÍÒ ‘”  ÍÓ ‘”  ÍÔ ‘”  ÍÕ ‘”  ÍÖ ‘”  Í× ‘”  ÍØ ‘”  ÍÙ ‘”  ÍÚ ‘”  ÍÛ ‘”  ÍÜ ‘”  Íİ ‘”  ÍŞ ‘”  Íß ‘”  Íà ‘”  Íá ‘Ù›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/t2.js‘Ú=Æimport huks from "@ohos.security.huks";
+import { AuthImpl } from "../a";
+export class HuksManager {
+    constructor() {
+        this.deriveHkdfInData = 'deriveHkdfIndata';
+        this.handle = undefined;
+        this.huksKeyDeriveKeySize = 32;
+        this.huksOptions = undefined;
+        this.finishOptions = undefined;
+        this.initOptions = undefined;
+    }
+    static getKeyAlies() {
+        return 'agconnect_auth_keyAlies' + AuthImpl.getInstance().getRegion();
+    }
+    static stringToUint8Array(str) {
+        let arr = new Array();
+        for (let c7 = 0, d7 = str.length; c7 < d7; ++c7) {
+            arr.push(str.charCodeAt(c7));
+        }
+        return new Uint8Array(arr);
+    }
+    static uint8ArrayToString(z6) {
+        let a7 = '';
+        for (let b7 = 0; b7 < z6.length; b7++) {
+            a7 += String.fromCharCode(z6[b7]);
+        }
+        return a7;
+    }
+    async publicGenKeyFunc(keyAlias) {
+        console.info(`enter promise generateKeyItem`);
+        let w6 = { i: false };
+        try {
+            await this.generateKeyItem(keyAlias, this.huksOptions, w6)
+                .then((data) => {
+                console.info(`promise: generateKeyItem success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (w6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: generateKeyItem failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: generateKeyItem input arg invalid` + error);
+        }
+    }
+    async publicInitFunc(keyAlias) {
+        console.info(`enter promise doInit`);
+        let t6 = { i: false };
+        try {
+            await this.initSession(keyAlias, this.initOptions, t6)
+                .then((data) => {
+                console.info(`promise: doInit success, data = ${JSON.stringify(data)}`);
+                this.handle = data.handle;
+            })
+                .catch((error) => {
+                if (t6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: doInit failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: doInit input arg invalid` + error);
+        }
+    }
+    async publicUpdateFunc() {
+        console.info(`enter promise doUpdate`);
+        let q6 = { i: false };
+        try {
+            await this.updateSession(this.handle, this.initOptions, q6)
+                .then((data) => {
+                console.info(`promise: doUpdate success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (q6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: doUpdate failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: doUpdate input arg invalid` + error);
+        }
+    }
+    async publicFinishFunc() {
+        console.info(`enter promise doFinish`);
+        let n6 = { i: false };
+        try {
+            await this.finishSession(this.handle, this.finishOptions, n6)
+                .then((data) => {
+                console.info(`promise: doFinish success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (n6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: doFinish failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: doFinish input arg invalid` + error);
+        }
+    }
+    async publicDeleteKeyFunc(keyAlias) {
+        console.info(`enter promise deleteKeyItem`);
+        let k6 = { i: false };
+        let huksOptions = {
+            properties: []
+        };
+        try {
+            await this.deleteKeyItem(keyAlias, huksOptions, k6)
+                .then((data) => {
+                console.info(`promise: deleteKeyItem key success, data = ${JSON.stringify(data)}`);
+            })
+                .catch((error) => {
+                if (k6.i) {
+                    throw error;
+                }
+                else {
+                    console.error(`promise: deleteKeyItem failed` + error);
+                }
+            });
+        }
+        catch (error) {
+            console.error(`promise: deleteKeyItem input arg invalid` + error);
+        }
+    }
+    async initDeriveKey(keyAlias) {
+        this.init(keyAlias);
+        await this.publicGenKeyFunc(keyAlias);
+        await this.publicInitFunc(keyAlias);
+        this.initOptions.inData = HuksManager.stringToUint8Array(this.deriveHkdfInData);
+        await this.publicUpdateFunc();
+        await this.publicFinishFunc();
+    }
+    getAesEncryptProperties(nonce, iv) {
+        let properties = new Array();
+        let index = 0;
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_256
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PADDING,
+            value: huks.HuksKeyPadding.HUKS_PADDING_NONE
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_BLOCK_MODE,
+            value: huks.HuksCipherMode.HUKS_MODE_GCM
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_IV,
+            value: HuksManager.stringToUint8Array(iv)
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_NONCE,
+            value: HuksManager.stringToUint8Array(nonce)
+        };
+        return properties;
+    }
+    getAesDecryptProperties(j6, nonce, iv) {
+        let properties = new Array();
+        let index = 0;
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_256
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_PADDING,
+            value: huks.HuksKeyPadding.HUKS_PADDING_NONE
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_BLOCK_MODE,
+            value: huks.HuksCipherMode.HUKS_MODE_GCM
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_NONCE,
+            value: HuksManager.stringToUint8Array(nonce)
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_IV,
+            value: HuksManager.stringToUint8Array(iv)
+        };
+        properties[index++] = {
+            tag: huks.HuksTag.HUKS_TAG_AE_TAG,
+            value: j6.slice(j6.length - 16)
+        };
+        return properties;
+    }
+    async encryptData(plainText, keyAlias, nonce, iv) {
+        let hasKey = await this.hasKeyAlies(keyAlias);
+        if (!hasKey) {
+            await this.initDeriveKey(keyAlias);
+        }
+        let options = {
+            properties: this.getAesEncryptProperties(nonce, iv),
+            inData: HuksManager.stringToUint8Array(plainText)
+        };
+        await huks.initSession(keyAlias, options)
+            .then((data) => {
+            this.handle = data.handle;
+        }).catch((error) => {
+            console.error(`promise: init EncryptData failed` + error);
+        });
+        return new Promise((f6, g6) => {
+            huks.finishSession(this.handle, options)
+                .then((data) => {
+                console.info(`promise: encrypt data success, data is ` +
+                    HuksManager.uint8ArrayToString(data.outData));
+                if (data.outData) {
+                    f6(data.outData);
+                }
+            }).catch((error) => {
+                g6(error);
+            });
+        });
+    }
+    async decryptData(s5, keyAlias, nonce, iv) {
+        if (s5.length === 0) {
+            return Promise.resolve(null);
+        }
+        let t5 = this.getAesDecryptProperties(s5, nonce, iv);
+        let options = {
+            properties: t5,
+            inData: s5.slice(0, s5.length - 16)
+        };
+        return new Promise((v5, w5) => {
+            huks.initSession(keyAlias, options)
+                .then((data) => {
+                this.handle = data.handle;
+                huks.finishSession(this.handle, options)
+                    .then((data) => {
+                    if (data && data.outData) {
+                        let b6 = HuksManager.uint8ArrayToString(data.outData);
+                        v5(b6);
+                    }
+                    else {
+                        v5(null);
+                    }
+                }).catch((error) => {
+                    w5(error);
+                });
+            }).catch((error) => {
+                console.error(`promise: init DecryptData failed` + error);
+                v5(null);
+            });
+        });
+    }
+    async generateKeyItem(keyAlias, huksOptions, n5) {
+        return new Promise((p5, q5) => {
+            try {
+                huks.generateKeyItem(keyAlias, huksOptions, (error, data) => {
+                    if (error) {
+                        q5(error);
+                    }
+                    else {
+                        p5(data);
+                    }
+                });
+            }
+            catch (error) {
+                n5.i = true;
+                throw error;
+            }
+        });
+    }
+    async initSession(keyAlias, huksOptions, i5) {
+        return new Promise((k5, l5) => {
+            try {
+                huks.initSession(keyAlias, huksOptions, (error, data) => {
+                    if (error) {
+                        l5(error);
+                    }
+                    else {
+                        k5(data);
+                    }
+                });
+            }
+            catch (error) {
+                i5.i = true;
+                throw error;
+            }
+        });
+    }
+    async updateSession(handle, huksOptions, d5) {
+        return new Promise((f5, g5) => {
+            try {
+                huks.updateSession(handle, huksOptions, (error, data) => {
+                    if (error) {
+                        g5(error);
+                    }
+                    else {
+                        f5(data);
+                    }
+                });
+            }
+            catch (error) {
+                d5.i = true;
+                throw error;
+            }
+        });
+    }
+    async finishSession(handle, huksOptions, y4) {
+        return new Promise((a5, b5) => {
+            try {
+                huks.finishSession(handle, huksOptions, (error, data) => {
+                    if (error) {
+                        b5(error);
+                    }
+                    else {
+                        a5(data);
+                    }
+                });
+            }
+            catch (error) {
+                y4.i = true;
+                throw error;
+            }
+        });
+    }
+    async deleteKeyItem(keyAlias, huksOptions, t4) {
+        return new Promise((v4, w4) => {
+            try {
+                huks.deleteKeyItem(keyAlias, huksOptions, (error, data) => {
+                    if (error) {
+                        w4(error);
+                    }
+                    else {
+                        v4(data);
+                    }
+                });
+            }
+            catch (error) {
+                t4.i = true;
+                throw error;
+            }
+        });
+    }
+    init(keyAlias) {
+        let properties = new Array();
+        properties[0] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES,
+        };
+        properties[1] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DERIVE,
+        };
+        properties[2] = {
+            tag: huks.HuksTag.HUKS_TAG_DIGEST,
+            value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256,
+        };
+        properties[3] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_128,
+        };
+        properties[4] = {
+            tag: huks.HuksTag.HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAG,
+            value: huks.HuksKeyStorageType.HUKS_STORAGE_ONLY_USED_IN_HUKS,
+        };
+        this.huksOptions = {
+            properties: properties,
+            inData: new Uint8Array(new Array())
+        };
+        let r4 = new Array();
+        r4[0] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_HKDF,
+        };
+        r4[1] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DERIVE,
+        };
+        r4[2] = {
+            tag: huks.HuksTag.HUKS_TAG_DIGEST,
+            value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256,
+        };
+        r4[3] = {
+            tag: huks.HuksTag.HUKS_TAG_DERIVE_KEY_SIZE,
+            value: this.huksKeyDeriveKeySize,
+        };
+        this.initOptions = {
+            properties: r4,
+            inData: new Uint8Array(new Array())
+        };
+        let s4 = new Array();
+        s4[0] = {
+            tag: huks.HuksTag.HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAG,
+            value: huks.HuksKeyStorageType.HUKS_STORAGE_ONLY_USED_IN_HUKS,
+        };
+        s4[1] = {
+            tag: huks.HuksTag.HUKS_TAG_IS_KEY_ALIAS,
+            value: true,
+        };
+        s4[2] = {
+            tag: huks.HuksTag.HUKS_TAG_ALGORITHM,
+            value: huks.HuksKeyAlg.HUKS_ALG_AES,
+        };
+        s4[3] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_SIZE,
+            value: huks.HuksKeySize.HUKS_AES_KEY_SIZE_256,
+        };
+        s4[4] = {
+            tag: huks.HuksTag.HUKS_TAG_PURPOSE,
+            value: huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT |
+                huks.HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT,
+        };
+        s4[5] = {
+            tag: huks.HuksTag.HUKS_TAG_DIGEST,
+            value: huks.HuksKeyDigest.HUKS_DIGEST_SHA256,
+        };
+        s4[6] = {
+            tag: huks.HuksTag.HUKS_TAG_KEY_ALIAS,
+            value: HuksManager.stringToUint8Array(keyAlias),
+        };
+        s4[7] = {
+            tag: huks.HuksTag.HUKS_TAG_PADDING,
+            value: huks.HuksKeyPadding.HUKS_PADDING_NONE,
+        };
+        s4[8] = {
+            tag: huks.HuksTag.HUKS_TAG_BLOCK_MODE,
+            value: huks.HuksCipherMode.HUKS_MODE_GCM,
+        };
+        this.finishOptions = {
+            properties: s4,
+            inData: new Uint8Array(new Array())
+        };
+    }
+    async hasKeyAlies(m4) {
+        let huksOptions = {
+            properties: []
+        };
+        return new Promise((o4, p4) => {
+            try {
+                huks.hasKeyItem(m4, huksOptions, (error, data) => {
+                    if (error) {
+                        p4(error);
+                    }
+                    else {
+                        if (data !== null && data.valueOf() !== null) {
+                            o4(data.valueOf());
+                        }
+                    }
+                });
+            }
+            catch (error) {
+                p4(error);
+            }
+        });
+    }
+}
+class l4 {
+    constructor() {
+        this.i = false;
+    }
+}
+ÔrF’³@ohos.security.huks¤../aÔrG—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙp hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_api_@ohos.security.huks.d.tsAÃªoh-resolveÂGAÂÙ—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/a.jsAÃªoh-resolveÂÂÔ  ÔrH”²dynamicImportCache¹exportAllDeclarationCache»exportNamedDeclarationCache«importCache‘ÔrI–¤type¥start£end«declarationªspecifiers¦source¶ExportNamedDeclarationÌIÍ=†ÔrJ–¤type¥start£end¢idªsuperClass¤body°ClassDeclarationÌPÍ=†ÔrK”¤type¥start£end¤nameªIdentifierÌVÌa«HuksManagerÀÔrL”¤type¥start£end¤body©ClassBodyÌbÍ=†Ü ÔrM˜¤type¥start£end¦static¨computed£key¤kind¥value°MethodDefinitionÌhÍnÂÂKªIdentifierÌhÌs«constructor«constructorÔrN™¤type¥start£end¢idªexpression©generator¥async¦params¤body²FunctionExpressionÌsÍnÀÂÂÂL®BlockStatementÌvÍn–ÔrO”¤type¥start£endªexpression³ExpressionStatementÌ€Ì«ÔrP–¤type¥start£end¨operator¤left¥right´AssignmentExpressionÌ€Ìª¡=ÔrQ—¤type¥start£end¦object¨property¨computed¨optional°MemberExpressionÌ€Ì•ÔrR“¤type¥start£end®ThisExpressionÌ€Ì„KªIdentifierÌ…Ì•°deriveHkdfInDataÂÂÔrS•¤type¥start£end¥value£raw§LiteralÌ˜Ìª°deriveHkdfIndata²'deriveHkdfIndata'O³ExpressionStatementÌ´ÌÌP´AssignmentExpressionÌ´ÌË¡=Q°MemberExpressionÌ´Ì¿R®ThisExpressionÌ´Ì¸KªIdentifierÌ¹Ì¿¦handleÂÂKªIdentifierÌÂÌË©undefinedO³ExpressionStatementÌÕÌôP´AssignmentExpressionÌÕÌó¡=Q°MemberExpressionÌÕÌîR®ThisExpressionÌÕÌÙKªIdentifierÌÚÌî´huksKeyDeriveKeySizeÂÂS§LiteralÌñÌó ¢32O³ExpressionStatementÌıÍP´AssignmentExpressionÌıÍ¡=Q°MemberExpressionÌıÍR®ThisExpressionÌıÍKªIdentifierÍÍ«huksOptionsÂÂKªIdentifierÍÍ©undefinedO³ExpressionStatementÍ#ÍBP´AssignmentExpressionÍ#ÍA¡=Q°MemberExpressionÍ#Í5R®ThisExpressionÍ#Í'KªIdentifierÍ(Í5­finishOptionsÂÂKªIdentifierÍ8ÍA©undefinedO³ExpressionStatementÍKÍhP´AssignmentExpressionÍKÍg¡=Q°MemberExpressionÍKÍ[R®ThisExpressionÍKÍOKªIdentifierÍPÍ[«initOptionsÂÂKªIdentifierÍ^Íg©undefinedM°MethodDefinitionÍsÍŞÃÂKªIdentifierÍzÍ…«getKeyAlies¦methodN²FunctionExpressionÍ…ÍŞÀÂÂÂL®BlockStatementÍˆÍŞ‘ÔrT”¤type¥start£end¨argument¯ReturnStatementÍ’ÍØÔrU–¤type¥start£end¤left¨operator¥right°BinaryExpressionÍ™Í×S§LiteralÍ™Í²·agconnect_auth_keyAlies¹'agconnect_auth_keyAlies'¡+ÔrV–¤type¥start£end¦callee©arguments¨optional®CallExpressionÍµÍ×Q°MemberExpressionÍµÍÕV®CallExpressionÍµÍËQ°MemberExpressionÍµÍÉKªIdentifierÍµÍ½¨AuthImplKªIdentifierÍ¾ÍÉ«getInstanceÂÂÂKªIdentifierÍÌÍÕ©getRegionÂÂÂM°MethodDefinitionÍãÍ»ÃÂKªIdentifierÍêÍü²stringToUint8Array¦methodN²FunctionExpressionÍüÍ»ÀÂÂÂ‘KªIdentifierÍıÍ £strL®BlockStatementÍÍ»“ÔrW•¤type¥start£end¬declarations¤kind³VariableDeclarationÍÍ"‘ÔrX•¤type¥start£end¢id¤init²VariableDeclaratorÍÍ!KªIdentifierÍÍ£arrÔrY•¤type¥start£end¦callee©arguments­NewExpressionÍÍ!KªIdentifierÍÍ¥Array£letÔrZ—¤type¥start£end¤init¤test¦update¤body¬ForStatementÍ+Í‘W³VariableDeclarationÍ0ÍK’X²VariableDeclaratorÍ4Í:KªIdentifierÍ4Í6¢c7S§LiteralÍ9Í: ¡0X²VariableDeclaratorÍ<ÍKKªIdentifierÍ<Í>¢d7Q°MemberExpressionÍAÍKKªIdentifierÍAÍD£strKªIdentifierÍEÍK¦lengthÂÂ£letU°BinaryExpressionÍMÍTKªIdentifierÍMÍO¢c7¡<KªIdentifierÍRÍT¢d7Ôr[–¤type¥start£end¨operator¦prefix¨argument°UpdateExpressionÍVÍZ¢++ÃKªIdentifierÍXÍZ¢c7L®BlockStatementÍ\Í‘‘O³ExpressionStatementÍjÍ‡V®CallExpressionÍjÍ†Q°MemberExpressionÍjÍrKªIdentifierÍjÍm£arrKªIdentifierÍnÍr¤pushÂÂ‘V®CallExpressionÍsÍ…Q°MemberExpressionÍsÍKªIdentifierÍsÍv£strKªIdentifierÍwÍªcharCodeAtÂÂ‘KªIdentifierÍ‚Í„¢c7ÂÂT¯ReturnStatementÍšÍµY­NewExpressionÍ¡Í´KªIdentifierÍ¥Í¯ªUint8Array‘KªIdentifierÍ°Í³£arrM°MethodDefinitionÍÀÍwÃÂKªIdentifierÍÇÍÙ²uint8ArrayToString¦methodN²FunctionExpressionÍÙÍwÀÂÂÂ‘KªIdentifierÍÚÍÜ¢z6L®BlockStatementÍŞÍw“W³VariableDeclarationÍèÍô‘X²VariableDeclaratorÍìÍóKªIdentifierÍìÍî¢a7S§LiteralÍñÍó ¢''£letZ¬ForStatementÍıÍ^W³VariableDeclarationÍÍ‘X²VariableDeclaratorÍÍKªIdentifierÍÍ¢b7S§LiteralÍÍ ¡0£letU°BinaryExpressionÍÍKªIdentifierÍÍ¢b7¡<Q°MemberExpressionÍÍKªIdentifierÍÍ¢z6KªIdentifierÍÍ¦lengthÂÂ[°UpdateExpressionÍÍ"¢++ÂKªIdentifierÍÍ ¢b7L®BlockStatementÍ$Í^‘O³ExpressionStatementÍ2ÍTP´AssignmentExpressionÍ2ÍS¢+=KªIdentifierÍ2Í4¢a7V®CallExpressionÍ8ÍSQ°MemberExpressionÍ8ÍKKªIdentifierÍ8Í>¦StringKªIdentifierÍ?ÍK¬fromCharCodeÂÂ‘Q°MemberExpressionÍLÍRKªIdentifierÍLÍN¢z6KªIdentifierÍOÍQ¢b7ÃÂÂT¯ReturnStatementÍgÍqKªIdentifierÍnÍp¢a7M°MethodDefinitionÍ|ÍYÂÂKªIdentifierÍ‚Í’°publicGenKeyFunc¦methodN²FunctionExpressionÍ’ÍYÀÂÂÃ‘KªIdentifierÍ“Í›¨keyAliasL®BlockStatementÍÍY“O³ExpressionStatementÍ§ÍÕV®CallExpressionÍ§ÍÔQ°MemberExpressionÍ§Í³KªIdentifierÍ§Í®§consoleKªIdentifierÍ¯Í³¤infoÂÂ‘Ôr\•¤type¥start£end«expressions¦quasis¯TemplateLiteralÍ´ÍÓ‘Ôr]•¤type¥start£end¥value¤tail¯TemplateElementÍµÍÒÔr^’£raw¦cooked½enter promise generateKeyItem½enter promise generateKeyItemÃÂW³VariableDeclarationÍŞÍô‘X²VariableDeclaratorÍâÍóKªIdentifierÍâÍä¢w6Ôr_”¤type¥start£endªproperties°ObjectExpressionÍçÍó‘Ôr`™¤type¥start£end¦method©shorthand¨computed£key¥value¤kind¨PropertyÍéÍñÂÂÂKªIdentifierÍéÍê¡iS§LiteralÍìÍñÂ¥false¤init£letÔra–¤type¥start£end¥block§handler©finalizer¬TryStatementÍıÍSL®BlockStatementÍÍà‘O³ExpressionStatementÍÍÖT¯AwaitExpressionÍÍÕV®CallExpressionÍÍÕQ°MemberExpressionÍÍóV®CallExpressionÍÍÜQ°MemberExpressionÍÍ_V®CallExpressionÍÍIQ°MemberExpressionÍÍ)R®ThisExpressionÍÍKªIdentifierÍÍ)¯generateKeyItemÂÂ“KªIdentifierÍ*Í2¨keyAliasQ°MemberExpressionÍ4ÍDR®ThisExpressionÍ4Í8KªIdentifierÍ9ÍD«huksOptionsÂÂKªIdentifierÍFÍH¢w6ÂKªIdentifierÍ[Í_¤thenÂÂ‘N·ArrowFunctionExpressionÍ`ÍÛÀÂÂÂ‘KªIdentifierÍaÍe¤dataL®BlockStatementÍjÍÛ‘O³ExpressionStatementÍ|ÍÍV®CallExpressionÍ|ÍÌQ°MemberExpressionÍ|ÍˆKªIdentifierÍ|Íƒ§consoleKªIdentifierÍ„Íˆ¤infoÂÂ‘\¯TemplateLiteralÍ‰ÍË‘V®CallExpressionÍµÍÉQ°MemberExpressionÍµÍÃKªIdentifierÍµÍ¹¤JSONKªIdentifierÍºÍÃ©stringifyÂÂ‘KªIdentifierÍÄÍÈ¤dataÂ’]¯TemplateElementÍŠÍ³^Ù)promise: generateKeyItem success, data = Ù)promise: generateKeyItem success, data = Â]¯TemplateElementÍÊÍÊ^  ÃÂÂKªIdentifierÍîÍó¥catchÂÂ‘N·ArrowFunctionExpressionÍôÍÔÀÂÂÂ‘KªIdentifierÍõÍú¥errorL®BlockStatementÍÿÍÔ‘Ôrb–¤type¥start£end¤testªconsequent©alternate«IfStatementÍÍÆQ°MemberExpressionÍÍKªIdentifierÍÍ¢w6KªIdentifierÍÍ¡iÂÂL®BlockStatementÍÍO‘T®ThrowStatementÍ1Í=KªIdentifierÍ7Í<¥errorL®BlockStatementÍeÍÆ‘O³ExpressionStatementÍ{Í´V®CallExpressionÍ{Í³Q°MemberExpressionÍ{ÍˆKªIdentifierÍ{Í‚§consoleKªIdentifierÍƒÍˆ¥errorÂÂ‘U°BinaryExpressionÍ‰Í²\¯TemplateLiteralÍ‰Íª‘]¯TemplateElementÍŠÍ©^¿promise: generateKeyItem failed¿promise: generateKeyItem failedÃ¡+KªIdentifierÍ­Í²¥errorÂÂÔrc•¤type¥start£end¥param¤body«CatchClauseÍéÍSKªIdentifierÍğÍõ¥errorL®BlockStatementÍ÷ÍS‘O³ExpressionStatementÍÍIV®CallExpressionÍÍHQ°MemberExpressionÍÍKªIdentifierÍÍ§consoleKªIdentifierÍÍ¥errorÂÂ‘U°BinaryExpressionÍÍG\¯TemplateLiteralÍÍ?‘]¯TemplateElementÍÍ>^Ù*promise: generateKeyItem input arg invalidÙ*promise: generateKeyItem input arg invalidÃ¡+KªIdentifierÍBÍG¥errorÂÀM°MethodDefinitionÍ^Í	<ÂÂKªIdentifierÍdÍr®publicInitFunc¦methodN²FunctionExpressionÍrÍ	<ÀÂÂÃ‘KªIdentifierÍsÍ{¨keyAliasL®BlockStatementÍ}Í	<“O³ExpressionStatementÍ‡Í¬V®CallExpressionÍ‡Í«Q°MemberExpressionÍ‡Í“KªIdentifierÍ‡Í§consoleKªIdentifierÍÍ“¤infoÂÂ‘\¯TemplateLiteralÍ”Íª‘]¯TemplateElementÍ•Í©^´enter promise doInit´enter promise doInitÃÂW³VariableDeclarationÍµÍË‘X²VariableDeclaratorÍ¹ÍÊKªIdentifierÍ¹Í»¢t6_°ObjectExpressionÍ¾ÍÊ‘`¨PropertyÍÀÍÈÂÂÂKªIdentifierÍÀÍÁ¡iS§LiteralÍÃÍÈÂ¥false¤init£leta¬TryStatementÍÔÍ	6L®BlockStatementÍØÍÌ‘O³ExpressionStatementÍæÍÂT¯AwaitExpressionÍæÍÁV®CallExpressionÍìÍÁQ°MemberExpressionÍìÍèV®CallExpressionÍìÍÑQ°MemberExpressionÍìÍ2V®CallExpressionÍìÍQ°MemberExpressionÍìÍüR®ThisExpressionÍìÍğKªIdentifierÍñÍü«initSessionÂÂ“KªIdentifierÍıÍ¨keyAliasQ°MemberExpressionÍÍR®ThisExpressionÍÍKªIdentifierÍÍ«initOptionsÂÂKªIdentifierÍÍ¢t6ÂKªIdentifierÍ.Í2¤thenÂÂ‘N·ArrowFunctionExpressionÍ3ÍĞÀÂÂÂ‘KªIdentifierÍ4Í8¤dataL®BlockStatementÍ=ÍĞ’O³ExpressionStatementÍOÍ—V®CallExpressionÍOÍ–Q°MemberExpressionÍOÍ[KªIdentifierÍOÍV§consoleKªIdentifierÍWÍ[¤infoÂÂ‘\¯TemplateLiteralÍ\Í•‘V®CallExpressionÍÍ“Q°MemberExpressionÍÍKªIdentifierÍÍƒ¤JSONKªIdentifierÍ„Í©stringifyÂÂ‘KªIdentifierÍÍ’¤dataÂ’]¯TemplateElementÍ]Í}^Ù promise: doInit success, data = Ù promise: doInit success, data = Â]¯TemplateElementÍ”Í”^  ÃÂO³ExpressionStatementÍ¨ÍÂP´AssignmentExpressionÍ¨ÍÁ¡=Q°MemberExpressionÍ¨Í³R®ThisExpressionÍ¨Í¬KªIdentifierÍ­Í³¦handleÂÂQ°MemberExpressionÍ¶ÍÁKªIdentifierÍ¶Íº¤dataKªIdentifierÍ»ÍÁ¦handleÂÂÂKªIdentifierÍãÍè¥catchÂÂ‘N·ArrowFunctionExpressionÍéÍÀÀÂÂÂ‘KªIdentifierÍêÍï¥errorL®BlockStatementÍôÍÀ‘b«IfStatementÍÍ²Q°MemberExpressionÍ
+ÍKªIdentifierÍ
+Í¢t6KªIdentifierÍÍ¡iÂÂL®BlockStatementÍÍD‘T®ThrowStatementÍ&Í2KªIdentifierÍ,Í1¥errorL®BlockStatementÍZÍ²‘O³ExpressionStatementÍpÍ V®CallExpressionÍpÍŸQ°MemberExpressionÍpÍ}KªIdentifierÍpÍw§consoleKªIdentifierÍxÍ}¥errorÂÂ‘U°BinaryExpressionÍ~Í\¯TemplateLiteralÍ~Í–‘]¯TemplateElementÍÍ•^¶promise: doInit failed¶promise: doInit failedÃ¡+KªIdentifierÍ™Í¥errorÂÂc«CatchClauseÍÕÍ	6KªIdentifierÍÜÍá¥errorL®BlockStatementÍãÍ	6‘O³ExpressionStatementÍñÍ	,V®CallExpressionÍñÍ	+Q°MemberExpressionÍñÍşKªIdentifierÍñÍø§consoleKªIdentifierÍùÍş¥errorÂÂ‘U°BinaryExpressionÍÿÍ	*\¯TemplateLiteralÍÿÍ	"‘]¯TemplateElementÍ	 Í	!^Ù!promise: doInit input arg invalidÙ!promise: doInit input arg invalidÃ¡+KªIdentifierÍ	%Í	*¥errorÂÀM°MethodDefinitionÍ	AÍûÂÂKªIdentifierÍ	GÍ	W°publicUpdateFunc¦methodN²FunctionExpressionÍ	WÍûÀÂÂÃL®BlockStatementÍ	ZÍû“O³ExpressionStatementÍ	dÍ	‹V®CallExpressionÍ	dÍ	ŠQ°MemberExpressionÍ	dÍ	pKªIdentifierÍ	dÍ	k§consoleKªIdentifierÍ	lÍ	p¤infoÂÂ‘\¯TemplateLiteralÍ	qÍ	‰‘]¯TemplateElementÍ	rÍ	ˆ^¶enter promise doUpdate¶enter promise doUpdateÃÂW³VariableDeclarationÍ	”Í	ª‘X²VariableDeclaratorÍ	˜Í	©KªIdentifierÍ	˜Í	š¢q6_°ObjectExpressionÍ	Í	©‘`¨PropertyÍ	ŸÍ	§ÂÂÂKªIdentifierÍ	ŸÍ	 ¡iS§LiteralÍ	¢Í	§Â¥false¤init£leta¬TryStatementÍ	³ÍõL®BlockStatementÍ	·Í‰‘O³ExpressionStatementÍ	ÅÍT¯AwaitExpressionÍ	ÅÍ~V®CallExpressionÍ	ËÍ~Q°MemberExpressionÍ	ËÍ
+£V®CallExpressionÍ	ËÍ
+ŒQ°MemberExpressionÍ	ËÍ
+V®CallExpressionÍ	ËÍ
+ Q°MemberExpressionÍ	ËÍ	İR®ThisExpressionÍ	ËÍ	ÏKªIdentifierÍ	ĞÍ	İ­updateSessionÂÂ“Q°MemberExpressionÍ	ŞÍ	éR®ThisExpressionÍ	ŞÍ	âKªIdentifierÍ	ãÍ	é¦handleÂÂQ°MemberExpressionÍ	ëÍ	ûR®ThisExpressionÍ	ëÍ	ïKªIdentifierÍ	ğÍ	û«initOptionsÂÂKªIdentifierÍ	ıÍ	ÿ¢q6ÂKªIdentifierÍ
+Í
+¤thenÂÂ‘N·ArrowFunctionExpressionÍ
+Í
+‹ÀÂÂÂ‘KªIdentifierÍ
+Í
+¤dataL®BlockStatementÍ
+!Í
+‹‘O³ExpressionStatementÍ
+3Í
+}V®CallExpressionÍ
+3Í
+|Q°MemberExpressionÍ
+3Í
+?KªIdentifierÍ
+3Í
+:§consoleKªIdentifierÍ
+;Í
+?¤infoÂÂ‘\¯TemplateLiteralÍ
+@Í
+{‘V®CallExpressionÍ
+eÍ
+yQ°MemberExpressionÍ
+eÍ
+sKªIdentifierÍ
+eÍ
+i¤JSONKªIdentifierÍ
+jÍ
+s©stringifyÂÂ‘KªIdentifierÍ
+tÍ
+x¤dataÂ’]¯TemplateElementÍ
+AÍ
+c^Ù"promise: doUpdate success, data = Ù"promise: doUpdate success, data = Â]¯TemplateElementÍ
+zÍ
+z^  ÃÂÂKªIdentifierÍ
+Í
+£¥catchÂÂ‘N·ArrowFunctionExpressionÍ
+¤Í}ÀÂÂÂ‘KªIdentifierÍ
+¥Í
+ª¥errorL®BlockStatementÍ
+¯Í}‘b«IfStatementÍ
+ÁÍoQ°MemberExpressionÍ
+ÅÍ
+ÉKªIdentifierÍ
+ÅÍ
+Ç¢q6KªIdentifierÍ
+ÈÍ
+É¡iÂÂL®BlockStatementÍ
+ËÍ
+ÿ‘T®ThrowStatementÍ
+áÍ
+íKªIdentifierÍ
+çÍ
+ì¥errorL®BlockStatementÍÍo‘O³ExpressionStatementÍ+Í]V®CallExpressionÍ+Í\Q°MemberExpressionÍ+Í8KªIdentifierÍ+Í2§consoleKªIdentifierÍ3Í8¥errorÂÂ‘U°BinaryExpressionÍ9Í[\¯TemplateLiteralÍ9ÍS‘]¯TemplateElementÍ:ÍR^¸promise: doUpdate failed¸promise: doUpdate failedÃ¡+KªIdentifierÍVÍ[¥errorÂÂc«CatchClauseÍ’ÍõKªIdentifierÍ™Í¥errorL®BlockStatementÍ Íõ‘O³ExpressionStatementÍ®ÍëV®CallExpressionÍ®ÍêQ°MemberExpressionÍ®Í»KªIdentifierÍ®Íµ§consoleKªIdentifierÍ¶Í»¥errorÂÂ‘U°BinaryExpressionÍ¼Íé\¯TemplateLiteralÍ¼Íá‘]¯TemplateElementÍ½Íà^Ù#promise: doUpdate input arg invalidÙ#promise: doUpdate input arg invalidÃ¡+KªIdentifierÍäÍé¥errorÂÀM°MethodDefinitionÍ Í¼ÂÂKªIdentifierÍÍ°publicFinishFunc¦methodN²FunctionExpressionÍÍ¼ÀÂÂÃL®BlockStatementÍÍ¼“O³ExpressionStatementÍ#ÍJV®CallExpressionÍ#ÍIQ°MemberExpressionÍ#Í/KªIdentifierÍ#Í*§consoleKªIdentifierÍ+Í/¤infoÂÂ‘\¯TemplateLiteralÍ0ÍH‘]¯TemplateElementÍ1ÍG^¶enter promise doFinish¶enter promise doFinishÃÂW³VariableDeclarationÍSÍi‘X²VariableDeclaratorÍWÍhKªIdentifierÍWÍY¢n6_°ObjectExpressionÍ\Íh‘`¨PropertyÍ^ÍfÂÂÂKªIdentifierÍ^Í_¡iS§LiteralÍaÍfÂ¥false¤init£leta¬TryStatementÍrÍ¶L®BlockStatementÍvÍJ‘O³ExpressionStatementÍ„Í@T¯AwaitExpressionÍ„Í?V®CallExpressionÍŠÍ?Q°MemberExpressionÍŠÍdV®CallExpressionÍŠÍMQ°MemberExpressionÍŠÍ×V®CallExpressionÍŠÍÁQ°MemberExpressionÍŠÍœR®ThisExpressionÍŠÍKªIdentifierÍÍœ­finishSessionÂÂ“Q°MemberExpressionÍÍ¨R®ThisExpressionÍÍ¡KªIdentifierÍ¢Í¨¦handleÂÂQ°MemberExpressionÍªÍ¼R®ThisExpressionÍªÍ®KªIdentifierÍ¯Í¼­finishOptionsÂÂKªIdentifierÍ¾ÍÀ¢n6ÂKªIdentifierÍÓÍ×¤thenÂÂ‘N·ArrowFunctionExpressionÍØÍLÀÂÂÂ‘KªIdentifierÍÙÍİ¤dataL®BlockStatementÍâÍL‘O³ExpressionStatementÍôÍ>V®CallExpressionÍôÍ=Q°MemberExpressionÍôÍ KªIdentifierÍôÍû§consoleKªIdentifierÍüÍ ¤infoÂÂ‘\¯TemplateLiteralÍÍ<‘V®CallExpressionÍ&Í:Q°MemberExpressionÍ&Í4KªIdentifierÍ&Í*¤JSONKªIdentifierÍ+Í4©stringifyÂÂ‘KªIdentifierÍ5Í9¤dataÂ’]¯TemplateElementÍÍ$^Ù"promise: doFinish success, data = Ù"promise: doFinish success, data = Â]¯TemplateElementÍ;Í;^  ÃÂÂKªIdentifierÍ_Íd¥catchÂÂ‘N·ArrowFunctionExpressionÍeÍ>ÀÂÂÂ‘KªIdentifierÍfÍk¥errorL®BlockStatementÍpÍ>‘b«IfStatementÍ‚Í0Q°MemberExpressionÍ†ÍŠKªIdentifierÍ†Íˆ¢n6KªIdentifierÍ‰ÍŠ¡iÂÂL®BlockStatementÍŒÍÀ‘T®ThrowStatementÍ¢Í®KªIdentifierÍ¨Í­¥errorL®BlockStatementÍÖÍ0‘O³ExpressionStatementÍìÍV®CallExpressionÍìÍQ°MemberExpressionÍìÍùKªIdentifierÍìÍó§consoleKªIdentifierÍôÍù¥errorÂÂ‘U°BinaryExpressionÍúÍ\¯TemplateLiteralÍúÍ‘]¯TemplateElementÍûÍ^¸promise: doFinish failed¸promise: doFinish failedÃ¡+KªIdentifierÍÍ¥errorÂÂc«CatchClauseÍSÍ¶KªIdentifierÍZÍ_¥errorL®BlockStatementÍaÍ¶‘O³ExpressionStatementÍoÍ¬V®CallExpressionÍoÍ«Q°MemberExpressionÍoÍ|KªIdentifierÍoÍv§consoleKªIdentifierÍwÍ|¥errorÂÂ‘U°BinaryExpressionÍ}Íª\¯TemplateLiteralÍ}Í¢‘]¯TemplateElementÍ~Í¡^Ù#promise: doFinish input arg invalidÙ#promise: doFinish input arg invalidÃ¡+KªIdentifierÍ¥Íª¥errorÂÀM°MethodDefinitionÍÁÍØÂÂKªIdentifierÍÇÍÚ³publicDeleteKeyFunc¦methodN²FunctionExpressionÍÚÍØÀÂÂÃ‘KªIdentifierÍÛÍã¨keyAliasL®BlockStatementÍåÍØ”O³ExpressionStatementÍïÍV®CallExpressionÍïÍQ°MemberExpressionÍïÍûKªIdentifierÍïÍö§consoleKªIdentifierÍ÷Íû¤infoÂÂ‘\¯TemplateLiteralÍüÍ‘]¯TemplateElementÍıÍ^»enter promise deleteKeyItem»enter promise deleteKeyItemÃÂW³VariableDeclarationÍ$Í:‘X²VariableDeclaratorÍ(Í9KªIdentifierÍ(Í*¢k6_°ObjectExpressionÍ-Í9‘`¨PropertyÍ/Í7ÂÂÂKªIdentifierÍ/Í0¡iS§LiteralÍ2Í7Â¥false¤init£letW³VariableDeclarationÍCÍ|‘X²VariableDeclaratorÍGÍ{KªIdentifierÍGÍR«huksOptions_°ObjectExpressionÍUÍ{‘`¨PropertyÍcÍqÂÂÂKªIdentifierÍcÍmªpropertiesÔrd”¤type¥start£end¨elements¯ArrayExpressionÍoÍq¤init£leta¬TryStatementÍ…ÍÒL®BlockStatementÍ‰Ía‘O³ExpressionStatementÍ—ÍWT¯AwaitExpressionÍ—ÍVV®CallExpressionÍÍVQ°MemberExpressionÍÍvV®CallExpressionÍÍ_Q°MemberExpressionÍÍàV®CallExpressionÍÍÊQ°MemberExpressionÍÍ¯R®ThisExpressionÍÍ¡KªIdentifierÍ¢Í¯­deleteKeyItemÂÂ“KªIdentifierÍ°Í¸¨keyAliasKªIdentifierÍºÍÅ«huksOptionsKªIdentifierÍÇÍÉ¢k6ÂKªIdentifierÍÜÍà¤thenÂÂ‘N·ArrowFunctionExpressionÍáÍ^ÀÂÂÂ‘KªIdentifierÍâÍæ¤dataL®BlockStatementÍëÍ^‘O³ExpressionStatementÍıÍPV®CallExpressionÍıÍOQ°MemberExpressionÍıÍ	KªIdentifierÍıÍ§consoleKªIdentifierÍÍ	¤infoÂÂ‘\¯TemplateLiteralÍ
+ÍN‘V®CallExpressionÍ8ÍLQ°MemberExpressionÍ8ÍFKªIdentifierÍ8Í<¤JSONKªIdentifierÍ=ÍF©stringifyÂÂ‘KªIdentifierÍGÍK¤dataÂ’]¯TemplateElementÍÍ6^Ù+promise: deleteKeyItem key success, data = Ù+promise: deleteKeyItem key success, data = Â]¯TemplateElementÍMÍM^  ÃÂÂKªIdentifierÍqÍv¥catchÂÂ‘N·ArrowFunctionExpressionÍwÍUÀÂÂÂ‘KªIdentifierÍxÍ}¥errorL®BlockStatementÍ‚ÍU‘b«IfStatementÍ”ÍGQ°MemberExpressionÍ˜ÍœKªIdentifierÍ˜Íš¢k6KªIdentifierÍ›Íœ¡iÂÂL®BlockStatementÍÍÒ‘T®ThrowStatementÍ´ÍÀKªIdentifierÍºÍ¿¥errorL®BlockStatementÍèÍG‘O³ExpressionStatementÍşÍ5V®CallExpressionÍşÍ4Q°MemberExpressionÍşÍKªIdentifierÍşÍ§consoleKªIdentifierÍÍ¥errorÂÂ‘U°BinaryExpressionÍÍ3\¯TemplateLiteralÍÍ+‘]¯TemplateElementÍÍ*^½promise: deleteKeyItem failed½promise: deleteKeyItem failedÃ¡+KªIdentifierÍ.Í3¥errorÂÂc«CatchClauseÍjÍÒKªIdentifierÍqÍv¥errorL®BlockStatementÍxÍÒ‘O³ExpressionStatementÍ†ÍÈV®CallExpressionÍ†ÍÇQ°MemberExpressionÍ†Í“KªIdentifierÍ†Í§consoleKªIdentifierÍÍ“¥errorÂÂ‘U°BinaryExpressionÍ”ÍÆ\¯TemplateLiteralÍ”Í¾‘]¯TemplateElementÍ•Í½^Ù(promise: deleteKeyItem input arg invalidÙ(promise: deleteKeyItem input arg invalidÃ¡+KªIdentifierÍÁÍÆ¥errorÂÀM°MethodDefinitionÍİÍ"ÂÂKªIdentifierÍãÍğ­initDeriveKey¦methodN²FunctionExpressionÍğÍ"ÀÂÂÃ‘KªIdentifierÍñÍù¨keyAliasL®BlockStatementÍûÍ"–O³ExpressionStatementÍÍV®CallExpressionÍÍQ°MemberExpressionÍÍR®ThisExpressionÍÍ	KªIdentifierÍ
+Í¤initÂÂ‘KªIdentifierÍÍ¨keyAliasÂO³ExpressionStatementÍ"ÍHT¯AwaitExpressionÍ"ÍGV®CallExpressionÍ(ÍGQ°MemberExpressionÍ(Í=R®ThisExpressionÍ(Í,KªIdentifierÍ-Í=°publicGenKeyFuncÂÂ‘KªIdentifierÍ>ÍF¨keyAliasÂO³ExpressionStatementÍQÍuT¯AwaitExpressionÍQÍtV®CallExpressionÍWÍtQ°MemberExpressionÍWÍjR®ThisExpressionÍWÍ[KªIdentifierÍ\Íj®publicInitFuncÂÂ‘KªIdentifierÍkÍs¨keyAliasÂO³ExpressionStatementÍ~ÍÎP´AssignmentExpressionÍ~ÍÍ¡=Q°MemberExpressionÍ~Í•Q°MemberExpressionÍ~ÍR®ThisExpressionÍ~Í‚KªIdentifierÍƒÍ«initOptionsÂÂKªIdentifierÍÍ•¦inDataÂÂV®CallExpressionÍ˜ÍÍQ°MemberExpressionÍ˜Í¶KªIdentifierÍ˜Í£«HuksManagerKªIdentifierÍ¤Í¶²stringToUint8ArrayÂÂ‘Q°MemberExpressionÍ·ÍÌR®ThisExpressionÍ·Í»KªIdentifierÍ¼ÍÌ°deriveHkdfInDataÂÂÂO³ExpressionStatementÍ×ÍõT¯AwaitExpressionÍ×ÍôV®CallExpressionÍİÍôQ°MemberExpressionÍİÍòR®ThisExpressionÍİÍáKªIdentifierÍâÍò°publicUpdateFuncÂÂÂO³ExpressionStatementÍşÍT¯AwaitExpressionÍşÍV®CallExpressionÍÍQ°MemberExpressionÍÍR®ThisExpressionÍÍKªIdentifierÍ	Í°publicFinishFuncÂÂÂM°MethodDefinitionÍ'Í¬ÂÂKªIdentifierÍ'Í>·getAesEncryptProperties¦methodN²FunctionExpressionÍ>Í¬ÀÂÂÂ’KªIdentifierÍ?ÍD¥nonceKªIdentifierÍFÍH¢ivL®BlockStatementÍJÍ¬šW³VariableDeclarationÍTÍq‘X²VariableDeclaratorÍXÍpKªIdentifierÍXÍbªpropertiesY­NewExpressionÍeÍpKªIdentifierÍiÍn¥Array£letW³VariableDeclarationÍzÍˆ‘X²VariableDeclaratorÍ~Í‡KªIdentifierÍ~Íƒ¥indexS§LiteralÍ†Í‡ ¡0£letO³ExpressionStatementÍ‘ÍP´AssignmentExpressionÍ‘Í¡=Q°MemberExpressionÍ‘Í¤KªIdentifierÍ‘Í›ªproperties[°UpdateExpressionÍœÍ£¢++ÂKªIdentifierÍœÍ¡¥indexÃÂ_°ObjectExpressionÍ§Í’`¨PropertyÍµÍÙÂÂÂKªIdentifierÍµÍ¸£tagQ°MemberExpressionÍºÍÙQ°MemberExpressionÍºÍÆKªIdentifierÍºÍ¾¤huksKªIdentifierÍ¿ÍÆ§HuksTagÂÂKªIdentifierÍÇÍÙ²HUKS_TAG_ALGORITHMÂÂ¤init`¨PropertyÍçÍ
+ÂÂÂKªIdentifierÍçÍì¥valueQ°MemberExpressionÍîÍ
+Q°MemberExpressionÍîÍıKªIdentifierÍîÍò¤huksKªIdentifierÍóÍıªHuksKeyAlgÂÂKªIdentifierÍşÍ
+¬HUKS_ALG_AESÂÂ¤initO³ExpressionStatementÍÍ«P´AssignmentExpressionÍÍª¡=Q°MemberExpressionÍÍ1KªIdentifierÍÍ(ªproperties[°UpdateExpressionÍ)Í0¢++ÂKªIdentifierÍ)Í.¥indexÃÂ_°ObjectExpressionÍ4Íª’`¨PropertyÍBÍeÂÂÂKªIdentifierÍBÍE£tagQ°MemberExpressionÍGÍeQ°MemberExpressionÍGÍSKªIdentifierÍGÍK¤huksKªIdentifierÍLÍS§HuksTagÂÂKªIdentifierÍTÍe±HUKS_TAG_KEY_SIZEÂÂ¤init`¨PropertyÍsÍ ÂÂÂKªIdentifierÍsÍx¥valueQ°MemberExpressionÍzÍ Q°MemberExpressionÍzÍŠKªIdentifierÍzÍ~¤huksKªIdentifierÍÍŠ«HuksKeySizeÂÂKªIdentifierÍ‹Í µHUKS_AES_KEY_SIZE_256ÂÂ¤initO³ExpressionStatementÍ´ÍFP´AssignmentExpressionÍ´ÍE¡=Q°MemberExpressionÍ´ÍÇKªIdentifierÍ´Í¾ªproperties[°UpdateExpressionÍ¿ÍÆ¢++ÂKªIdentifierÍ¿ÍÄ¥indexÃÂ_°ObjectExpressionÍÊÍE’`¨PropertyÍØÍúÂÂÂKªIdentifierÍØÍÛ£tagQ°MemberExpressionÍİÍúQ°MemberExpressionÍİÍéKªIdentifierÍİÍá¤huksKªIdentifierÍâÍé§HuksTagÂÂKªIdentifierÍêÍú°HUKS_TAG_PURPOSEÂÂ¤init`¨PropertyÍÍ;ÂÂÂKªIdentifierÍÍ¥valueQ°MemberExpressionÍÍ;Q°MemberExpressionÍÍ"KªIdentifierÍÍ¤huksKªIdentifierÍÍ"®HuksKeyPurposeÂÂKªIdentifierÍ#Í;¸HUKS_KEY_PURPOSE_ENCRYPTÂÂ¤initO³ExpressionStatementÍOÍÚP´AssignmentExpressionÍOÍÙ¡=Q°MemberExpressionÍOÍbKªIdentifierÍOÍYªproperties[°UpdateExpressionÍZÍa¢++ÂKªIdentifierÍZÍ_¥indexÃÂ_°ObjectExpressionÍeÍÙ’`¨PropertyÍsÍ•ÂÂÂKªIdentifierÍsÍv£tagQ°MemberExpressionÍxÍ•Q°MemberExpressionÍxÍ„KªIdentifierÍxÍ|¤huksKªIdentifierÍ}Í„§HuksTagÂÂKªIdentifierÍ…Í•°HUKS_TAG_PADDINGÂÂ¤init`¨PropertyÍ£ÍÏÂÂÂKªIdentifierÍ£Í¨¥valueQ°MemberExpressionÍªÍÏQ°MemberExpressionÍªÍ½KªIdentifierÍªÍ®¤huksKªIdentifierÍ¯Í½®HuksKeyPaddingÂÂKªIdentifierÍ¾ÍÏ±HUKS_PADDING_NONEÂÂ¤initO³ExpressionStatementÍãÍmP´AssignmentExpressionÍãÍl¡=Q°MemberExpressionÍãÍöKªIdentifierÍãÍíªproperties[°UpdateExpressionÍîÍõ¢++ÂKªIdentifierÍîÍó¥indexÃÂ_°ObjectExpressionÍùÍl’`¨PropertyÍÍ,ÂÂÂKªIdentifierÍÍ
+£tagQ°MemberExpressionÍÍ,Q°MemberExpressionÍÍKªIdentifierÍÍ¤huksKªIdentifierÍÍ§HuksTagÂÂKªIdentifierÍÍ,³HUKS_TAG_BLOCK_MODEÂÂ¤init`¨PropertyÍ:ÍbÂÂÂKªIdentifierÍ:Í?¥valueQ°MemberExpressionÍAÍbQ°MemberExpressionÍAÍTKªIdentifierÍAÍE¤huksKªIdentifierÍFÍT®HuksCipherModeÂÂKªIdentifierÍUÍb­HUKS_MODE_GCMÂÂ¤initO³ExpressionStatementÍvÍùP´AssignmentExpressionÍvÍø¡=Q°MemberExpressionÍvÍ‰KªIdentifierÍvÍ€ªproperties[°UpdateExpressionÍÍˆ¢++ÂKªIdentifierÍÍ†¥indexÃÂ_°ObjectExpressionÍŒÍø’`¨PropertyÍšÍ·ÂÂÂKªIdentifierÍšÍ£tagQ°MemberExpressionÍŸÍ·Q°MemberExpressionÍŸÍ«KªIdentifierÍŸÍ£¤huksKªIdentifierÍ¤Í«§HuksTagÂÂKªIdentifierÍ¬Í·«HUKS_TAG_IVÂÂ¤init`¨PropertyÍÅÍîÂÂÂKªIdentifierÍÅÍÊ¥valueV®CallExpressionÍÌÍîQ°MemberExpressionÍÌÍêKªIdentifierÍÌÍ×«HuksManagerKªIdentifierÍØÍê²stringToUint8ArrayÂÂ‘KªIdentifierÍëÍí¢ivÂ¤initO³ExpressionStatementÍÍ‹P´AssignmentExpressionÍÍŠ¡=Q°MemberExpressionÍÍKªIdentifierÍÍªproperties[°UpdateExpressionÍÍ¢++ÂKªIdentifierÍÍ¥indexÃÂ_°ObjectExpressionÍÍŠ’`¨PropertyÍ&ÍFÂÂÂKªIdentifierÍ&Í)£tagQ°MemberExpressionÍ+ÍFQ°MemberExpressionÍ+Í7KªIdentifierÍ+Í/¤huksKªIdentifierÍ0Í7§HuksTagÂÂKªIdentifierÍ8ÍF®HUKS_TAG_NONCEÂÂ¤init`¨PropertyÍTÍ€ÂÂÂKªIdentifierÍTÍY¥valueV®CallExpressionÍ[Í€Q°MemberExpressionÍ[ÍyKªIdentifierÍ[Íf«HuksManagerKªIdentifierÍgÍy²stringToUint8ArrayÂÂ‘KªIdentifierÍzÍ¥nonceÂ¤initT¯ReturnStatementÍ”Í¦KªIdentifierÍ›Í¥ªpropertiesM°MethodDefinitionÍ±ÍÀÂÂKªIdentifierÍ±ÍÈ·getAesDecryptProperties¦methodN²FunctionExpressionÍÈÍÀÀÂÂÂ“KªIdentifierÍÉÍË¢j6KªIdentifierÍÍÍÒ¥nonceKªIdentifierÍÔÍÖ¢ivL®BlockStatementÍØÍÀ›W³VariableDeclarationÍâÍÿ‘X²VariableDeclaratorÍæÍşKªIdentifierÍæÍğªpropertiesY­NewExpressionÍóÍşKªIdentifierÍ÷Íü¥Array£letW³VariableDeclarationÍÍ‘X²VariableDeclaratorÍÍKªIdentifierÍÍ¥indexS§LiteralÍÍ ¡0£letO³ExpressionStatementÍÍ£P´AssignmentExpressionÍÍ¢¡=Q°MemberExpressionÍÍ2KªIdentifierÍÍ)ªproperties[°UpdateExpressionÍ*Í1¢++ÂKªIdentifierÍ*Í/¥indexÃÂ_°ObjectExpressionÍ5Í¢’`¨PropertyÍCÍgÂÂÂKªIdentifierÍCÍF£tagQ°MemberExpressionÍHÍgQ°MemberExpressionÍHÍTKªIdentifierÍHÍL¤huksKªIdentifierÍMÍT§HuksTagÂÂKªIdentifierÍUÍg²HUKS_TAG_ALGORITHMÂÂ¤init`¨PropertyÍuÍ˜ÂÂÂKªIdentifierÍuÍz¥valueQ°MemberExpressionÍ|Í˜Q°MemberExpressionÍ|Í‹KªIdentifierÍ|Í€¤huksKªIdentifierÍÍ‹ªHuksKeyAlgÂÂKªIdentifierÍŒÍ˜¬HUKS_ALG_AESÂÂ¤initO³ExpressionStatementÍ¬Í9P´AssignmentExpressionÍ¬Í8¡=Q°MemberExpressionÍ¬Í¿KªIdentifierÍ¬Í¶ªproperties[°UpdateExpressionÍ·Í¾¢++ÂKªIdentifierÍ·Í¼¥indexÃÂ_°ObjectExpressionÍÂÍ8’`¨PropertyÍĞÍóÂÂÂKªIdentifierÍĞÍÓ£tagQ°MemberExpressionÍÕÍóQ°MemberExpressionÍÕÍáKªIdentifierÍÕÍÙ¤huksKªIdentifierÍÚÍá§HuksTagÂÂKªIdentifierÍâÍó±HUKS_TAG_KEY_SIZEÂÂ¤init`¨PropertyÍÍ.ÂÂÂKªIdentifierÍÍ¥valueQ°MemberExpressionÍÍ.Q°MemberExpressionÍÍKªIdentifierÍÍ¤huksKªIdentifierÍÍ«HuksKeySizeÂÂKªIdentifierÍÍ.µHUKS_AES_KEY_SIZE_256ÂÂ¤initO³ExpressionStatementÍBÍÔP´AssignmentExpressionÍBÍÓ¡=Q°MemberExpressionÍBÍUKªIdentifierÍBÍLªproperties[°UpdateExpressionÍMÍT¢++ÂKªIdentifierÍMÍR¥indexÃÂ_°ObjectExpressionÍXÍÓ’`¨PropertyÍfÍˆÂÂÂKªIdentifierÍfÍi£tagQ°MemberExpressionÍkÍˆQ°MemberExpressionÍkÍwKªIdentifierÍkÍo¤huksKªIdentifierÍpÍw§HuksTagÂÂKªIdentifierÍxÍˆ°HUKS_TAG_PURPOSEÂÂ¤init`¨PropertyÍ–ÍÉÂÂÂKªIdentifierÍ–Í›¥valueQ°MemberExpressionÍÍÉQ°MemberExpressionÍÍ°KªIdentifierÍÍ¡¤huksKªIdentifierÍ¢Í°®HuksKeyPurposeÂÂKªIdentifierÍ±ÍÉ¸HUKS_KEY_PURPOSE_DECRYPTÂÂ¤initO³ExpressionStatementÍİÍhP´AssignmentExpressionÍİÍg¡=Q°MemberExpressionÍİÍğKªIdentifierÍİÍçªproperties[°UpdateExpressionÍèÍï¢++ÂKªIdentifierÍèÍí¥indexÃÂ_°ObjectExpressionÍóÍg’`¨PropertyÍÍ#ÂÂÂKªIdentifierÍÍ£tagQ°MemberExpressionÍÍ#Q°MemberExpressionÍÍKªIdentifierÍÍ
+¤huksKªIdentifierÍÍ§HuksTagÂÂKªIdentifierÍÍ#°HUKS_TAG_PADDINGÂÂ¤init`¨PropertyÍ1Í]ÂÂÂKªIdentifierÍ1Í6¥valueQ°MemberExpressionÍ8Í]Q°MemberExpressionÍ8ÍKKªIdentifierÍ8Í<¤huksKªIdentifierÍ=ÍK®HuksKeyPaddingÂÂKªIdentifierÍLÍ]±HUKS_PADDING_NONEÂÂ¤initO³ExpressionStatementÍqÍûP´AssignmentExpressionÍqÍú¡=Q°MemberExpressionÍqÍ„KªIdentifierÍqÍ{ªproperties[°UpdateExpressionÍ|Íƒ¢++ÂKªIdentifierÍ|Í¥indexÃÂ_°ObjectExpressionÍ‡Íú’`¨PropertyÍ•ÍºÂÂÂKªIdentifierÍ•Í˜£tagQ°MemberExpressionÍšÍºQ°MemberExpressionÍšÍ¦KªIdentifierÍšÍ¤huksKªIdentifierÍŸÍ¦§HuksTagÂÂKªIdentifierÍ§Íº³HUKS_TAG_BLOCK_MODEÂÂ¤init`¨PropertyÍÈÍğÂÂÂKªIdentifierÍÈÍÍ¥valueQ°MemberExpressionÍÏÍğQ°MemberExpressionÍÏÍâKªIdentifierÍÏÍÓ¤huksKªIdentifierÍÔÍâ®HuksCipherModeÂÂKªIdentifierÍãÍğ­HUKS_MODE_GCMÂÂ¤initO³ExpressionStatementÍÍP´AssignmentExpressionÍÍŒ¡=Q°MemberExpressionÍÍKªIdentifierÍÍªproperties[°UpdateExpressionÍÍ¢++ÂKªIdentifierÍÍ¥indexÃÂ_°ObjectExpressionÍÍŒ’`¨PropertyÍ(ÍHÂÂÂKªIdentifierÍ(Í+£tagQ°MemberExpressionÍ-ÍHQ°MemberExpressionÍ-Í9KªIdentifierÍ-Í1¤huksKªIdentifierÍ2Í9§HuksTagÂÂKªIdentifierÍ:ÍH®HUKS_TAG_NONCEÂÂ¤init`¨PropertyÍVÍ‚ÂÂÂKªIdentifierÍVÍ[¥valueV®CallExpressionÍ]Í‚Q°MemberExpressionÍ]Í{KªIdentifierÍ]Íh«HuksManagerKªIdentifierÍiÍ{²stringToUint8ArrayÂÂ‘KªIdentifierÍ|Í¥nonceÂ¤initO³ExpressionStatementÍ–ÍP´AssignmentExpressionÍ–Í¡=Q°MemberExpressionÍ–Í©KªIdentifierÍ–Í ªproperties[°UpdateExpressionÍ¡Í¨¢++ÂKªIdentifierÍ¡Í¦¥indexÃÂ_°ObjectExpressionÍ¬Í’`¨PropertyÍºÍ×ÂÂÂKªIdentifierÍºÍ½£tagQ°MemberExpressionÍ¿Í×Q°MemberExpressionÍ¿ÍËKªIdentifierÍ¿ÍÃ¤huksKªIdentifierÍÄÍË§HuksTagÂÂKªIdentifierÍÌÍ×«HUKS_TAG_IVÂÂ¤init`¨PropertyÍåÍÂÂÂKªIdentifierÍåÍê¥valueV®CallExpressionÍìÍQ°MemberExpressionÍìÍ
+KªIdentifierÍìÍ÷«HuksManagerKªIdentifierÍøÍ
+²stringToUint8ArrayÂÂ‘KªIdentifierÍÍ¢ivÂ¤initO³ExpressionStatementÍ"ÍŸP´AssignmentExpressionÍ"Í¡=Q°MemberExpressionÍ"Í5KªIdentifierÍ"Í,ªproperties[°UpdateExpressionÍ-Í4¢++ÂKªIdentifierÍ-Í2¥indexÃÂ_°ObjectExpressionÍ8Í’`¨PropertyÍFÍgÂÂÂKªIdentifierÍFÍI£tagQ°MemberExpressionÍKÍgQ°MemberExpressionÍKÍWKªIdentifierÍKÍO¤huksKªIdentifierÍPÍW§HuksTagÂÂKªIdentifierÍXÍg¯HUKS_TAG_AE_TAGÂÂ¤init`¨PropertyÍuÍ”ÂÂÂKªIdentifierÍuÍz¥valueV®CallExpressionÍ|Í”Q°MemberExpressionÍ|Í„KªIdentifierÍ|Í~¢j6KªIdentifierÍÍ„¥sliceÂÂ‘U°BinaryExpressionÍ…Í“Q°MemberExpressionÍ…ÍKªIdentifierÍ…Í‡¢j6KªIdentifierÍˆÍ¦lengthÂÂ¡-S§LiteralÍ‘Í“¢16Â¤initT¯ReturnStatementÍ¨ÍºKªIdentifierÍ¯Í¹ªpropertiesM°MethodDefinitionÍÅÍ ÑÂÂKªIdentifierÍËÍÖ«encryptData¦methodN²FunctionExpressionÍÖÍ ÑÀÂÂÃ”KªIdentifierÍ×Íà©plainTextKªIdentifierÍâÍê¨keyAliasKªIdentifierÍìÍñ¥nonceKªIdentifierÍóÍõ¢ivL®BlockStatementÍ÷Í Ñ•W³VariableDeclarationÍÍ/‘X²VariableDeclaratorÍÍ.KªIdentifierÍÍ¦hasKeyT¯AwaitExpressionÍÍ.V®CallExpressionÍÍ.Q°MemberExpressionÍÍ$R®ThisExpressionÍÍKªIdentifierÍÍ$«hasKeyAliesÂÂ‘KªIdentifierÍ%Í-¨keyAliasÂ£letb«IfStatementÍ8Í€[¯UnaryExpressionÍ<ÍC¡!ÃKªIdentifierÍ=ÍC¦hasKeyL®BlockStatementÍEÍ€‘O³ExpressionStatementÍSÍvT¯AwaitExpressionÍSÍuV®CallExpressionÍYÍuQ°MemberExpressionÍYÍkR®ThisExpressionÍYÍ]KªIdentifierÍ^Ík­initDeriveKeyÂÂ‘KªIdentifierÍlÍt¨keyAliasÂÀW³VariableDeclarationÍ‰Í"‘X²VariableDeclaratorÍÍ!KªIdentifierÍÍ”§options_°ObjectExpressionÍ—Í!’`¨PropertyÍ¥ÍØÂÂÂKªIdentifierÍ¥Í¯ªpropertiesV®CallExpressionÍ±ÍØQ°MemberExpressionÍ±ÍÍR®ThisExpressionÍ±ÍµKªIdentifierÍ¶ÍÍ·getAesEncryptPropertiesÂÂ’KªIdentifierÍÎÍÓ¥nonceKªIdentifierÍÕÍ×¢ivÂ¤init`¨PropertyÍæÍÂÂÂKªIdentifierÍæÍì¦inDataV®CallExpressionÍîÍQ°MemberExpressionÍîÍKªIdentifierÍîÍù«HuksManagerKªIdentifierÍúÍ²stringToUint8ArrayÂÂ‘KªIdentifierÍÍ©plainTextÂ¤init£letO³ExpressionStatementÍ+Í
+T¯AwaitExpressionÍ+Í	V®CallExpressionÍ1Í	Q°MemberExpressionÍ1ÍªV®CallExpressionÍ1Í¤Q°MemberExpressionÍ1ÍfV®CallExpressionÍ1ÍTQ°MemberExpressionÍ1ÍAKªIdentifierÍ1Í5¤huksKªIdentifierÍ6ÍA«initSessionÂÂ’KªIdentifierÍBÍJ¨keyAliasKªIdentifierÍLÍS§optionsÂKªIdentifierÍbÍf¤thenÂÂ‘N·ArrowFunctionExpressionÍgÍ£ÀÂÂÂ‘KªIdentifierÍhÍl¤dataL®BlockStatementÍqÍ£‘O³ExpressionStatementÍÍ™P´AssignmentExpressionÍÍ˜¡=Q°MemberExpressionÍÍŠR®ThisExpressionÍÍƒKªIdentifierÍ„ÍŠ¦handleÂÂQ°MemberExpressionÍÍ˜KªIdentifierÍÍ‘¤dataKªIdentifierÍ’Í˜¦handleÂÂÂKªIdentifierÍ¥Íª¥catchÂÂ‘N·ArrowFunctionExpressionÍ«ÍÀÂÂÂ‘KªIdentifierÍ¬Í±¥errorL®BlockStatementÍ¶Í‘O³ExpressionStatementÍÄÍşV®CallExpressionÍÄÍıQ°MemberExpressionÍÄÍÑKªIdentifierÍÄÍË§consoleKªIdentifierÍÌÍÑ¥errorÂÂ‘U°BinaryExpressionÍÒÍü\¯TemplateLiteralÍÒÍô‘]¯TemplateElementÍÓÍó^Ù promise: init EncryptData failedÙ promise: init EncryptData failedÃ¡+KªIdentifierÍ÷Íü¥errorÂÂT¯ReturnStatementÍÍ ËY­NewExpressionÍÍ ÊKªIdentifierÍÍ%§Promise‘N·ArrowFunctionExpressionÍ&Í ÉÀÂÂÂ’KªIdentifierÍ'Í)¢f6KªIdentifierÍ+Í-¢g6L®BlockStatementÍ2Í É‘O³ExpressionStatementÍ@Í ¿V®CallExpressionÍ@Í ¾Q°MemberExpressionÍ@Í ‡V®CallExpressionÍ@Í Q°MemberExpressionÍ@Í~V®CallExpressionÍ@ÍhQ°MemberExpressionÍ@ÍRKªIdentifierÍ@ÍD¤huksKªIdentifierÍEÍR­finishSessionÂÂ’Q°MemberExpressionÍSÍ^R®ThisExpressionÍSÍWKªIdentifierÍXÍ^¦handleÂÂKªIdentifierÍ`Íg§optionsÂKªIdentifierÍzÍ~¤thenÂÂ‘N·ArrowFunctionExpressionÍÍ €ÀÂÂÂ‘KªIdentifierÍ€Í„¤dataL®BlockStatementÍ‰Í €’O³ExpressionStatementÍ›Í V®CallExpressionÍ›Í Q°MemberExpressionÍ›Í§KªIdentifierÍ›Í¢§consoleKªIdentifierÍ£Í§¤infoÂÂ‘U°BinaryExpressionÍ¨Í \¯TemplateLiteralÍ¨ÍÑ‘]¯TemplateElementÍ©ÍĞ^Ù'promise: encrypt data success, data is Ù'promise: encrypt data success, data is Ã¡+V®CallExpressionÍèÍ Q°MemberExpressionÍèÍ KªIdentifierÍèÍó«HuksManagerKªIdentifierÍôÍ ²uint8ArrayToStringÂÂ‘Q°MemberExpressionÍ Í KªIdentifierÍ Í ¤dataKªIdentifierÍ Í §outDataÂÂÂÂb«IfStatementÍ 'Í rQ°MemberExpressionÍ +Í 7KªIdentifierÍ +Í /¤dataKªIdentifierÍ 0Í 7§outDataÂÂL®BlockStatementÍ 9Í r‘O³ExpressionStatementÍ OÍ `V®CallExpressionÍ OÍ _KªIdentifierÍ OÍ Q¢f6‘Q°MemberExpressionÍ RÍ ^KªIdentifierÍ RÍ V¤dataKªIdentifierÍ WÍ ^§outDataÂÂÂÀÂKªIdentifierÍ ‚Í ‡¥catchÂÂ‘N·ArrowFunctionExpressionÍ ˆÍ ½ÀÂÂÂ‘KªIdentifierÍ ‰Í ¥errorL®BlockStatementÍ “Í ½‘O³ExpressionStatementÍ ¥Í ¯V®CallExpressionÍ ¥Í ®KªIdentifierÍ ¥Í §¢g6‘KªIdentifierÍ ¨Í ­¥errorÂÂM°MethodDefinitionÍ ÖÍ%ÂÂKªIdentifierÍ ÜÍ ç«decryptData¦methodN²FunctionExpressionÍ çÍ%ÀÂÂÃ”KªIdentifierÍ èÍ ê¢s5KªIdentifierÍ ìÍ ô¨keyAliasKªIdentifierÍ öÍ û¥nonceKªIdentifierÍ ıÍ ÿ¢ivL®BlockStatementÍ!Í%”b«IfStatementÍ!Í!UU°BinaryExpressionÍ!Í!Q°MemberExpressionÍ!Í!KªIdentifierÍ!Í!¢s5KªIdentifierÍ!Í!¦lengthÂÂ£===S§LiteralÍ!Í! ¡0L®BlockStatementÍ! Í!U‘T¯ReturnStatementÍ!.Í!KV®CallExpressionÍ!5Í!JQ°MemberExpressionÍ!5Í!DKªIdentifierÍ!5Í!<§PromiseKªIdentifierÍ!=Í!D§resolveÂÂ‘S§LiteralÍ!EÍ!IÀ¤nullÂÀW³VariableDeclarationÍ!^Í!“‘X²VariableDeclaratorÍ!bÍ!’KªIdentifierÍ!bÍ!d¢t5V®CallExpressionÍ!gÍ!’Q°MemberExpressionÍ!gÍ!ƒR®ThisExpressionÍ!gÍ!kKªIdentifierÍ!lÍ!ƒ·getAesDecryptPropertiesÂÂ“KªIdentifierÍ!„Í!†¢s5KªIdentifierÍ!ˆÍ!¥nonceKªIdentifierÍ!Í!‘¢ivÂ£letW³VariableDeclarationÍ!œÍ"‘X²VariableDeclaratorÍ! Í"KªIdentifierÍ! Í!§§options_°ObjectExpressionÍ!ªÍ"’`¨PropertyÍ!¸Í!ÆÂÂÂKªIdentifierÍ!¸Í!ÂªpropertiesKªIdentifierÍ!ÄÍ!Æ¢t5¤init`¨PropertyÍ!ÔÍ!÷ÂÂÂKªIdentifierÍ!ÔÍ!Ú¦inDataV®CallExpressionÍ!ÜÍ!÷Q°MemberExpressionÍ!ÜÍ!äKªIdentifierÍ!ÜÍ!Ş¢s5KªIdentifierÍ!ßÍ!ä¥sliceÂÂ’S§LiteralÍ!åÍ!æ ¡0U°BinaryExpressionÍ!èÍ!öQ°MemberExpressionÍ!èÍ!ñKªIdentifierÍ!èÍ!ê¢s5KªIdentifierÍ!ëÍ!ñ¦lengthÂÂ¡-S§LiteralÍ!ôÍ!ö¢16Â¤init£letT¯ReturnStatementÍ"Í%Y­NewExpressionÍ"Í%
+KªIdentifierÍ"Í"§Promise‘N·ArrowFunctionExpressionÍ"Í%	ÀÂÂÂ’KªIdentifierÍ"Í"!¢v5KªIdentifierÍ"#Í"%¢w5L®BlockStatementÍ"*Í%	‘O³ExpressionStatementÍ"8Í$ÿV®CallExpressionÍ"8Í$şQ°MemberExpressionÍ"8Í$}V®CallExpressionÍ"8Í$wQ°MemberExpressionÍ"8Í"qV®CallExpressionÍ"8Í"[Q°MemberExpressionÍ"8Í"HKªIdentifierÍ"8Í"<¤huksKªIdentifierÍ"=Í"H«initSessionÂÂ’KªIdentifierÍ"IÍ"Q¨keyAliasKªIdentifierÍ"SÍ"Z§optionsÂKªIdentifierÍ"mÍ"q¤thenÂÂ‘N·ArrowFunctionExpressionÍ"rÍ$vÀÂÂÂ‘KªIdentifierÍ"sÍ"w¤dataL®BlockStatementÍ"|Í$v’O³ExpressionStatementÍ"Í"¨P´AssignmentExpressionÍ"Í"§¡=Q°MemberExpressionÍ"Í"™R®ThisExpressionÍ"Í"’KªIdentifierÍ"“Í"™¦handleÂÂQ°MemberExpressionÍ"œÍ"§KªIdentifierÍ"œÍ" ¤dataKªIdentifierÍ"¡Í"§¦handleÂÂO³ExpressionStatementÍ"¹Í$hV®CallExpressionÍ"¹Í$gQ°MemberExpressionÍ"¹Í$(V®CallExpressionÍ"¹Í$"Q°MemberExpressionÍ"¹Í"ûV®CallExpressionÍ"¹Í"áQ°MemberExpressionÍ"¹Í"ËKªIdentifierÍ"¹Í"½¤huksKªIdentifierÍ"¾Í"Ë­finishSessionÂÂ’Q°MemberExpressionÍ"ÌÍ"×R®ThisExpressionÍ"ÌÍ"ĞKªIdentifierÍ"ÑÍ"×¦handleÂÂKªIdentifierÍ"ÙÍ"à§optionsÂKªIdentifierÍ"÷Í"û¤thenÂÂ‘N·ArrowFunctionExpressionÍ"üÍ$!ÀÂÂÂ‘KªIdentifierÍ"ıÍ#¤dataL®BlockStatementÍ#Í$!‘b«IfStatementÍ#Í$U±LogicalExpressionÍ# Í#4KªIdentifierÍ# Í#$¤data¢&&Q°MemberExpressionÍ#(Í#4KªIdentifierÍ#(Í#,¤dataKªIdentifierÍ#-Í#4§outDataÂÂL®BlockStatementÍ#6Í#¼’W³VariableDeclarationÍ#PÍ#†‘X²VariableDeclaratorÍ#TÍ#…KªIdentifierÍ#TÍ#V¢b6V®CallExpressionÍ#YÍ#…Q°MemberExpressionÍ#YÍ#wKªIdentifierÍ#YÍ#d«HuksManagerKªIdentifierÍ#eÍ#w²uint8ArrayToStringÂÂ‘Q°MemberExpressionÍ#xÍ#„KªIdentifierÍ#xÍ#|¤dataKªIdentifierÍ#}Í#„§outDataÂÂÂ£letO³ExpressionStatementÍ#ŸÍ#¦V®CallExpressionÍ#ŸÍ#¥KªIdentifierÍ#ŸÍ#¡¢v5‘KªIdentifierÍ#¢Í#¤¢b6ÂL®BlockStatementÍ#ÖÍ$‘O³ExpressionStatementÍ#ğÍ#ùV®CallExpressionÍ#ğÍ#øKªIdentifierÍ#ğÍ#ò¢v5‘S§LiteralÍ#óÍ#÷À¤nullÂÂKªIdentifierÍ$#Í$(¥catchÂÂ‘N·ArrowFunctionExpressionÍ$)Í$fÀÂÂÂ‘KªIdentifierÍ$*Í$/¥errorL®BlockStatementÍ$4Í$f‘O³ExpressionStatementÍ$JÍ$TV®CallExpressionÍ$JÍ$SKªIdentifierÍ$JÍ$L¢w5‘KªIdentifierÍ$MÍ$R¥errorÂÂÂKªIdentifierÍ$xÍ$}¥catchÂÂ‘N·ArrowFunctionExpressionÍ$~Í$ıÀÂÂÂ‘KªIdentifierÍ$Í$„¥errorL®BlockStatementÍ$‰Í$ı’O³ExpressionStatementÍ$›Í$ÕV®CallExpressionÍ$›Í$ÔQ°MemberExpressionÍ$›Í$¨KªIdentifierÍ$›Í$¢§consoleKªIdentifierÍ$£Í$¨¥errorÂÂ‘U°BinaryExpressionÍ$©Í$Ó\¯TemplateLiteralÍ$©Í$Ë‘]¯TemplateElementÍ$ªÍ$Ê^Ù promise: init DecryptData failedÙ promise: init DecryptData failedÃ¡+KªIdentifierÍ$ÎÍ$Ó¥errorÂO³ExpressionStatementÍ$æÍ$ïV®CallExpressionÍ$æÍ$îKªIdentifierÍ$æÍ$è¢v5‘S§LiteralÍ$éÍ$íÀ¤nullÂÂM°MethodDefinitionÍ%Í'ÂÂKªIdentifierÍ%Í%+¯generateKeyItem¦methodN²FunctionExpressionÍ%+Í'ÀÂÂÃ“KªIdentifierÍ%,Í%4¨keyAliasKªIdentifierÍ%6Í%A«huksOptionsKªIdentifierÍ%CÍ%E¢n5L®BlockStatementÍ%GÍ'‘T¯ReturnStatementÍ%QÍ'Y­NewExpressionÍ%XÍ'KªIdentifierÍ%\Í%c§Promise‘N·ArrowFunctionExpressionÍ%dÍ'ÀÂÂÂ’KªIdentifierÍ%eÍ%g¢p5KªIdentifierÍ%iÍ%k¢q5L®BlockStatementÍ%pÍ'‘a¬TryStatementÍ%~Í'L®BlockStatementÍ%‚Í&¡‘O³ExpressionStatementÍ%”Í&“V®CallExpressionÍ%”Í&’Q°MemberExpressionÍ%”Í%¨KªIdentifierÍ%”Í%˜¤huksKªIdentifierÍ%™Í%¨¯generateKeyItemÂÂ“KªIdentifierÍ%©Í%±¨keyAliasKªIdentifierÍ%³Í%¾«huksOptionsN·ArrowFunctionExpressionÍ%ÀÍ&‘ÀÂÂÂ’KªIdentifierÍ%ÁÍ%Æ¥errorKªIdentifierÍ%ÈÍ%Ì¤dataL®BlockStatementÍ%ÑÍ&‘‘b«IfStatementÍ%çÍ&KªIdentifierÍ%ëÍ%ğ¥errorL®BlockStatementÍ%òÍ&,‘O³ExpressionStatementÍ&Í&V®CallExpressionÍ&Í&KªIdentifierÍ&Í&¢q5‘KªIdentifierÍ&Í&¥errorÂL®BlockStatementÍ&FÍ&‘O³ExpressionStatementÍ&`Í&iV®CallExpressionÍ&`Í&hKªIdentifierÍ&`Í&b¢p5‘KªIdentifierÍ&cÍ&g¤dataÂÂc«CatchClauseÍ&®Í'KªIdentifierÍ&µÍ&º¥errorL®BlockStatementÍ&¼Í'’O³ExpressionStatementÍ&ÎÍ&ÚP´AssignmentExpressionÍ&ÎÍ&Ù¡=Q°MemberExpressionÍ&ÎÍ&ÒKªIdentifierÍ&ÎÍ&Ğ¢n5KªIdentifierÍ&ÑÍ&Ò¡iÂÂS§LiteralÍ&ÕÍ&ÙÃ¤trueT®ThrowStatementÍ&ëÍ&÷KªIdentifierÍ&ñÍ&ö¥errorÀM°MethodDefinitionÍ'Í)ÂÂKªIdentifierÍ'"Í'-«initSession¦methodN²FunctionExpressionÍ'-Í)ÀÂÂÃ“KªIdentifierÍ'.Í'6¨keyAliasKªIdentifierÍ'8Í'C«huksOptionsKªIdentifierÍ'EÍ'G¢i5L®BlockStatementÍ'IÍ)‘T¯ReturnStatementÍ'SÍ)Y­NewExpressionÍ'ZÍ)KªIdentifierÍ'^Í'e§Promise‘N·ArrowFunctionExpressionÍ'fÍ)ÀÂÂÂ’KªIdentifierÍ'gÍ'i¢k5KªIdentifierÍ'kÍ'm¢l5L®BlockStatementÍ'rÍ)‘a¬TryStatementÍ'€Í)L®BlockStatementÍ'„Í(Ÿ‘O³ExpressionStatementÍ'–Í(‘V®CallExpressionÍ'–Í(Q°MemberExpressionÍ'–Í'¦KªIdentifierÍ'–Í'š¤huksKªIdentifierÍ'›Í'¦«initSessionÂÂ“KªIdentifierÍ'§Í'¯¨keyAliasKªIdentifierÍ'±Í'¼«huksOptionsN·ArrowFunctionExpressionÍ'¾Í(ÀÂÂÂ’KªIdentifierÍ'¿Í'Ä¥errorKªIdentifierÍ'ÆÍ'Ê¤dataL®BlockStatementÍ'ÏÍ(‘b«IfStatementÍ'åÍ(}KªIdentifierÍ'éÍ'î¥errorL®BlockStatementÍ'ğÍ(*‘O³ExpressionStatementÍ(
+Í(V®CallExpressionÍ(
+Í(KªIdentifierÍ(
+Í(¢l5‘KªIdentifierÍ(Í(¥errorÂL®BlockStatementÍ(DÍ(}‘O³ExpressionStatementÍ(^Í(gV®CallExpressionÍ(^Í(fKªIdentifierÍ(^Í(`¢k5‘KªIdentifierÍ(aÍ(e¤dataÂÂc«CatchClauseÍ(¬Í)KªIdentifierÍ(³Í(¸¥errorL®BlockStatementÍ(ºÍ)’O³ExpressionStatementÍ(ÌÍ(ØP´AssignmentExpressionÍ(ÌÍ(×¡=Q°MemberExpressionÍ(ÌÍ(ĞKªIdentifierÍ(ÌÍ(Î¢i5KªIdentifierÍ(ÏÍ(Ğ¡iÂÂS§LiteralÍ(ÓÍ(×Ã¤trueT®ThrowStatementÍ(éÍ(õKªIdentifierÍ(ïÍ(ô¥errorÀM°MethodDefinitionÍ)Í+ÂÂKªIdentifierÍ) Í)-­updateSession¦methodN²FunctionExpressionÍ)-Í+ÀÂÂÃ“KªIdentifierÍ).Í)4¦handleKªIdentifierÍ)6Í)A«huksOptionsKªIdentifierÍ)CÍ)E¢d5L®BlockStatementÍ)GÍ+‘T¯ReturnStatementÍ)QÍ+Y­NewExpressionÍ)XÍ+KªIdentifierÍ)\Í)c§Promise‘N·ArrowFunctionExpressionÍ)dÍ+ÀÂÂÂ’KªIdentifierÍ)eÍ)g¢f5KªIdentifierÍ)iÍ)k¢g5L®BlockStatementÍ)pÍ+‘a¬TryStatementÍ)~Í+L®BlockStatementÍ)‚Í*‘O³ExpressionStatementÍ)”Í*V®CallExpressionÍ)”Í*Q°MemberExpressionÍ)”Í)¦KªIdentifierÍ)”Í)˜¤huksKªIdentifierÍ)™Í)¦­updateSessionÂÂ“KªIdentifierÍ)§Í)­¦handleKªIdentifierÍ)¯Í)º«huksOptionsN·ArrowFunctionExpressionÍ)¼Í*ÀÂÂÂ’KªIdentifierÍ)½Í)Â¥errorKªIdentifierÍ)ÄÍ)È¤dataL®BlockStatementÍ)ÍÍ*‘b«IfStatementÍ)ãÍ*{KªIdentifierÍ)çÍ)ì¥errorL®BlockStatementÍ)îÍ*(‘O³ExpressionStatementÍ*Í*V®CallExpressionÍ*Í*KªIdentifierÍ*Í*
+¢g5‘KªIdentifierÍ*Í*¥errorÂL®BlockStatementÍ*BÍ*{‘O³ExpressionStatementÍ*\Í*eV®CallExpressionÍ*\Í*dKªIdentifierÍ*\Í*^¢f5‘KªIdentifierÍ*_Í*c¤dataÂÂc«CatchClauseÍ*ªÍ+KªIdentifierÍ*±Í*¶¥errorL®BlockStatementÍ*¸Í+’O³ExpressionStatementÍ*ÊÍ*ÖP´AssignmentExpressionÍ*ÊÍ*Õ¡=Q°MemberExpressionÍ*ÊÍ*ÎKªIdentifierÍ*ÊÍ*Ì¢d5KªIdentifierÍ*ÍÍ*Î¡iÂÂS§LiteralÍ*ÑÍ*ÕÃ¤trueT®ThrowStatementÍ*çÍ*óKªIdentifierÍ*íÍ*ò¥errorÀM°MethodDefinitionÍ+Í-ÂÂKªIdentifierÍ+Í++­finishSession¦methodN²FunctionExpressionÍ++Í-ÀÂÂÃ“KªIdentifierÍ+,Í+2¦handleKªIdentifierÍ+4Í+?«huksOptionsKªIdentifierÍ+AÍ+C¢y4L®BlockStatementÍ+EÍ-‘T¯ReturnStatementÍ+OÍ-Y­NewExpressionÍ+VÍ-
+KªIdentifierÍ+ZÍ+a§Promise‘N·ArrowFunctionExpressionÍ+bÍ-	ÀÂÂÂ’KªIdentifierÍ+cÍ+e¢a5KªIdentifierÍ+gÍ+i¢b5L®BlockStatementÍ+nÍ-	‘a¬TryStatementÍ+|Í,ÿL®BlockStatementÍ+€Í,›‘O³ExpressionStatementÍ+’Í,V®CallExpressionÍ+’Í,ŒQ°MemberExpressionÍ+’Í+¤KªIdentifierÍ+’Í+–¤huksKªIdentifierÍ+—Í+¤­finishSessionÂÂ“KªIdentifierÍ+¥Í+«¦handleKªIdentifierÍ+­Í+¸«huksOptionsN·ArrowFunctionExpressionÍ+ºÍ,‹ÀÂÂÂ’KªIdentifierÍ+»Í+À¥errorKªIdentifierÍ+ÂÍ+Æ¤dataL®BlockStatementÍ+ËÍ,‹‘b«IfStatementÍ+áÍ,yKªIdentifierÍ+åÍ+ê¥errorL®BlockStatementÍ+ìÍ,&‘O³ExpressionStatementÍ,Í,V®CallExpressionÍ,Í,KªIdentifierÍ,Í,¢b5‘KªIdentifierÍ,	Í,¥errorÂL®BlockStatementÍ,@Í,y‘O³ExpressionStatementÍ,ZÍ,cV®CallExpressionÍ,ZÍ,bKªIdentifierÍ,ZÍ,\¢a5‘KªIdentifierÍ,]Í,a¤dataÂÂc«CatchClauseÍ,¨Í,ÿKªIdentifierÍ,¯Í,´¥errorL®BlockStatementÍ,¶Í,ÿ’O³ExpressionStatementÍ,ÈÍ,ÔP´AssignmentExpressionÍ,ÈÍ,Ó¡=Q°MemberExpressionÍ,ÈÍ,ÌKªIdentifierÍ,ÈÍ,Ê¢y4KªIdentifierÍ,ËÍ,Ì¡iÂÂS§LiteralÍ,ÏÍ,ÓÃ¤trueT®ThrowStatementÍ,åÍ,ñKªIdentifierÍ,ëÍ,ğ¥errorÀM°MethodDefinitionÍ-Í/ÂÂKªIdentifierÍ-Í-)­deleteKeyItem¦methodN²FunctionExpressionÍ-)Í/ÀÂÂÃ“KªIdentifierÍ-*Í-2¨keyAliasKªIdentifierÍ-4Í-?«huksOptionsKªIdentifierÍ-AÍ-C¢t4L®BlockStatementÍ-EÍ/‘T¯ReturnStatementÍ-OÍ/Y­NewExpressionÍ-VÍ/KªIdentifierÍ-ZÍ-a§Promise‘N·ArrowFunctionExpressionÍ-bÍ/ÀÂÂÂ’KªIdentifierÍ-cÍ-e¢v4KªIdentifierÍ-gÍ-i¢w4L®BlockStatementÍ-nÍ/‘a¬TryStatementÍ-|Í/L®BlockStatementÍ-€Í.‘O³ExpressionStatementÍ-’Í.V®CallExpressionÍ-’Í.Q°MemberExpressionÍ-’Í-¤KªIdentifierÍ-’Í-–¤huksKªIdentifierÍ-—Í-¤­deleteKeyItemÂÂ“KªIdentifierÍ-¥Í-­¨keyAliasKªIdentifierÍ-¯Í-º«huksOptionsN·ArrowFunctionExpressionÍ-¼Í.ÀÂÂÂ’KªIdentifierÍ-½Í-Â¥errorKªIdentifierÍ-ÄÍ-È¤dataL®BlockStatementÍ-ÍÍ.‘b«IfStatementÍ-ãÍ.{KªIdentifierÍ-çÍ-ì¥errorL®BlockStatementÍ-îÍ.(‘O³ExpressionStatementÍ.Í.V®CallExpressionÍ.Í.KªIdentifierÍ.Í.
+¢w4‘KªIdentifierÍ.Í.¥errorÂL®BlockStatementÍ.BÍ.{‘O³ExpressionStatementÍ.\Í.eV®CallExpressionÍ.\Í.dKªIdentifierÍ.\Í.^¢v4‘KªIdentifierÍ._Í.c¤dataÂÂc«CatchClauseÍ.ªÍ/KªIdentifierÍ.±Í.¶¥errorL®BlockStatementÍ.¸Í/’O³ExpressionStatementÍ.ÊÍ.ÖP´AssignmentExpressionÍ.ÊÍ.Õ¡=Q°MemberExpressionÍ.ÊÍ.ÎKªIdentifierÍ.ÊÍ.Ì¢t4KªIdentifierÍ.ÍÍ.Î¡iÂÂS§LiteralÍ.ÑÍ.ÕÃ¤trueT®ThrowStatementÍ.çÍ.óKªIdentifierÍ.íÍ.ò¥errorÀM°MethodDefinitionÍ/Í;ÂÂKªIdentifierÍ/Í/¤init¦methodN²FunctionExpressionÍ/Í;ÀÂÂÂ‘KªIdentifierÍ/Í/%¨keyAliasL®BlockStatementÍ/'Í;Ü W³VariableDeclarationÍ/1Í/N‘X²VariableDeclaratorÍ/5Í/MKªIdentifierÍ/5Í/?ªpropertiesY­NewExpressionÍ/BÍ/MKªIdentifierÍ/FÍ/K¥Array£letO³ExpressionStatementÍ/WÍ/ÖP´AssignmentExpressionÍ/WÍ/Õ¡=Q°MemberExpressionÍ/WÍ/dKªIdentifierÍ/WÍ/aªpropertiesS§LiteralÍ/bÍ/c ¡0ÃÂ_°ObjectExpressionÍ/gÍ/Õ’`¨PropertyÍ/uÍ/™ÂÂÂKªIdentifierÍ/uÍ/x£tagQ°MemberExpressionÍ/zÍ/™Q°MemberExpressionÍ/zÍ/†KªIdentifierÍ/zÍ/~¤huksKªIdentifierÍ/Í/†§HuksTagÂÂKªIdentifierÍ/‡Í/™²HUKS_TAG_ALGORITHMÂÂ¤init`¨PropertyÍ/§Í/ÊÂÂÂKªIdentifierÍ/§Í/¬¥valueQ°MemberExpressionÍ/®Í/ÊQ°MemberExpressionÍ/®Í/½KªIdentifierÍ/®Í/²¤huksKªIdentifierÍ/³Í/½ªHuksKeyAlgÂÂKªIdentifierÍ/¾Í/Ê¬HUKS_ALG_AESÂÂ¤initO³ExpressionStatementÍ/ßÍ0kP´AssignmentExpressionÍ/ßÍ0j¡=Q°MemberExpressionÍ/ßÍ/ìKªIdentifierÍ/ßÍ/éªpropertiesS§LiteralÍ/êÍ/ë¡1ÃÂ_°ObjectExpressionÍ/ïÍ0j’`¨PropertyÍ/ıÍ0ÂÂÂKªIdentifierÍ/ıÍ0 £tagQ°MemberExpressionÍ0Í0Q°MemberExpressionÍ0Í0KªIdentifierÍ0Í0¤huksKªIdentifierÍ0Í0§HuksTagÂÂKªIdentifierÍ0Í0°HUKS_TAG_PURPOSEÂÂ¤init`¨PropertyÍ0-Í0_ÂÂÂKªIdentifierÍ0-Í02¥valueQ°MemberExpressionÍ04Í0_Q°MemberExpressionÍ04Í0GKªIdentifierÍ04Í08¤huksKªIdentifierÍ09Í0G®HuksKeyPurposeÂÂKªIdentifierÍ0HÍ0_·HUKS_KEY_PURPOSE_DERIVEÂÂ¤initO³ExpressionStatementÍ0tÍ0ùP´AssignmentExpressionÍ0tÍ0ø¡=Q°MemberExpressionÍ0tÍ0KªIdentifierÍ0tÍ0~ªpropertiesS§LiteralÍ0Í0€¡2ÃÂ_°ObjectExpressionÍ0„Í0ø’`¨PropertyÍ0’Í0³ÂÂÂKªIdentifierÍ0’Í0•£tagQ°MemberExpressionÍ0—Í0³Q°MemberExpressionÍ0—Í0£KªIdentifierÍ0—Í0›¤huksKªIdentifierÍ0œÍ0£§HuksTagÂÂKªIdentifierÍ0¤Í0³¯HUKS_TAG_DIGESTÂÂ¤init`¨PropertyÍ0ÁÍ0íÂÂÂKªIdentifierÍ0ÁÍ0Æ¥valueQ°MemberExpressionÍ0ÈÍ0íQ°MemberExpressionÍ0ÈÍ0ÚKªIdentifierÍ0ÈÍ0Ì¤huksKªIdentifierÍ0ÍÍ0Ú­HuksKeyDigestÂÂKªIdentifierÍ0ÛÍ0í²HUKS_DIGEST_SHA256ÂÂ¤initO³ExpressionStatementÍ1Í1ŠP´AssignmentExpressionÍ1Í1‰¡=Q°MemberExpressionÍ1Í1KªIdentifierÍ1Í1ªpropertiesS§LiteralÍ1Í1¡3ÃÂ_°ObjectExpressionÍ1Í1‰’`¨PropertyÍ1 Í1CÂÂÂKªIdentifierÍ1 Í1#£tagQ°MemberExpressionÍ1%Í1CQ°MemberExpressionÍ1%Í11KªIdentifierÍ1%Í1)¤huksKªIdentifierÍ1*Í11§HuksTagÂÂKªIdentifierÍ12Í1C±HUKS_TAG_KEY_SIZEÂÂ¤init`¨PropertyÍ1QÍ1~ÂÂÂKªIdentifierÍ1QÍ1V¥valueQ°MemberExpressionÍ1XÍ1~Q°MemberExpressionÍ1XÍ1hKªIdentifierÍ1XÍ1\¤huksKªIdentifierÍ1]Í1h«HuksKeySizeÂÂKªIdentifierÍ1iÍ1~µHUKS_AES_KEY_SIZE_128ÂÂ¤initO³ExpressionStatementÍ1“Í2BP´AssignmentExpressionÍ1“Í2A¡=Q°MemberExpressionÍ1“Í1 KªIdentifierÍ1“Í1ªpropertiesS§LiteralÍ1Í1Ÿ¡4ÃÂ_°ObjectExpressionÍ1£Í2A’`¨PropertyÍ1±Í1ëÂÂÂKªIdentifierÍ1±Í1´£tagQ°MemberExpressionÍ1¶Í1ëQ°MemberExpressionÍ1¶Í1ÂKªIdentifierÍ1¶Í1º¤huksKªIdentifierÍ1»Í1Â§HuksTagÂÂKªIdentifierÍ1ÃÍ1ëÙ(HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAGÂÂ¤init`¨PropertyÍ1ùÍ26ÂÂÂKªIdentifierÍ1ùÍ1ş¥valueQ°MemberExpressionÍ2 Í26Q°MemberExpressionÍ2 Í2KªIdentifierÍ2 Í2¤huksKªIdentifierÍ2Í2²HuksKeyStorageTypeÂÂKªIdentifierÍ2Í26¾HUKS_STORAGE_ONLY_USED_IN_HUKSÂÂ¤initO³ExpressionStatementÍ2KÍ2¾P´AssignmentExpressionÍ2KÍ2½¡=Q°MemberExpressionÍ2KÍ2[R®ThisExpressionÍ2KÍ2OKªIdentifierÍ2PÍ2[«huksOptionsÂÂ_°ObjectExpressionÍ2^Í2½’`¨PropertyÍ2lÍ2‚ÂÂÂKªIdentifierÍ2lÍ2vªpropertiesKªIdentifierÍ2xÍ2‚ªproperties¤init`¨PropertyÍ2Í2³ÂÂÂKªIdentifierÍ2Í2–¦inDataY­NewExpressionÍ2˜Í2³KªIdentifierÍ2œÍ2¦ªUint8Array‘Y­NewExpressionÍ2§Í2²KªIdentifierÍ2«Í2°¥Array¤initW³VariableDeclarationÍ2ÇÍ2Ü‘X²VariableDeclaratorÍ2ËÍ2ÛKªIdentifierÍ2ËÍ2Í¢r4Y­NewExpressionÍ2ĞÍ2ÛKªIdentifierÍ2ÔÍ2Ù¥Array£letO³ExpressionStatementÍ2åÍ3]P´AssignmentExpressionÍ2åÍ3\¡=Q°MemberExpressionÍ2åÍ2êKªIdentifierÍ2åÍ2ç¢r4S§LiteralÍ2èÍ2é ¡0ÃÂ_°ObjectExpressionÍ2íÍ3\’`¨PropertyÍ2ûÍ3ÂÂÂKªIdentifierÍ2ûÍ2ş£tagQ°MemberExpressionÍ3 Í3Q°MemberExpressionÍ3 Í3KªIdentifierÍ3 Í3¤huksKªIdentifierÍ3Í3§HuksTagÂÂKªIdentifierÍ3Í3²HUKS_TAG_ALGORITHMÂÂ¤init`¨PropertyÍ3-Í3QÂÂÂKªIdentifierÍ3-Í32¥valueQ°MemberExpressionÍ34Í3QQ°MemberExpressionÍ34Í3CKªIdentifierÍ34Í38¤huksKªIdentifierÍ39Í3CªHuksKeyAlgÂÂKªIdentifierÍ3DÍ3Q­HUKS_ALG_HKDFÂÂ¤initO³ExpressionStatementÍ3fÍ3êP´AssignmentExpressionÍ3fÍ3é¡=Q°MemberExpressionÍ3fÍ3kKªIdentifierÍ3fÍ3h¢r4S§LiteralÍ3iÍ3j¡1ÃÂ_°ObjectExpressionÍ3nÍ3é’`¨PropertyÍ3|Í3ÂÂÂKªIdentifierÍ3|Í3£tagQ°MemberExpressionÍ3Í3Q°MemberExpressionÍ3Í3KªIdentifierÍ3Í3…¤huksKªIdentifierÍ3†Í3§HuksTagÂÂKªIdentifierÍ3Í3°HUKS_TAG_PURPOSEÂÂ¤init`¨PropertyÍ3¬Í3ŞÂÂÂKªIdentifierÍ3¬Í3±¥valueQ°MemberExpressionÍ3³Í3ŞQ°MemberExpressionÍ3³Í3ÆKªIdentifierÍ3³Í3·¤huksKªIdentifierÍ3¸Í3Æ®HuksKeyPurposeÂÂKªIdentifierÍ3ÇÍ3Ş·HUKS_KEY_PURPOSE_DERIVEÂÂ¤initO³ExpressionStatementÍ3óÍ4pP´AssignmentExpressionÍ3óÍ4o¡=Q°MemberExpressionÍ3óÍ3øKªIdentifierÍ3óÍ3õ¢r4S§LiteralÍ3öÍ3÷¡2ÃÂ_°ObjectExpressionÍ3ûÍ4o’`¨PropertyÍ4	Í4*ÂÂÂKªIdentifierÍ4	Í4£tagQ°MemberExpressionÍ4Í4*Q°MemberExpressionÍ4Í4KªIdentifierÍ4Í4¤huksKªIdentifierÍ4Í4§HuksTagÂÂKªIdentifierÍ4Í4*¯HUKS_TAG_DIGESTÂÂ¤init`¨PropertyÍ48Í4dÂÂÂKªIdentifierÍ48Í4=¥valueQ°MemberExpressionÍ4?Í4dQ°MemberExpressionÍ4?Í4QKªIdentifierÍ4?Í4C¤huksKªIdentifierÍ4DÍ4Q­HuksKeyDigestÂÂKªIdentifierÍ4RÍ4d²HUKS_DIGEST_SHA256ÂÂ¤initO³ExpressionStatementÍ4yÍ4óP´AssignmentExpressionÍ4yÍ4ò¡=Q°MemberExpressionÍ4yÍ4~KªIdentifierÍ4yÍ4{¢r4S§LiteralÍ4|Í4}¡3ÃÂ_°ObjectExpressionÍ4Í4ò’`¨PropertyÍ4Í4¹ÂÂÂKªIdentifierÍ4Í4’£tagQ°MemberExpressionÍ4”Í4¹Q°MemberExpressionÍ4”Í4 KªIdentifierÍ4”Í4˜¤huksKªIdentifierÍ4™Í4 §HuksTagÂÂKªIdentifierÍ4¡Í4¹¸HUKS_TAG_DERIVE_KEY_SIZEÂÂ¤init`¨PropertyÍ4ÇÍ4çÂÂÂKªIdentifierÍ4ÇÍ4Ì¥valueQ°MemberExpressionÍ4ÎÍ4çR®ThisExpressionÍ4ÎÍ4ÒKªIdentifierÍ4ÓÍ4ç´huksKeyDeriveKeySizeÂÂ¤initO³ExpressionStatementÍ4üÍ5gP´AssignmentExpressionÍ4üÍ5f¡=Q°MemberExpressionÍ4üÍ5R®ThisExpressionÍ4üÍ5 KªIdentifierÍ5Í5«initOptionsÂÂ_°ObjectExpressionÍ5Í5f’`¨PropertyÍ5Í5+ÂÂÂKªIdentifierÍ5Í5'ªpropertiesKªIdentifierÍ5)Í5+¢r4¤init`¨PropertyÍ59Í5\ÂÂÂKªIdentifierÍ59Í5?¦inDataY­NewExpressionÍ5AÍ5\KªIdentifierÍ5EÍ5OªUint8Array‘Y­NewExpressionÍ5PÍ5[KªIdentifierÍ5TÍ5Y¥Array¤initW³VariableDeclarationÍ5pÍ5…‘X²VariableDeclaratorÍ5tÍ5„KªIdentifierÍ5tÍ5v¢s4Y­NewExpressionÍ5yÍ5„KªIdentifierÍ5}Í5‚¥Array£letO³ExpressionStatementÍ5Í65P´AssignmentExpressionÍ5Í64¡=Q°MemberExpressionÍ5Í5“KªIdentifierÍ5Í5¢s4S§LiteralÍ5‘Í5’ ¡0ÃÂ_°ObjectExpressionÍ5–Í64’`¨PropertyÍ5¤Í5ŞÂÂÂKªIdentifierÍ5¤Í5§£tagQ°MemberExpressionÍ5©Í5ŞQ°MemberExpressionÍ5©Í5µKªIdentifierÍ5©Í5­¤huksKªIdentifierÍ5®Í5µ§HuksTagÂÂKªIdentifierÍ5¶Í5ŞÙ(HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAGÂÂ¤init`¨PropertyÍ5ìÍ6)ÂÂÂKªIdentifierÍ5ìÍ5ñ¥valueQ°MemberExpressionÍ5óÍ6)Q°MemberExpressionÍ5óÍ6
+KªIdentifierÍ5óÍ5÷¤huksKªIdentifierÍ5øÍ6
+²HuksKeyStorageTypeÂÂKªIdentifierÍ6Í6)¾HUKS_STORAGE_ONLY_USED_IN_HUKSÂÂ¤initO³ExpressionStatementÍ6>Í6 P´AssignmentExpressionÍ6>Í6Ÿ¡=Q°MemberExpressionÍ6>Í6CKªIdentifierÍ6>Í6@¢s4S§LiteralÍ6AÍ6B¡1ÃÂ_°ObjectExpressionÍ6FÍ6Ÿ’`¨PropertyÍ6TÍ6{ÂÂÂKªIdentifierÍ6TÍ6W£tagQ°MemberExpressionÍ6YÍ6{Q°MemberExpressionÍ6YÍ6eKªIdentifierÍ6YÍ6]¤huksKªIdentifierÍ6^Í6e§HuksTagÂÂKªIdentifierÍ6fÍ6{µHUKS_TAG_IS_KEY_ALIASÂÂ¤init`¨PropertyÍ6‰Í6”ÂÂÂKªIdentifierÍ6‰Í6¥valueS§LiteralÍ6Í6”Ã¤true¤initO³ExpressionStatementÍ6©Í7 P´AssignmentExpressionÍ6©Í7¡=Q°MemberExpressionÍ6©Í6®KªIdentifierÍ6©Í6«¢s4S§LiteralÍ6¬Í6­¡2ÃÂ_°ObjectExpressionÍ6±Í7’`¨PropertyÍ6¿Í6ãÂÂÂKªIdentifierÍ6¿Í6Â£tagQ°MemberExpressionÍ6ÄÍ6ãQ°MemberExpressionÍ6ÄÍ6ĞKªIdentifierÍ6ÄÍ6È¤huksKªIdentifierÍ6ÉÍ6Ğ§HuksTagÂÂKªIdentifierÍ6ÑÍ6ã²HUKS_TAG_ALGORITHMÂÂ¤init`¨PropertyÍ6ñÍ7ÂÂÂKªIdentifierÍ6ñÍ6ö¥valueQ°MemberExpressionÍ6øÍ7Q°MemberExpressionÍ6øÍ7KªIdentifierÍ6øÍ6ü¤huksKªIdentifierÍ6ıÍ7ªHuksKeyAlgÂÂKªIdentifierÍ7Í7¬HUKS_ALG_AESÂÂ¤initO³ExpressionStatementÍ7)Í7©P´AssignmentExpressionÍ7)Í7¨¡=Q°MemberExpressionÍ7)Í7.KªIdentifierÍ7)Í7+¢s4S§LiteralÍ7,Í7-¡3ÃÂ_°ObjectExpressionÍ71Í7¨’`¨PropertyÍ7?Í7bÂÂÂKªIdentifierÍ7?Í7B£tagQ°MemberExpressionÍ7DÍ7bQ°MemberExpressionÍ7DÍ7PKªIdentifierÍ7DÍ7H¤huksKªIdentifierÍ7IÍ7P§HuksTagÂÂKªIdentifierÍ7QÍ7b±HUKS_TAG_KEY_SIZEÂÂ¤init`¨PropertyÍ7pÍ7ÂÂÂKªIdentifierÍ7pÍ7u¥valueQ°MemberExpressionÍ7wÍ7Q°MemberExpressionÍ7wÍ7‡KªIdentifierÍ7wÍ7{¤huksKªIdentifierÍ7|Í7‡«HuksKeySizeÂÂKªIdentifierÍ7ˆÍ7µHUKS_AES_KEY_SIZE_256ÂÂ¤initO³ExpressionStatementÍ7²Í8vP´AssignmentExpressionÍ7²Í8u¡=Q°MemberExpressionÍ7²Í7·KªIdentifierÍ7²Í7´¢s4S§LiteralÍ7µÍ7¶¡4ÃÂ_°ObjectExpressionÍ7ºÍ8u’`¨PropertyÍ7ÈÍ7êÂÂÂKªIdentifierÍ7ÈÍ7Ë£tagQ°MemberExpressionÍ7ÍÍ7êQ°MemberExpressionÍ7ÍÍ7ÙKªIdentifierÍ7ÍÍ7Ñ¤huksKªIdentifierÍ7ÒÍ7Ù§HuksTagÂÂKªIdentifierÍ7ÚÍ7ê°HUKS_TAG_PURPOSEÂÂ¤init`¨PropertyÍ7øÍ8jÂÂÂKªIdentifierÍ7øÍ7ı¥valueU°BinaryExpressionÍ7ÿÍ8jQ°MemberExpressionÍ7ÿÍ8+Q°MemberExpressionÍ7ÿÍ8KªIdentifierÍ7ÿÍ8¤huksKªIdentifierÍ8Í8®HuksKeyPurposeÂÂKªIdentifierÍ8Í8+¸HUKS_KEY_PURPOSE_ENCRYPTÂÂ¡|Q°MemberExpressionÍ8>Í8jQ°MemberExpressionÍ8>Í8QKªIdentifierÍ8>Í8B¤huksKªIdentifierÍ8CÍ8Q®HuksKeyPurposeÂÂKªIdentifierÍ8RÍ8j¸HUKS_KEY_PURPOSE_DECRYPTÂÂ¤initO³ExpressionStatementÍ8Í8üP´AssignmentExpressionÍ8Í8û¡=Q°MemberExpressionÍ8Í8„KªIdentifierÍ8Í8¢s4S§LiteralÍ8‚Í8ƒ¡5ÃÂ_°ObjectExpressionÍ8‡Í8û’`¨PropertyÍ8•Í8¶ÂÂÂKªIdentifierÍ8•Í8˜£tagQ°MemberExpressionÍ8šÍ8¶Q°MemberExpressionÍ8šÍ8¦KªIdentifierÍ8šÍ8¤huksKªIdentifierÍ8ŸÍ8¦§HuksTagÂÂKªIdentifierÍ8§Í8¶¯HUKS_TAG_DIGESTÂÂ¤init`¨PropertyÍ8ÄÍ8ğÂÂÂKªIdentifierÍ8ÄÍ8É¥valueQ°MemberExpressionÍ8ËÍ8ğQ°MemberExpressionÍ8ËÍ8İKªIdentifierÍ8ËÍ8Ï¤huksKªIdentifierÍ8ĞÍ8İ­HuksKeyDigestÂÂKªIdentifierÍ8ŞÍ8ğ²HUKS_DIGEST_SHA256ÂÂ¤initO³ExpressionStatementÍ9Í9ˆP´AssignmentExpressionÍ9Í9‡¡=Q°MemberExpressionÍ9Í9
+KªIdentifierÍ9Í9¢s4S§LiteralÍ9Í9	¡6ÃÂ_°ObjectExpressionÍ9Í9‡’`¨PropertyÍ9Í9?ÂÂÂKªIdentifierÍ9Í9£tagQ°MemberExpressionÍ9 Í9?Q°MemberExpressionÍ9 Í9,KªIdentifierÍ9 Í9$¤huksKªIdentifierÍ9%Í9,§HuksTagÂÂKªIdentifierÍ9-Í9?²HUKS_TAG_KEY_ALIASÂÂ¤init`¨PropertyÍ9MÍ9|ÂÂÂKªIdentifierÍ9MÍ9R¥valueV®CallExpressionÍ9TÍ9|Q°MemberExpressionÍ9TÍ9rKªIdentifierÍ9TÍ9_«HuksManagerKªIdentifierÍ9`Í9r²stringToUint8ArrayÂÂ‘KªIdentifierÍ9sÍ9{¨keyAliasÂ¤initO³ExpressionStatementÍ9‘Í:P´AssignmentExpressionÍ9‘Í:¡=Q°MemberExpressionÍ9‘Í9–KªIdentifierÍ9‘Í9“¢s4S§LiteralÍ9”Í9•¡7ÃÂ_°ObjectExpressionÍ9™Í:’`¨PropertyÍ9§Í9ÉÂÂÂKªIdentifierÍ9§Í9ª£tagQ°MemberExpressionÍ9¬Í9ÉQ°MemberExpressionÍ9¬Í9¸KªIdentifierÍ9¬Í9°¤huksKªIdentifierÍ9±Í9¸§HuksTagÂÂKªIdentifierÍ9¹Í9É°HUKS_TAG_PADDINGÂÂ¤init`¨PropertyÍ9×Í:ÂÂÂKªIdentifierÍ9×Í9Ü¥valueQ°MemberExpressionÍ9ŞÍ:Q°MemberExpressionÍ9ŞÍ9ñKªIdentifierÍ9ŞÍ9â¤huksKªIdentifierÍ9ãÍ9ñ®HuksKeyPaddingÂÂKªIdentifierÍ9òÍ:±HUKS_PADDING_NONEÂÂ¤initO³ExpressionStatementÍ:Í:•P´AssignmentExpressionÍ:Í:”¡=Q°MemberExpressionÍ:Í:KªIdentifierÍ:Í:¢s4S§LiteralÍ:Í:¡8ÃÂ_°ObjectExpressionÍ: Í:”’`¨PropertyÍ:.Í:SÂÂÂKªIdentifierÍ:.Í:1£tagQ°MemberExpressionÍ:3Í:SQ°MemberExpressionÍ:3Í:?KªIdentifierÍ:3Í:7¤huksKªIdentifierÍ:8Í:?§HuksTagÂÂKªIdentifierÍ:@Í:S³HUKS_TAG_BLOCK_MODEÂÂ¤init`¨PropertyÍ:aÍ:‰ÂÂÂKªIdentifierÍ:aÍ:f¥valueQ°MemberExpressionÍ:hÍ:‰Q°MemberExpressionÍ:hÍ:{KªIdentifierÍ:hÍ:l¤huksKªIdentifierÍ:mÍ:{®HuksCipherModeÂÂKªIdentifierÍ:|Í:‰­HUKS_MODE_GCMÂÂ¤initO³ExpressionStatementÍ:Í;P´AssignmentExpressionÍ:Í;
+¡=Q°MemberExpressionÍ:Í:°R®ThisExpressionÍ:Í:¢KªIdentifierÍ:£Í:°­finishOptionsÂÂ_°ObjectExpressionÍ:³Í;
+’`¨PropertyÍ:ÁÍ:ÏÂÂÂKªIdentifierÍ:ÁÍ:ËªpropertiesKªIdentifierÍ:ÍÍ:Ï¢s4¤init`¨PropertyÍ:İÍ; ÂÂÂKªIdentifierÍ:İÍ:ã¦inDataY­NewExpressionÍ:åÍ; KªIdentifierÍ:éÍ:óªUint8Array‘Y­NewExpressionÍ:ôÍ:ÿKªIdentifierÍ:øÍ:ı¥Array¤initM°MethodDefinitionÍ;Í=„ÂÂKªIdentifierÍ;Í;'«hasKeyAlies¦methodN²FunctionExpressionÍ;'Í=„ÀÂÂÃ‘KªIdentifierÍ;(Í;*¢m4L®BlockStatementÍ;,Í=„’W³VariableDeclarationÍ;6Í;o‘X²VariableDeclaratorÍ;:Í;nKªIdentifierÍ;:Í;E«huksOptions_°ObjectExpressionÍ;HÍ;n‘`¨PropertyÍ;VÍ;dÂÂÂKªIdentifierÍ;VÍ;`ªpropertiesd¯ArrayExpressionÍ;bÍ;d¤init£letT¯ReturnStatementÍ;xÍ=~Y­NewExpressionÍ;Í=}KªIdentifierÍ;ƒÍ;Š§Promise‘N·ArrowFunctionExpressionÍ;‹Í=|ÀÂÂÂ’KªIdentifierÍ;ŒÍ;¢o4KªIdentifierÍ;Í;’¢p4L®BlockStatementÍ;—Í=|‘a¬TryStatementÍ;¥Í=rL®BlockStatementÍ;©Í=-‘O³ExpressionStatementÍ;»Í=V®CallExpressionÍ;»Í=Q°MemberExpressionÍ;»Í;ÊKªIdentifierÍ;»Í;¿¤huksKªIdentifierÍ;ÀÍ;ÊªhasKeyItemÂÂ“KªIdentifierÍ;ËÍ;Í¢m4KªIdentifierÍ;ÏÍ;Ú«huksOptionsN·ArrowFunctionExpressionÍ;ÜÍ=ÀÂÂÂ’KªIdentifierÍ;İÍ;â¥errorKªIdentifierÍ;äÍ;è¤dataL®BlockStatementÍ;íÍ=‘b«IfStatementÍ<Í=KªIdentifierÍ<Í<¥errorL®BlockStatementÍ<Í<H‘O³ExpressionStatementÍ<(Í<2V®CallExpressionÍ<(Í<1KªIdentifierÍ<(Í<*¢p4‘KªIdentifierÍ<+Í<0¥errorÂL®BlockStatementÍ<bÍ=‘b«IfStatementÍ<|Í<õU±LogicalExpressionÍ<€Í<¨U°BinaryExpressionÍ<€Í<KªIdentifierÍ<€Í<„¤data£!==S§LiteralÍ<‰Í<À¤null¢&&U°BinaryExpressionÍ<‘Í<¨V®CallExpressionÍ<‘Í<ŸQ°MemberExpressionÍ<‘Í<KªIdentifierÍ<‘Í<•¤dataKªIdentifierÍ<–Í<§valueOfÂÂÂ£!==S§LiteralÍ<¤Í<¨À¤nullL®BlockStatementÍ<ªÍ<õ‘O³ExpressionStatementÍ<ÈÍ<ÛV®CallExpressionÍ<ÈÍ<ÚKªIdentifierÍ<ÈÍ<Ê¢o4‘V®CallExpressionÍ<ËÍ<ÙQ°MemberExpressionÍ<ËÍ<×KªIdentifierÍ<ËÍ<Ï¤dataKªIdentifierÍ<ĞÍ<×§valueOfÂÂÂÂÀÂc«CatchClauseÍ=:Í=rKªIdentifierÍ=AÍ=F¥errorL®BlockStatementÍ=HÍ=r‘O³ExpressionStatementÍ=ZÍ=dV®CallExpressionÍ=ZÍ=cKªIdentifierÍ=ZÍ=\¢p4‘KªIdentifierÍ=]Í=b¥errorÂÀÀ’Ôre•¤type¥start£endªspecifiers¦source±ImportDeclaration '‘Ôrf”¤type¥start£end¥local¶ImportDefaultSpecifierKªIdentifier¤huksS§Literal&³@ohos.security.huksµ"@ohos.security.huks"e±ImportDeclaration(ÌH‘Ôrg•¤type¥start£end¨imported¥local¯ImportSpecifier19KªIdentifier19¨AuthImplKªIdentifier19¨AuthImplS§LiteralÌAÌG¤../a¦"../a"

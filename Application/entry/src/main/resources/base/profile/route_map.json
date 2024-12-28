@@ -1,0 +1,76 @@
+{
+  "routerMap": [
+    {
+      "name": "addChild",
+      "pageSourceFile": "src/main/ets/pages/AddChild.ets",
+      "buildFunction": "PageBuilder",
+      "data": {
+        "description": "this is addChild"
+      }
+    },
+    {
+      "name": "addCategory",
+      "pageSourceFile": "src/main/ets/pages/AddCategory.ets",
+      "buildFunction": "PageBuilder",
+      "data": {
+        "description": "this is addCategory"
+      }
+    },
+    {
+      "name": "addAlbum",
+      "pageSourceFile": "src/main/ets/pages/AddAlbum.ets",
+      "buildFunction": "PageBuilder",
+      "data": {
+        "description": "this is addAlbum"
+      }
+    },
+    {
+      "name": "addPicture",
+      "pageSourceFile": "src/main/ets/pages/AddPicture.ets",
+      "buildFunction": "PageBuilder",
+      "data": {
+        "description": "this is addPicture"
+      }
+    },
+    {
+      "name": "albumDetail",
+      "pageSourceFile": "src/main/ets/pages/AlbumDetail.ets",
+      "buildFunction": "PageBuilder",
+      "data": {
+        "description": "this is albumDetail"
+      }
+    },
+    {
+      "name": "listChild",
+      "pageSourceFile": "src/main/ets/pages/ListChild.ets",
+      "buildFunction": "PageBuilder",
+      "data": {
+        "description": "this is listChild"
+      }
+    },
+    {
+      "name": "listAlbum",
+      "pageSourceFile": "src/main/ets/pages/ListAlbum.ets",
+      "buildFunction": "PageBuilder",
+      "data": {
+        "description": "this is listAlbum"
+      }
+    },
+    {
+      "name": "listCategory",
+      "pageSourceFile": "src/main/ets/pages/ListCategory.ets",
+      "buildFunction": "PageBuilder",
+      "data": {
+        "description": "this is listCategory"
+      }
+    },
+    {
+      "name": "pictureDetail",
+      "pageSourceFile": "src/main/ets/pages/PictureDetail.ets",
+      "buildFunction": "PageBuilder",
+      "data": {
+        "description": "this is pictureDetail"
+      }
+    }
+  ]
+}

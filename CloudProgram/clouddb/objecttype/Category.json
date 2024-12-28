@@ -1,0 +1,80 @@
+{
+  "objectTypeName": "Category",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": true
+    },
+    {
+      "fieldName": "userId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive":false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "name",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createTime",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "sort",
+      "fieldType": "Integer",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": false,
+      "defaultValue": 0
+    }
+  ],
+  "indexes": [
+    {
+      "indexName": "createTime",
+      "indexList": [{ "fieldName": "createTime", "sortType": "DESC" }]
+    },
+    {
+      "indexName": "sort",
+      "indexList": [{ "fieldName": "sort", "sortType": "DESC" }]
+    }
+  ],
+  "permissions": [
+    {
+        "role": "World", "rights": ["Read"]
+      },
+      {
+        "role": "Authenticated", "rights": ["Read"]
+      },
+      {
+        "role": "Creator", "rights": ["Read", "Upsert", "Delete"]
+      },
+      {
+        "role": "Administrator", "rights": ["Read", "Upsert", "Delete"]
+      }
+  ]
+} 

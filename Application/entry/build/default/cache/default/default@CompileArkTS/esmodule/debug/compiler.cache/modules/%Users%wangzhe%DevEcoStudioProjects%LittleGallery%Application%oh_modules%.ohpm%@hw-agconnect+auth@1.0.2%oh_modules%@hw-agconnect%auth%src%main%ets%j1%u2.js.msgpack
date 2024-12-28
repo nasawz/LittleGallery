@@ -1,0 +1,494 @@
+Ôr@Ÿªassertions¤code´customTransformCache¬dependencies¢id¤meta±moduleSideEffects¬originalCode±originalSourcemap«resolvedIds®sourcemapChainµsyntheticNamedExportsµtransformDependencies®transformFiles¨cacheAstÔrAÚ°import { AuthImpl } from "../a";
+import { Logger } from "../e1/f1/g1";
+import { FileStored } from "./k4";
+import { HuksManager } from "./t2";
+import { Preferences } from "./l4";
+import { Random } from "./m4";
+const TAG = 'StoredManager';
+export class StoredManager {
+    constructor(name, region, keyAlias) {
+        this.DEFAULT_FILE_NAME = 'auth_storedManager';
+        this.huskManager = new HuksManager();
+        this.name = name;
+        this.region = region;
+        if (keyAlias) {
+            this.keyAlias = keyAlias;
+        }
+    }
+    async saveToPfStorage(m7) {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (m7 == null) {
+            Logger.info(TAG, 'clear storage user');
+            return Promise.resolve();
+        }
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = Random.getRandom(8);
+            let iv = Random.getRandom(6);
+            let encrypt = await this.huskManager.encryptData(m7, this.keyAlias, nonce, iv);
+            await Preferences.put(context, fileName, key, encrypt);
+            await Preferences.put(context, fileName, 'nonce', nonce);
+            await Preferences.put(context, fileName, 'iv', iv);
+        }
+        else {
+            let key = this.name + '_sp';
+            await Preferences.put(context, fileName, key, m7);
+        }
+        return Promise.resolve();
+    }
+    async loadFromPfStorage() {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = await Preferences.get(context, fileName, 'nonce');
+            let iv = await Preferences.get(context, fileName, 'iv');
+            let k7 = await Preferences.get(context, fileName, key);
+            let l7 = await this.huskManager.decryptData(k7, this.keyAlias, nonce, iv);
+            if (k7 && l7) {
+                return Promise.resolve(l7);
+            }
+            return Promise.resolve(null);
+        }
+        else {
+            let key = this.name + '_sp';
+            let data = await Preferences.get(context, fileName, key);
+            if (data) {
+                return Promise.resolve(data);
+            }
+            return Promise.resolve(null);
+        }
+    }
+    async deletePfData() {
+        let key = '';
+        if (this.keyAlias) {
+            key = this.name + '_' + this.keyAlias;
+        }
+        else {
+            key = this.name + '_sp';
+        }
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        return Preferences.delete(context, fileName, key);
+    }
+    async saveToFileStorage(j7) {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (j7 == null) {
+            Logger.info(TAG, 'clear storage user');
+            return Promise.resolve();
+        }
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = Random.getRandom(8);
+            let iv = Random.getRandom(6);
+            let encrypt = await this.huskManager.encryptData(j7, this.keyAlias, nonce, iv);
+            await FileStored.writeFile(context, fileName, key, HuksManager.uint8ArrayToString(encrypt));
+            await FileStored.writeFile(context, fileName, 'nonce', nonce);
+            await FileStored.writeFile(context, fileName, 'iv', iv);
+        }
+        else {
+            let key = this.name + '_fs';
+            await FileStored.writeFile(context, fileName, key, j7);
+        }
+        return Promise.resolve();
+    }
+    async loadFromFileStorage() {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = await FileStored.readFile(context, fileName, 'nonce');
+            let iv = await FileStored.readFile(context, fileName, 'iv');
+            let h7 = await FileStored.readFile(context, fileName, key);
+            let i7 = await this.huskManager.decryptData(HuksManager.stringToUint8Array(h7), this.keyAlias, nonce, iv);
+            if (h7 && i7) {
+                return Promise.resolve(i7);
+            }
+            return Promise.resolve(null);
+        }
+        else {
+            let key = this.name + '_fs';
+            let data = await FileStored.readFile(context, fileName, key).toString();
+            if (data) {
+                return Promise.resolve(data);
+            }
+            return Promise.resolve(null);
+        }
+    }
+    async deleteFileData() {
+        let key = '';
+        if (this.keyAlias) {
+            key = this.name + '_' + this.keyAlias;
+        }
+        else {
+            key = this.name + '_fs';
+        }
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        return FileStored.deleteFile(context, fileName, key);
+    }
+}
+Â–Ù—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/a.jsÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/f1/g1.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/k4.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/t2.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/l4.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/m4.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/u2.jsÔrB™±isLocalDependency¯isNodeEntryFile§pkgPath§pkgNameªpkgVersion±belongProjectPath±dependencyPkgInfo¨commonjs¯hostModulesInfoÂÂÙ…/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth²@hw-agconnect/auth¥1.0.2Ù=/Users/wangzhe/DevEcoStudioProjects/LittleGallery/ApplicationÔrC’§pkgNameªpkgVersion²@hw-agconnect/auth¥1.0.2ÔrD’¯hasNamedExportsªisCommonJSÃÂÃÚ°import { AuthImpl } from "../a";
+import { Logger } from "../e1/f1/g1";
+import { FileStored } from "./k4";
+import { HuksManager } from "./t2";
+import { Preferences } from "./l4";
+import { Random } from "./m4";
+const TAG = 'StoredManager';
+export class StoredManager {
+    constructor(name, region, keyAlias) {
+        this.DEFAULT_FILE_NAME = 'auth_storedManager';
+        this.huskManager = new HuksManager();
+        this.name = name;
+        this.region = region;
+        if (keyAlias) {
+            this.keyAlias = keyAlias;
+        }
+    }
+    async saveToPfStorage(m7) {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (m7 == null) {
+            Logger.info(TAG, 'clear storage user');
+            return Promise.resolve();
+        }
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = Random.getRandom(8);
+            let iv = Random.getRandom(6);
+            let encrypt = await this.huskManager.encryptData(m7, this.keyAlias, nonce, iv);
+            await Preferences.put(context, fileName, key, encrypt);
+            await Preferences.put(context, fileName, 'nonce', nonce);
+            await Preferences.put(context, fileName, 'iv', iv);
+        }
+        else {
+            let key = this.name + '_sp';
+            await Preferences.put(context, fileName, key, m7);
+        }
+        return Promise.resolve();
+    }
+    async loadFromPfStorage() {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = await Preferences.get(context, fileName, 'nonce');
+            let iv = await Preferences.get(context, fileName, 'iv');
+            let k7 = await Preferences.get(context, fileName, key);
+            let l7 = await this.huskManager.decryptData(k7, this.keyAlias, nonce, iv);
+            if (k7 && l7) {
+                return Promise.resolve(l7);
+            }
+            return Promise.resolve(null);
+        }
+        else {
+            let key = this.name + '_sp';
+            let data = await Preferences.get(context, fileName, key);
+            if (data) {
+                return Promise.resolve(data);
+            }
+            return Promise.resolve(null);
+        }
+    }
+    async deletePfData() {
+        let key = '';
+        if (this.keyAlias) {
+            key = this.name + '_' + this.keyAlias;
+        }
+        else {
+            key = this.name + '_sp';
+        }
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        return Preferences.delete(context, fileName, key);
+    }
+    async saveToFileStorage(j7) {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (j7 == null) {
+            Logger.info(TAG, 'clear storage user');
+            return Promise.resolve();
+        }
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = Random.getRandom(8);
+            let iv = Random.getRandom(6);
+            let encrypt = await this.huskManager.encryptData(j7, this.keyAlias, nonce, iv);
+            await FileStored.writeFile(context, fileName, key, HuksManager.uint8ArrayToString(encrypt));
+            await FileStored.writeFile(context, fileName, 'nonce', nonce);
+            await FileStored.writeFile(context, fileName, 'iv', iv);
+        }
+        else {
+            let key = this.name + '_fs';
+            await FileStored.writeFile(context, fileName, key, j7);
+        }
+        return Promise.resolve();
+    }
+    async loadFromFileStorage() {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = await FileStored.readFile(context, fileName, 'nonce');
+            let iv = await FileStored.readFile(context, fileName, 'iv');
+            let h7 = await FileStored.readFile(context, fileName, key);
+            let i7 = await this.huskManager.decryptData(HuksManager.stringToUint8Array(h7), this.keyAlias, nonce, iv);
+            if (h7 && i7) {
+                return Promise.resolve(i7);
+            }
+            return Promise.resolve(null);
+        }
+        else {
+            let key = this.name + '_fs';
+            let data = await FileStored.readFile(context, fileName, key).toString();
+            if (data) {
+                return Promise.resolve(data);
+            }
+            return Promise.resolve(null);
+        }
+    }
+    async deleteFileData() {
+        let key = '';
+        if (this.keyAlias) {
+            key = this.name + '_' + this.keyAlias;
+        }
+        else {
+            key = this.name + '_fs';
+        }
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        return FileStored.deleteFile(context, fileName, key);
+    }
+}
+ÔrE•§version¨mappings¥names§sources®sourcesContentÜ …‘”    ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”  	 ‘”  
+ ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”    ‘”  ! ‘”  " ‘”  # ‘”  $ ‘”  % ‘”  & ‘”  ' ‘”  ( ‘”  ) ‘”  * ‘”  + ‘”  , ‘”  - ‘”  . ‘”  / ‘”  0 ‘”  1 ‘”  2 ‘”  3 ‘”  4 ‘”  5 ‘”  6 ‘”  7 ‘”  8 ‘”  9 ‘”  : ‘”  ; ‘”  < ‘”  = ‘”  > ‘”  ? ‘”  Ì@ ‘”  ÌA ‘”  ÌB ‘”  ÌC ‘”  ÌD ‘”  ÌE ‘”  ÌF ‘”  ÌG ‘”  ÌH ‘”  ÌI ‘”  ÌJ ‘”  ÌK ‘”  ÌL ‘”  ÌM ‘”  ÌN ‘”  ÌO ‘”  ÌP ‘”  ÌQ ‘”  ÌR ‘”  ÌS ‘”  ÌT ‘”  ÌU ‘”  ÌV ‘”  ÌW ‘”  ÌX ‘”  ÌY ‘”  ÌZ ‘”  Ì[ ‘”  Ì\ ‘”  Ì] ‘”  Ì^ ‘”  Ì_ ‘”  Ì` ‘”  Ìa ‘”  Ìb ‘”  Ìc ‘”  Ìd ‘”  Ìe ‘”  Ìf ‘”  Ìg ‘”  Ìh ‘”  Ìi ‘”  Ìj ‘”  Ìk ‘”  Ìl ‘”  Ìm ‘”  Ìn ‘”  Ìo ‘”  Ìp ‘”  Ìq ‘”  Ìr ‘”  Ìs ‘”  Ìt ‘”  Ìu ‘”  Ìv ‘”  Ìw ‘”  Ìx ‘”  Ìy ‘”  Ìz ‘”  Ì{ ‘”  Ì| ‘”  Ì} ‘”  Ì~ ‘”  Ì ‘”  Ì€ ‘”  Ì ‘”  Ì‚ ‘”  Ìƒ ‘Ù›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/u2.js‘Ú°import { AuthImpl } from "../a";
+import { Logger } from "../e1/f1/g1";
+import { FileStored } from "./k4";
+import { HuksManager } from "./t2";
+import { Preferences } from "./l4";
+import { Random } from "./m4";
+const TAG = 'StoredManager';
+export class StoredManager {
+    constructor(name, region, keyAlias) {
+        this.DEFAULT_FILE_NAME = 'auth_storedManager';
+        this.huskManager = new HuksManager();
+        this.name = name;
+        this.region = region;
+        if (keyAlias) {
+            this.keyAlias = keyAlias;
+        }
+    }
+    async saveToPfStorage(m7) {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (m7 == null) {
+            Logger.info(TAG, 'clear storage user');
+            return Promise.resolve();
+        }
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = Random.getRandom(8);
+            let iv = Random.getRandom(6);
+            let encrypt = await this.huskManager.encryptData(m7, this.keyAlias, nonce, iv);
+            await Preferences.put(context, fileName, key, encrypt);
+            await Preferences.put(context, fileName, 'nonce', nonce);
+            await Preferences.put(context, fileName, 'iv', iv);
+        }
+        else {
+            let key = this.name + '_sp';
+            await Preferences.put(context, fileName, key, m7);
+        }
+        return Promise.resolve();
+    }
+    async loadFromPfStorage() {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = await Preferences.get(context, fileName, 'nonce');
+            let iv = await Preferences.get(context, fileName, 'iv');
+            let k7 = await Preferences.get(context, fileName, key);
+            let l7 = await this.huskManager.decryptData(k7, this.keyAlias, nonce, iv);
+            if (k7 && l7) {
+                return Promise.resolve(l7);
+            }
+            return Promise.resolve(null);
+        }
+        else {
+            let key = this.name + '_sp';
+            let data = await Preferences.get(context, fileName, key);
+            if (data) {
+                return Promise.resolve(data);
+            }
+            return Promise.resolve(null);
+        }
+    }
+    async deletePfData() {
+        let key = '';
+        if (this.keyAlias) {
+            key = this.name + '_' + this.keyAlias;
+        }
+        else {
+            key = this.name + '_sp';
+        }
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        return Preferences.delete(context, fileName, key);
+    }
+    async saveToFileStorage(j7) {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (j7 == null) {
+            Logger.info(TAG, 'clear storage user');
+            return Promise.resolve();
+        }
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = Random.getRandom(8);
+            let iv = Random.getRandom(6);
+            let encrypt = await this.huskManager.encryptData(j7, this.keyAlias, nonce, iv);
+            await FileStored.writeFile(context, fileName, key, HuksManager.uint8ArrayToString(encrypt));
+            await FileStored.writeFile(context, fileName, 'nonce', nonce);
+            await FileStored.writeFile(context, fileName, 'iv', iv);
+        }
+        else {
+            let key = this.name + '_fs';
+            await FileStored.writeFile(context, fileName, key, j7);
+        }
+        return Promise.resolve();
+    }
+    async loadFromFileStorage() {
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        if (this.keyAlias) {
+            let key = this.name + '_' + this.keyAlias;
+            let nonce = await FileStored.readFile(context, fileName, 'nonce');
+            let iv = await FileStored.readFile(context, fileName, 'iv');
+            let h7 = await FileStored.readFile(context, fileName, key);
+            let i7 = await this.huskManager.decryptData(HuksManager.stringToUint8Array(h7), this.keyAlias, nonce, iv);
+            if (h7 && i7) {
+                return Promise.resolve(i7);
+            }
+            return Promise.resolve(null);
+        }
+        else {
+            let key = this.name + '_fs';
+            let data = await FileStored.readFile(context, fileName, key).toString();
+            if (data) {
+                return Promise.resolve(data);
+            }
+            return Promise.resolve(null);
+        }
+    }
+    async deleteFileData() {
+        let key = '';
+        if (this.keyAlias) {
+            key = this.name + '_' + this.keyAlias;
+        }
+        else {
+            key = this.name + '_fs';
+        }
+        let context = AuthImpl.getInstance().appContext;
+        let fileName = this.DEFAULT_FILE_NAME + '_' + this.region + '_' + this.name;
+        return FileStored.deleteFile(context, fileName, key);
+    }
+}
+ÔrF–¤../a«../e1/f1/g1¤./t2¤./k4¤./m4¤./l4ÔrG—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÂÙ—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/a.jsAÃªoh-resolveÂGAÂÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/f1/g1.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/t2.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/k4.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/m4.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/l4.jsAÃªoh-resolveÂÂÔ  ÔrH”²dynamicImportCache¹exportAllDeclarationCache»exportNamedDeclarationCache«importCache‘ÔrI–¤type¥start£end«declarationªspecifiers¦source¶ExportNamedDeclarationÌîÍ¯ÔrJ–¤type¥start£end¢idªsuperClass¤body°ClassDeclarationÌõÍ¯ÔrK”¤type¥start£end¤nameªIdentifierÌûÍ­StoredManagerÀÔrL”¤type¥start£end¤body©ClassBodyÍ	Í¯—ÔrM˜¤type¥start£end¦static¨computed£key¤kind¥value°MethodDefinitionÍÍÂÂKªIdentifierÍÍ«constructor«constructorÔrN™¤type¥start£end¢idªexpression©generator¥async¦params¤body²FunctionExpressionÍÍÀÂÂÂ“KªIdentifierÍÍ¤nameKªIdentifierÍ!Í'¦regionKªIdentifierÍ)Í1¨keyAliasL®BlockStatementÍ3Í•ÔrO”¤type¥start£endªexpression³ExpressionStatementÍ=ÍkÔrP–¤type¥start£end¨operator¤left¥right´AssignmentExpressionÍ=Íj¡=ÔrQ—¤type¥start£end¦object¨property¨computed¨optional°MemberExpressionÍ=ÍSÔrR“¤type¥start£end®ThisExpressionÍ=ÍAKªIdentifierÍBÍS±DEFAULT_FILE_NAMEÂÂÔrS•¤type¥start£end¥value£raw§LiteralÍVÍj²auth_storedManager´'auth_storedManager'O³ExpressionStatementÍtÍ™P´AssignmentExpressionÍtÍ˜¡=Q°MemberExpressionÍtÍ„R®ThisExpressionÍtÍxKªIdentifierÍyÍ„«huskManagerÂÂÔrT•¤type¥start£end¦callee©arguments­NewExpressionÍ‡Í˜KªIdentifierÍ‹Í–«HuksManagerO³ExpressionStatementÍ¢Í³P´AssignmentExpressionÍ¢Í²¡=Q°MemberExpressionÍ¢Í«R®ThisExpressionÍ¢Í¦KªIdentifierÍ§Í«¤nameÂÂKªIdentifierÍ®Í²¤nameO³ExpressionStatementÍ¼ÍÑP´AssignmentExpressionÍ¼ÍĞ¡=Q°MemberExpressionÍ¼ÍÇR®ThisExpressionÍ¼ÍÀKªIdentifierÍÁÍÇ¦regionÂÂKªIdentifierÍÊÍĞ¦regionÔrU–¤type¥start£end¤testªconsequent©alternate«IfStatementÍÚÍKªIdentifierÍŞÍæ¨keyAliasL®BlockStatementÍèÍ‘O³ExpressionStatementÍöÍP´AssignmentExpressionÍöÍ¡=Q°MemberExpressionÍöÍR®ThisExpressionÍöÍúKªIdentifierÍûÍ¨keyAliasÂÂKªIdentifierÍÍ¨keyAliasÀM°MethodDefinitionÍ$ÍÏÂÂKªIdentifierÍ*Í9¯saveToPfStorage¦methodN²FunctionExpressionÍ9ÍÏÀÂÂÃ‘KªIdentifierÍ:Í<¢m7L®BlockStatementÍ>ÍÏ•ÔrV•¤type¥start£end¬declarations¤kind³VariableDeclarationÍHÍx‘ÔrW•¤type¥start£end¢id¤init²VariableDeclaratorÍLÍwKªIdentifierÍLÍS§contextQ°MemberExpressionÍVÍwÔrX–¤type¥start£end¦callee©arguments¨optional®CallExpressionÍVÍlQ°MemberExpressionÍVÍjKªIdentifierÍVÍ^¨AuthImplKªIdentifierÍ_Íj«getInstanceÂÂÂKªIdentifierÍmÍwªappContextÂÂ£letV³VariableDeclarationÍÍÍ‘W²VariableDeclaratorÍ…ÍÌKªIdentifierÍ…Í¨fileNameÔrY–¤type¥start£end¤left¨operator¥right°BinaryExpressionÍÍÌY°BinaryExpressionÍÍÀY°BinaryExpressionÍÍºY°BinaryExpressionÍÍ¬Q°MemberExpressionÍÍ¦R®ThisExpressionÍÍ”KªIdentifierÍ•Í¦±DEFAULT_FILE_NAMEÂÂ¡+S§LiteralÍ©Í¬¡_£'_'¡+Q°MemberExpressionÍ¯ÍºR®ThisExpressionÍ¯Í³KªIdentifierÍ´Íº¦regionÂÂ¡+S§LiteralÍ½ÍÀ¡_£'_'¡+Q°MemberExpressionÍÃÍÌR®ThisExpressionÍÃÍÇKªIdentifierÍÈÍÌ¤nameÂÂ£letU«IfStatementÍÖÍKY°BinaryExpressionÍÚÍäKªIdentifierÍÚÍÜ¢m7¢==S§LiteralÍàÍäÀ¤nullL®BlockStatementÍæÍK’O³ExpressionStatementÍôÍX®CallExpressionÍôÍQ°MemberExpressionÍôÍÿKªIdentifierÍôÍú¦LoggerKªIdentifierÍûÍÿ¤infoÂÂ’KªIdentifierÍ Í£TAGS§LiteralÍÍ²clear storage user´'clear storage user'ÂÔrZ”¤type¥start£end¨argument¯ReturnStatementÍ(ÍAX®CallExpressionÍ/Í@Q°MemberExpressionÍ/Í>KªIdentifierÍ/Í6§PromiseKªIdentifierÍ7Í>§resolveÂÂÂÀU«IfStatementÍTÍ§Q°MemberExpressionÍXÍeR®ThisExpressionÍXÍ\KªIdentifierÍ]Íe¨keyAliasÂÂL®BlockStatementÍgÍ&—V³VariableDeclarationÍuÍŸ‘W²VariableDeclaratorÍyÍKªIdentifierÍyÍ|£keyY°BinaryExpressionÍÍY°BinaryExpressionÍÍQ°MemberExpressionÍÍˆR®ThisExpressionÍÍƒKªIdentifierÍ„Íˆ¤nameÂÂ¡+S§LiteralÍ‹Í¡_£'_'¡+Q°MemberExpressionÍ‘ÍR®ThisExpressionÍ‘Í•KªIdentifierÍ–Í¨keyAliasÂÂ£letV³VariableDeclarationÍ¬ÍÌ‘W²VariableDeclaratorÍ°ÍËKªIdentifierÍ°Íµ¥nonceX®CallExpressionÍ¸ÍËQ°MemberExpressionÍ¸ÍÈKªIdentifierÍ¸Í¾¦RandomKªIdentifierÍ¿ÍÈ©getRandomÂÂ‘S§LiteralÍÉÍÊ¡8Â£letV³VariableDeclarationÍÙÍö‘W²VariableDeclaratorÍİÍõKªIdentifierÍİÍß¢ivX®CallExpressionÍâÍõQ°MemberExpressionÍâÍòKªIdentifierÍâÍè¦RandomKªIdentifierÍéÍò©getRandomÂÂ‘S§LiteralÍóÍô¡6Â£letV³VariableDeclarationÍÍR‘W²VariableDeclaratorÍÍQKªIdentifierÍÍ§encryptZ¯AwaitExpressionÍÍQX®CallExpressionÍÍQQ°MemberExpressionÍÍ3Q°MemberExpressionÍÍ'R®ThisExpressionÍÍKªIdentifierÍÍ'«huskManagerÂÂKªIdentifierÍ(Í3«encryptDataÂÂ”KªIdentifierÍ4Í6¢m7Q°MemberExpressionÍ8ÍER®ThisExpressionÍ8Í<KªIdentifierÍ=ÍE¨keyAliasÂÂKªIdentifierÍGÍL¥nonceKªIdentifierÍNÍP¢ivÂ£letO³ExpressionStatementÍ_Í–Z¯AwaitExpressionÍ_Í•X®CallExpressionÍeÍ•Q°MemberExpressionÍeÍtKªIdentifierÍeÍp«PreferencesKªIdentifierÍqÍt£putÂÂ”KªIdentifierÍuÍ|§contextKªIdentifierÍ~Í†¨fileNameKªIdentifierÍˆÍ‹£keyKªIdentifierÍÍ”§encryptÂO³ExpressionStatementÍ£ÍÜZ¯AwaitExpressionÍ£ÍÛX®CallExpressionÍ©ÍÛQ°MemberExpressionÍ©Í¸KªIdentifierÍ©Í´«PreferencesKªIdentifierÍµÍ¸£putÂÂ”KªIdentifierÍ¹ÍÀ§contextKªIdentifierÍÂÍÊ¨fileNameS§LiteralÍÌÍÓ¥nonce§'nonce'KªIdentifierÍÕÍÚ¥nonceÂO³ExpressionStatementÍéÍZ¯AwaitExpressionÍéÍX®CallExpressionÍïÍQ°MemberExpressionÍïÍşKªIdentifierÍïÍú«PreferencesKªIdentifierÍûÍş£putÂÂ”KªIdentifierÍÿÍ§contextKªIdentifierÍÍ¨fileNameS§LiteralÍÍ¢iv¤'iv'KªIdentifierÍÍ¢ivÂL®BlockStatementÍ4Í§’V³VariableDeclarationÍBÍ^‘W²VariableDeclaratorÍFÍ]KªIdentifierÍFÍI£keyY°BinaryExpressionÍLÍ]Q°MemberExpressionÍLÍUR®ThisExpressionÍLÍPKªIdentifierÍQÍU¤nameÂÂ¡+S§LiteralÍXÍ]£_sp¥'_sp'£letO³ExpressionStatementÍkÍZ¯AwaitExpressionÍkÍœX®CallExpressionÍqÍœQ°MemberExpressionÍqÍ€KªIdentifierÍqÍ|«PreferencesKªIdentifierÍ}Í€£putÂÂ”KªIdentifierÍÍˆ§contextKªIdentifierÍŠÍ’¨fileNameKªIdentifierÍ”Í—£keyKªIdentifierÍ™Í›¢m7ÂZ¯ReturnStatementÍ°ÍÉX®CallExpressionÍ·ÍÈQ°MemberExpressionÍ·ÍÆKªIdentifierÍ·Í¾§PromiseKªIdentifierÍ¿ÍÆ§resolveÂÂÂM°MethodDefinitionÍÔÍ	’ÂÂKªIdentifierÍÚÍë±loadFromPfStorage¦methodN²FunctionExpressionÍëÍ	’ÀÂÂÃL®BlockStatementÍîÍ	’“V³VariableDeclarationÍøÍ(‘W²VariableDeclaratorÍüÍ'KªIdentifierÍüÍ§contextQ°MemberExpressionÍÍ'X®CallExpressionÍÍQ°MemberExpressionÍÍKªIdentifierÍÍ¨AuthImplKªIdentifierÍÍ«getInstanceÂÂÂKªIdentifierÍÍ'ªappContextÂÂ£letV³VariableDeclarationÍ1Í}‘W²VariableDeclaratorÍ5Í|KªIdentifierÍ5Í=¨fileNameY°BinaryExpressionÍ@Í|Y°BinaryExpressionÍ@ÍpY°BinaryExpressionÍ@ÍjY°BinaryExpressionÍ@Í\Q°MemberExpressionÍ@ÍVR®ThisExpressionÍ@ÍDKªIdentifierÍEÍV±DEFAULT_FILE_NAMEÂÂ¡+S§LiteralÍYÍ\¡_£'_'¡+Q°MemberExpressionÍ_ÍjR®ThisExpressionÍ_ÍcKªIdentifierÍdÍj¦regionÂÂ¡+S§LiteralÍmÍp¡_£'_'¡+Q°MemberExpressionÍsÍ|R®ThisExpressionÍsÍwKªIdentifierÍxÍ|¤nameÂÂ£letU«IfStatementÍ†Í	ŒQ°MemberExpressionÍŠÍ—R®ThisExpressionÍŠÍKªIdentifierÍÍ—¨keyAliasÂÂL®BlockStatementÍ™Í†—V³VariableDeclarationÍ§ÍÑ‘W²VariableDeclaratorÍ«ÍĞKªIdentifierÍ«Í®£keyY°BinaryExpressionÍ±ÍĞY°BinaryExpressionÍ±ÍÀQ°MemberExpressionÍ±ÍºR®ThisExpressionÍ±ÍµKªIdentifierÍ¶Íº¤nameÂÂ¡+S§LiteralÍ½ÍÀ¡_£'_'¡+Q°MemberExpressionÍÃÍĞR®ThisExpressionÍÃÍÇKªIdentifierÍÈÍĞ¨keyAliasÂÂ£letV³VariableDeclarationÍŞÍ‘W²VariableDeclaratorÍâÍKªIdentifierÍâÍç¥nonceZ¯AwaitExpressionÍêÍX®CallExpressionÍğÍQ°MemberExpressionÍğÍÿKªIdentifierÍğÍû«PreferencesKªIdentifierÍüÍÿ£getÂÂ“KªIdentifierÍ Í§contextKªIdentifierÍ	Í¨fileNameS§LiteralÍÍ¥nonce§'nonce'Â£letV³VariableDeclarationÍ)Ía‘W²VariableDeclaratorÍ-Í`KªIdentifierÍ-Í/¢ivZ¯AwaitExpressionÍ2Í`X®CallExpressionÍ8Í`Q°MemberExpressionÍ8ÍGKªIdentifierÍ8ÍC«PreferencesKªIdentifierÍDÍG£getÂÂ“KªIdentifierÍHÍO§contextKªIdentifierÍQÍY¨fileNameS§LiteralÍ[Í_¢iv¤'iv'Â£letV³VariableDeclarationÍnÍ¥‘W²VariableDeclaratorÍrÍ¤KªIdentifierÍrÍt¢k7Z¯AwaitExpressionÍwÍ¤X®CallExpressionÍ}Í¤Q°MemberExpressionÍ}ÍŒKªIdentifierÍ}Íˆ«PreferencesKªIdentifierÍ‰ÍŒ£getÂÂ“KªIdentifierÍÍ”§contextKªIdentifierÍ–Í¨fileNameKªIdentifierÍ Í££keyÂ£letV³VariableDeclarationÍ²Íü‘W²VariableDeclaratorÍ¶ÍûKªIdentifierÍ¶Í¸¢l7Z¯AwaitExpressionÍ»ÍûX®CallExpressionÍÁÍûQ°MemberExpressionÍÁÍİQ°MemberExpressionÍÁÍÑR®ThisExpressionÍÁÍÅKªIdentifierÍÆÍÑ«huskManagerÂÂKªIdentifierÍÒÍİ«decryptDataÂÂ”KªIdentifierÍŞÍà¢k7Q°MemberExpressionÍâÍïR®ThisExpressionÍâÍæKªIdentifierÍçÍï¨keyAliasÂÂKªIdentifierÍñÍö¥nonceKªIdentifierÍøÍú¢ivÂ£letU«IfStatementÍ	ÍRY±LogicalExpressionÍÍKªIdentifierÍÍ¢k7¢&&KªIdentifierÍÍ¢l7L®BlockStatementÍÍR‘Z¯ReturnStatementÍ)ÍDX®CallExpressionÍ0ÍCQ°MemberExpressionÍ0Í?KªIdentifierÍ0Í7§PromiseKªIdentifierÍ8Í?§resolveÂÂ‘KªIdentifierÍ@ÍB¢l7ÂÀZ¯ReturnStatementÍ_Í|X®CallExpressionÍfÍ{Q°MemberExpressionÍfÍuKªIdentifierÍfÍm§PromiseKªIdentifierÍnÍu§resolveÂÂ‘S§LiteralÍvÍzÀ¤nullÂL®BlockStatementÍ”Í	Œ”V³VariableDeclarationÍ¢Í¾‘W²VariableDeclaratorÍ¦Í½KªIdentifierÍ¦Í©£keyY°BinaryExpressionÍ¬Í½Q°MemberExpressionÍ¬ÍµR®ThisExpressionÍ¬Í°KªIdentifierÍ±Íµ¤nameÂÂ¡+S§LiteralÍ¸Í½£_sp¥'_sp'£letV³VariableDeclarationÍËÍ	‘W²VariableDeclaratorÍÏÍ	KªIdentifierÍÏÍÓ¤dataZ¯AwaitExpressionÍÖÍ	X®CallExpressionÍÜÍ	Q°MemberExpressionÍÜÍëKªIdentifierÍÜÍç«PreferencesKªIdentifierÍèÍë£getÂÂ“KªIdentifierÍìÍó§contextKªIdentifierÍõÍı¨fileNameKªIdentifierÍÿÍ	£keyÂ£letU«IfStatementÍ	Í	XKªIdentifierÍ	Í	¤dataL®BlockStatementÍ	Í	X‘Z¯ReturnStatementÍ	-Í	JX®CallExpressionÍ	4Í	IQ°MemberExpressionÍ	4Í	CKªIdentifierÍ	4Í	;§PromiseKªIdentifierÍ	<Í	C§resolveÂÂ‘KªIdentifierÍ	DÍ	H¤dataÂÀZ¯ReturnStatementÍ	eÍ	‚X®CallExpressionÍ	lÍ	Q°MemberExpressionÍ	lÍ	{KªIdentifierÍ	lÍ	s§PromiseKªIdentifierÍ	tÍ	{§resolveÂÂ‘S§LiteralÍ	|Í	€À¤nullÂM°MethodDefinitionÍ	—Í*ÂÂKªIdentifierÍ	Í	©¬deletePfData¦methodN²FunctionExpressionÍ	©Í*ÀÂÂÃL®BlockStatementÍ	¬Í*•V³VariableDeclarationÍ	¶Í	Ã‘W²VariableDeclaratorÍ	ºÍ	ÂKªIdentifierÍ	ºÍ	½£keyS§LiteralÍ	ÀÍ	Â ¢''£letU«IfStatementÍ	ÌÍ
+[Q°MemberExpressionÍ	ĞÍ	İR®ThisExpressionÍ	ĞÍ	ÔKªIdentifierÍ	ÕÍ	İ¨keyAliasÂÂL®BlockStatementÍ	ßÍ
+‘O³ExpressionStatementÍ	íÍ
+P´AssignmentExpressionÍ	íÍ
+¡=KªIdentifierÍ	íÍ	ğ£keyY°BinaryExpressionÍ	óÍ
+Y°BinaryExpressionÍ	óÍ
+Q°MemberExpressionÍ	óÍ	üR®ThisExpressionÍ	óÍ	÷KªIdentifierÍ	øÍ	ü¤nameÂÂ¡+S§LiteralÍ	ÿÍ
+¡_£'_'¡+Q°MemberExpressionÍ
+Í
+R®ThisExpressionÍ
+Í
+	KªIdentifierÍ
+
+Í
+¨keyAliasÂÂL®BlockStatementÍ
++Í
+[‘O³ExpressionStatementÍ
+9Í
+QP´AssignmentExpressionÍ
+9Í
+P¡=KªIdentifierÍ
+9Í
+<£keyY°BinaryExpressionÍ
+?Í
+PQ°MemberExpressionÍ
+?Í
+HR®ThisExpressionÍ
+?Í
+CKªIdentifierÍ
+DÍ
+H¤nameÂÂ¡+S§LiteralÍ
+KÍ
+P£_sp¥'_sp'V³VariableDeclarationÍ
+dÍ
+”‘W²VariableDeclaratorÍ
+hÍ
+“KªIdentifierÍ
+hÍ
+o§contextQ°MemberExpressionÍ
+rÍ
+“X®CallExpressionÍ
+rÍ
+ˆQ°MemberExpressionÍ
+rÍ
+†KªIdentifierÍ
+rÍ
+z¨AuthImplKªIdentifierÍ
+{Í
+†«getInstanceÂÂÂKªIdentifierÍ
+‰Í
+“ªappContextÂÂ£letV³VariableDeclarationÍ
+Í
+é‘W²VariableDeclaratorÍ
+¡Í
+èKªIdentifierÍ
+¡Í
+©¨fileNameY°BinaryExpressionÍ
+¬Í
+èY°BinaryExpressionÍ
+¬Í
+ÜY°BinaryExpressionÍ
+¬Í
+ÖY°BinaryExpressionÍ
+¬Í
+ÈQ°MemberExpressionÍ
+¬Í
+ÂR®ThisExpressionÍ
+¬Í
+°KªIdentifierÍ
+±Í
+Â±DEFAULT_FILE_NAMEÂÂ¡+S§LiteralÍ
+ÅÍ
+È¡_£'_'¡+Q°MemberExpressionÍ
+ËÍ
+ÖR®ThisExpressionÍ
+ËÍ
+ÏKªIdentifierÍ
+ĞÍ
+Ö¦regionÂÂ¡+S§LiteralÍ
+ÙÍ
+Ü¡_£'_'¡+Q°MemberExpressionÍ
+ßÍ
+èR®ThisExpressionÍ
+ßÍ
+ãKªIdentifierÍ
+äÍ
+è¤nameÂÂ£letZ¯ReturnStatementÍ
+òÍ$X®CallExpressionÍ
+ùÍ#Q°MemberExpressionÍ
+ùÍKªIdentifierÍ
+ùÍ«PreferencesKªIdentifierÍÍ¦deleteÂÂ“KªIdentifierÍÍ§contextKªIdentifierÍÍ¨fileNameKªIdentifierÍÍ"£keyÂM°MethodDefinitionÍ/ÍÂÂKªIdentifierÍ5ÍF±saveToFileStorage¦methodN²FunctionExpressionÍFÍÀÂÂÃ‘KªIdentifierÍGÍI¢j7L®BlockStatementÍKÍ•V³VariableDeclarationÍUÍ…‘W²VariableDeclaratorÍYÍ„KªIdentifierÍYÍ`§contextQ°MemberExpressionÍcÍ„X®CallExpressionÍcÍyQ°MemberExpressionÍcÍwKªIdentifierÍcÍk¨AuthImplKªIdentifierÍlÍw«getInstanceÂÂÂKªIdentifierÍzÍ„ªappContextÂÂ£letV³VariableDeclarationÍÍÚ‘W²VariableDeclaratorÍ’ÍÙKªIdentifierÍ’Íš¨fileNameY°BinaryExpressionÍÍÙY°BinaryExpressionÍÍÍY°BinaryExpressionÍÍÇY°BinaryExpressionÍÍ¹Q°MemberExpressionÍÍ³R®ThisExpressionÍÍ¡KªIdentifierÍ¢Í³±DEFAULT_FILE_NAMEÂÂ¡+S§LiteralÍ¶Í¹¡_£'_'¡+Q°MemberExpressionÍ¼ÍÇR®ThisExpressionÍ¼ÍÀKªIdentifierÍÁÍÇ¦regionÂÂ¡+S§LiteralÍÊÍÍ¡_£'_'¡+Q°MemberExpressionÍĞÍÙR®ThisExpressionÍĞÍÔKªIdentifierÍÕÍÙ¤nameÂÂ£letU«IfStatementÍãÍXY°BinaryExpressionÍçÍñKªIdentifierÍçÍé¢j7¢==S§LiteralÍíÍñÀ¤nullL®BlockStatementÍóÍX’O³ExpressionStatementÍÍ(X®CallExpressionÍÍ'Q°MemberExpressionÍÍKªIdentifierÍÍ¦LoggerKªIdentifierÍÍ¤infoÂÂ’KªIdentifierÍÍ£TAGS§LiteralÍÍ&²clear storage user´'clear storage user'ÂZ¯ReturnStatementÍ5ÍNX®CallExpressionÍ<ÍMQ°MemberExpressionÍ<ÍKKªIdentifierÍ<ÍC§PromiseKªIdentifierÍDÍK§resolveÂÂÂÀU«IfStatementÍaÍèQ°MemberExpressionÍeÍrR®ThisExpressionÍeÍiKªIdentifierÍjÍr¨keyAliasÂÂL®BlockStatementÍtÍb—V³VariableDeclarationÍ‚Í¬‘W²VariableDeclaratorÍ†Í«KªIdentifierÍ†Í‰£keyY°BinaryExpressionÍŒÍ«Y°BinaryExpressionÍŒÍ›Q°MemberExpressionÍŒÍ•R®ThisExpressionÍŒÍKªIdentifierÍ‘Í•¤nameÂÂ¡+S§LiteralÍ˜Í›¡_£'_'¡+Q°MemberExpressionÍÍ«R®ThisExpressionÍÍ¢KªIdentifierÍ£Í«¨keyAliasÂÂ£letV³VariableDeclarationÍ¹ÍÙ‘W²VariableDeclaratorÍ½ÍØKªIdentifierÍ½ÍÂ¥nonceX®CallExpressionÍÅÍØQ°MemberExpressionÍÅÍÕKªIdentifierÍÅÍË¦RandomKªIdentifierÍÌÍÕ©getRandomÂÂ‘S§LiteralÍÖÍ×¡8Â£letV³VariableDeclarationÍæÍ‘W²VariableDeclaratorÍêÍKªIdentifierÍêÍì¢ivX®CallExpressionÍïÍQ°MemberExpressionÍïÍÿKªIdentifierÍïÍõ¦RandomKªIdentifierÍöÍÿ©getRandomÂÂ‘S§LiteralÍ Í¡6Â£letV³VariableDeclarationÍÍ_‘W²VariableDeclaratorÍÍ^KªIdentifierÍÍ§encryptZ¯AwaitExpressionÍÍ^X®CallExpressionÍ$Í^Q°MemberExpressionÍ$Í@Q°MemberExpressionÍ$Í4R®ThisExpressionÍ$Í(KªIdentifierÍ)Í4«huskManagerÂÂKªIdentifierÍ5Í@«encryptDataÂÂ”KªIdentifierÍAÍC¢j7Q°MemberExpressionÍEÍRR®ThisExpressionÍEÍIKªIdentifierÍJÍR¨keyAliasÂÂKªIdentifierÍTÍY¥nonceKªIdentifierÍ[Í]¢ivÂ£letO³ExpressionStatementÍlÍÈZ¯AwaitExpressionÍlÍÇX®CallExpressionÍrÍÇQ°MemberExpressionÍrÍ†KªIdentifierÍrÍ|ªFileStoredKªIdentifierÍ}Í†©writeFileÂÂ”KªIdentifierÍ‡Í§contextKªIdentifierÍÍ˜¨fileNameKªIdentifierÍšÍ£keyX®CallExpressionÍŸÍÆQ°MemberExpressionÍŸÍ½KªIdentifierÍŸÍª«HuksManagerKªIdentifierÍ«Í½²uint8ArrayToStringÂÂ‘KªIdentifierÍ¾ÍÅ§encryptÂÂO³ExpressionStatementÍÕÍZ¯AwaitExpressionÍÕÍX®CallExpressionÍÛÍQ°MemberExpressionÍÛÍïKªIdentifierÍÛÍåªFileStoredKªIdentifierÍæÍï©writeFileÂÂ”KªIdentifierÍğÍ÷§contextKªIdentifierÍùÍ¨fileNameS§LiteralÍÍ
+¥nonce§'nonce'KªIdentifierÍÍ¥nonceÂO³ExpressionStatementÍ ÍXZ¯AwaitExpressionÍ ÍWX®CallExpressionÍ&ÍWQ°MemberExpressionÍ&Í:KªIdentifierÍ&Í0ªFileStoredKªIdentifierÍ1Í:©writeFileÂÂ”KªIdentifierÍ;ÍB§contextKªIdentifierÍDÍL¨fileNameS§LiteralÍNÍR¢iv¤'iv'KªIdentifierÍTÍV¢ivÂL®BlockStatementÍpÍè’V³VariableDeclarationÍ~Íš‘W²VariableDeclaratorÍ‚Í™KªIdentifierÍ‚Í…£keyY°BinaryExpressionÍˆÍ™Q°MemberExpressionÍˆÍ‘R®ThisExpressionÍˆÍŒKªIdentifierÍÍ‘¤nameÂÂ¡+S§LiteralÍ”Í™£_fs¥'_fs'£letO³ExpressionStatementÍ§ÍŞZ¯AwaitExpressionÍ§ÍİX®CallExpressionÍ­ÍİQ°MemberExpressionÍ­ÍÁKªIdentifierÍ­Í·ªFileStoredKªIdentifierÍ¸ÍÁ©writeFileÂÂ”KªIdentifierÍÂÍÉ§contextKªIdentifierÍËÍÓ¨fileNameKªIdentifierÍÕÍØ£keyKªIdentifierÍÚÍÜ¢j7ÂZ¯ReturnStatementÍñÍ
+X®CallExpressionÍøÍ	Q°MemberExpressionÍøÍKªIdentifierÍøÍÿ§PromiseKªIdentifierÍ Í§resolveÂÂÂM°MethodDefinitionÍÍÂÂKªIdentifierÍÍ.³loadFromFileStorage¦methodN²FunctionExpressionÍ.ÍÀÂÂÃL®BlockStatementÍ1Í“V³VariableDeclarationÍ;Ík‘W²VariableDeclaratorÍ?ÍjKªIdentifierÍ?ÍF§contextQ°MemberExpressionÍIÍjX®CallExpressionÍIÍ_Q°MemberExpressionÍIÍ]KªIdentifierÍIÍQ¨AuthImplKªIdentifierÍRÍ]«getInstanceÂÂÂKªIdentifierÍ`ÍjªappContextÂÂ£letV³VariableDeclarationÍtÍÀ‘W²VariableDeclaratorÍxÍ¿KªIdentifierÍxÍ€¨fileNameY°BinaryExpressionÍƒÍ¿Y°BinaryExpressionÍƒÍ³Y°BinaryExpressionÍƒÍ­Y°BinaryExpressionÍƒÍŸQ°MemberExpressionÍƒÍ™R®ThisExpressionÍƒÍ‡KªIdentifierÍˆÍ™±DEFAULT_FILE_NAMEÂÂ¡+S§LiteralÍœÍŸ¡_£'_'¡+Q°MemberExpressionÍ¢Í­R®ThisExpressionÍ¢Í¦KªIdentifierÍ§Í­¦regionÂÂ¡+S§LiteralÍ°Í³¡_£'_'¡+Q°MemberExpressionÍ¶Í¿R®ThisExpressionÍ¶ÍºKªIdentifierÍ»Í¿¤nameÂÂ£letU«IfStatementÍÉÍ
+Q°MemberExpressionÍÍÍÚR®ThisExpressionÍÍÍÑKªIdentifierÍÒÍÚ¨keyAliasÂÂL®BlockStatementÍÜÍõ—V³VariableDeclarationÍêÍ‘W²VariableDeclaratorÍîÍKªIdentifierÍîÍñ£keyY°BinaryExpressionÍôÍY°BinaryExpressionÍôÍQ°MemberExpressionÍôÍıR®ThisExpressionÍôÍøKªIdentifierÍùÍı¤nameÂÂ¡+S§LiteralÍ Í¡_£'_'¡+Q°MemberExpressionÍÍR®ThisExpressionÍÍ
+KªIdentifierÍÍ¨keyAliasÂÂ£letV³VariableDeclarationÍ!Íc‘W²VariableDeclaratorÍ%ÍbKªIdentifierÍ%Í*¥nonceZ¯AwaitExpressionÍ-ÍbX®CallExpressionÍ3ÍbQ°MemberExpressionÍ3ÍFKªIdentifierÍ3Í=ªFileStoredKªIdentifierÍ>ÍF¨readFileÂÂ“KªIdentifierÍGÍN§contextKªIdentifierÍPÍX¨fileNameS§LiteralÍZÍa¥nonce§'nonce'Â£letV³VariableDeclarationÍpÍ¬‘W²VariableDeclaratorÍtÍ«KªIdentifierÍtÍv¢ivZ¯AwaitExpressionÍyÍ«X®CallExpressionÍÍ«Q°MemberExpressionÍÍ’KªIdentifierÍÍ‰ªFileStoredKªIdentifierÍŠÍ’¨readFileÂÂ“KªIdentifierÍ“Íš§contextKªIdentifierÍœÍ¤¨fileNameS§LiteralÍ¦Íª¢iv¤'iv'Â£letV³VariableDeclarationÍ¹Íô‘W²VariableDeclaratorÍ½ÍóKªIdentifierÍ½Í¿¢h7Z¯AwaitExpressionÍÂÍóX®CallExpressionÍÈÍóQ°MemberExpressionÍÈÍÛKªIdentifierÍÈÍÒªFileStoredKªIdentifierÍÓÍÛ¨readFileÂÂ“KªIdentifierÍÜÍã§contextKªIdentifierÍåÍí¨fileNameKªIdentifierÍïÍò£keyÂ£letV³VariableDeclarationÍÍk‘W²VariableDeclaratorÍÍjKªIdentifierÍÍ¢i7Z¯AwaitExpressionÍ
+ÍjX®CallExpressionÍÍjQ°MemberExpressionÍÍ,Q°MemberExpressionÍÍ R®ThisExpressionÍÍKªIdentifierÍÍ «huskManagerÂÂKªIdentifierÍ!Í,«decryptDataÂÂ”X®CallExpressionÍ-ÍOQ°MemberExpressionÍ-ÍKKªIdentifierÍ-Í8«HuksManagerKªIdentifierÍ9ÍK²stringToUint8ArrayÂÂ‘KªIdentifierÍLÍN¢h7ÂQ°MemberExpressionÍQÍ^R®ThisExpressionÍQÍUKªIdentifierÍVÍ^¨keyAliasÂÂKªIdentifierÍ`Íe¥nonceKªIdentifierÍgÍi¢ivÂ£letU«IfStatementÍxÍÁY±LogicalExpressionÍ|Í„KªIdentifierÍ|Í~¢h7¢&&KªIdentifierÍ‚Í„¢i7L®BlockStatementÍ†ÍÁ‘Z¯ReturnStatementÍ˜Í³X®CallExpressionÍŸÍ²Q°MemberExpressionÍŸÍ®KªIdentifierÍŸÍ¦§PromiseKªIdentifierÍ§Í®§resolveÂÂ‘KªIdentifierÍ¯Í±¢i7ÂÀZ¯ReturnStatementÍÎÍëX®CallExpressionÍÕÍêQ°MemberExpressionÍÕÍäKªIdentifierÍÕÍÜ§PromiseKªIdentifierÍİÍä§resolveÂÂ‘S§LiteralÍåÍéÀ¤nullÂL®BlockStatementÍÍ
+”V³VariableDeclarationÍÍ-‘W²VariableDeclaratorÍÍ,KªIdentifierÍÍ£keyY°BinaryExpressionÍÍ,Q°MemberExpressionÍÍ$R®ThisExpressionÍÍKªIdentifierÍ Í$¤nameÂÂ¡+S§LiteralÍ'Í,£_fs¥'_fs'£letV³VariableDeclarationÍ:Í‚‘W²VariableDeclaratorÍ>ÍKªIdentifierÍ>ÍB¤dataZ¯AwaitExpressionÍEÍX®CallExpressionÍKÍQ°MemberExpressionÍKÍX®CallExpressionÍKÍvQ°MemberExpressionÍKÍ^KªIdentifierÍKÍUªFileStoredKªIdentifierÍVÍ^¨readFileÂÂ“KªIdentifierÍ_Íf§contextKªIdentifierÍhÍp¨fileNameKªIdentifierÍrÍu£keyÂKªIdentifierÍwÍ¨toStringÂÂÂ£letU«IfStatementÍÍÖKªIdentifierÍ“Í—¤dataL®BlockStatementÍ™ÍÖ‘Z¯ReturnStatementÍ«ÍÈX®CallExpressionÍ²ÍÇQ°MemberExpressionÍ²ÍÁKªIdentifierÍ²Í¹§PromiseKªIdentifierÍºÍÁ§resolveÂÂ‘KªIdentifierÍÂÍÆ¤dataÂÀZ¯ReturnStatementÍãÍ X®CallExpressionÍêÍÿQ°MemberExpressionÍêÍùKªIdentifierÍêÍñ§PromiseKªIdentifierÍòÍù§resolveÂÂ‘S§LiteralÍúÍşÀ¤nullÂM°MethodDefinitionÍÍ­ÂÂKªIdentifierÍÍ)®deleteFileData¦methodN²FunctionExpressionÍ)Í­ÀÂÂÃL®BlockStatementÍ,Í­•V³VariableDeclarationÍ6ÍC‘W²VariableDeclaratorÍ:ÍBKªIdentifierÍ:Í=£keyS§LiteralÍ@ÍB ¢''£letU«IfStatementÍLÍÛQ°MemberExpressionÍPÍ]R®ThisExpressionÍPÍTKªIdentifierÍUÍ]¨keyAliasÂÂL®BlockStatementÍ_Í‘O³ExpressionStatementÍmÍ“P´AssignmentExpressionÍmÍ’¡=KªIdentifierÍmÍp£keyY°BinaryExpressionÍsÍ’Y°BinaryExpressionÍsÍ‚Q°MemberExpressionÍsÍ|R®ThisExpressionÍsÍwKªIdentifierÍxÍ|¤nameÂÂ¡+S§LiteralÍÍ‚¡_£'_'¡+Q°MemberExpressionÍ…Í’R®ThisExpressionÍ…Í‰KªIdentifierÍŠÍ’¨keyAliasÂÂL®BlockStatementÍ«ÍÛ‘O³ExpressionStatementÍ¹ÍÑP´AssignmentExpressionÍ¹ÍĞ¡=KªIdentifierÍ¹Í¼£keyY°BinaryExpressionÍ¿ÍĞQ°MemberExpressionÍ¿ÍÈR®ThisExpressionÍ¿ÍÃKªIdentifierÍÄÍÈ¤nameÂÂ¡+S§LiteralÍËÍĞ£_fs¥'_fs'V³VariableDeclarationÍäÍ‘W²VariableDeclaratorÍèÍKªIdentifierÍèÍï§contextQ°MemberExpressionÍòÍX®CallExpressionÍòÍQ°MemberExpressionÍòÍKªIdentifierÍòÍú¨AuthImplKªIdentifierÍûÍ«getInstanceÂÂÂKªIdentifierÍ	ÍªappContextÂÂ£letV³VariableDeclarationÍÍi‘W²VariableDeclaratorÍ!ÍhKªIdentifierÍ!Í)¨fileNameY°BinaryExpressionÍ,ÍhY°BinaryExpressionÍ,Í\Y°BinaryExpressionÍ,ÍVY°BinaryExpressionÍ,ÍHQ°MemberExpressionÍ,ÍBR®ThisExpressionÍ,Í0KªIdentifierÍ1ÍB±DEFAULT_FILE_NAMEÂÂ¡+S§LiteralÍEÍH¡_£'_'¡+Q°MemberExpressionÍKÍVR®ThisExpressionÍKÍOKªIdentifierÍPÍV¦regionÂÂ¡+S§LiteralÍYÍ\¡_£'_'¡+Q°MemberExpressionÍ_ÍhR®ThisExpressionÍ_ÍcKªIdentifierÍdÍh¤nameÂÂ£letZ¯ReturnStatementÍrÍ§X®CallExpressionÍyÍ¦Q°MemberExpressionÍyÍKªIdentifierÍyÍƒªFileStoredKªIdentifierÍ„ÍªdeleteFileÂÂ“KªIdentifierÍÍ–§contextKªIdentifierÍ˜Í ¨fileNameKªIdentifierÍ¢Í¥£keyÂÀ–Ôr[•¤type¥start£endªspecifiers¦source±ImportDeclaration  ‘Ôr\•¤type¥start£end¨imported¥local¯ImportSpecifier	KªIdentifier	¨AuthImplKªIdentifier	¨AuthImplS§Literal¤../a¦"../a"[±ImportDeclaration!ÌF‘\¯ImportSpecifier*0KªIdentifier*0¦LoggerKªIdentifier*0¦LoggerS§Literal8ÌE«../e1/f1/g1­"../e1/f1/g1"[±ImportDeclarationÌGÌi‘\¯ImportSpecifierÌPÌZKªIdentifierÌPÌZªFileStoredKªIdentifierÌPÌZªFileStoredS§LiteralÌbÌh¤./k4¦"./k4"[±ImportDeclarationÌjÌ‘\¯ImportSpecifierÌsÌ~KªIdentifierÌsÌ~«HuksManagerKªIdentifierÌsÌ~«HuksManagerS§LiteralÌ†ÌŒ¤./t2¦"./t2"[±ImportDeclarationÌÌ±‘\¯ImportSpecifierÌ—Ì¢KªIdentifierÌ—Ì¢«PreferencesKªIdentifierÌ—Ì¢«PreferencesS§LiteralÌªÌ°¤./l4¦"./l4"[±ImportDeclarationÌ²ÌĞ‘\¯ImportSpecifierÌ»ÌÁKªIdentifierÌ»ÌÁ¦RandomKªIdentifierÌ»ÌÁ¦RandomS§LiteralÌÉÌÏ¤./m4¦"./m4"

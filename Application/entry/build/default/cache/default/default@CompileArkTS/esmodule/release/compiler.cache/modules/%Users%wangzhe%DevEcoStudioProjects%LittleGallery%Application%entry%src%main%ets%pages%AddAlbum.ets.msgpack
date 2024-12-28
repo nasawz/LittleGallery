@@ -1,0 +1,703 @@
+Ôr@Ÿªassertions¤code´customTransformCache¬dependencies¢id¤meta±moduleSideEffects¬originalCode±originalSourcemap«resolvedIds®sourcemapChainµsyntheticNamedExportsµtransformDependencies®transformFiles¨cacheAstÔrAÚ@¹var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+if (!("finalizeConstruction" in ViewPU.prototype)) {
+    Reflect.set(ViewPU.prototype, "finalizeConstruction", () => { });
+}
+/**
+ * Copyright (c) 2024 é£å(QQ:12446006)
+ *
+ * æ­¤ä»£ç ä»…ä¾›å­¦ä¹ ä½¿ç”¨,ç¦æ­¢:
+ * 1. åœ¨åä¸ºåº”ç”¨å•†åº—å‘å¸ƒ
+ * 2. é”€å”®æˆ–ç”¨äºå•†ä¸šç”¨é€”
+ * 3. ç”¨äºä»»ä½•ç›ˆåˆ©ç›®çš„
+ *
+ * æ·»åŠ /ç¼–è¾‘ç”»å†Œé¡µé¢
+ * åŠŸèƒ½:
+ * - åˆ›å»ºæ–°ç”»å†Œ
+ * - ç¼–è¾‘ç°æœ‰ç”»å†Œä¿¡æ¯
+ * - é€‰æ‹©ç”»å†Œåˆ†ç±»å’Œå…³è”å­©å­
+ * - ä¿å­˜ç”»å†Œæ•°æ®
+ */
+import { AppStorageV2, promptAction } from "@kit.ArkUI";
+import { cloudDatabase } from "@kit.CloudFoundationKit";
+import { util } from "@kit.ArkTS";
+import { Album } from "../module/Album";
+import { MainStat, resultClass } from '../common/MainStat';
+import { AppConfig } from '../utils/AppConfig';
+export function PageBuilder(name, param, parent = null) {
+    {
+        (parent ? parent : this).observeComponentCreation2((elmtId, isInitialRender) => {
+            if (isInitialRender) {
+                let componentCall = new AddAlbum(parent ? parent : this, {}, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/AddAlbum.ets", line: 31, col: 3 });
+                ViewV2.create(componentCall);
+                let paramsLambda = () => {
+                    return {};
+                };
+                componentCall.paramsGenerator_ = paramsLambda;
+            }
+            else {
+                (parent ? parent : this).updateStateVarsOfChildByElmtId(elmtId, {});
+            }
+        }, { name: "AddAlbum" });
+    }
+}
+class AddAlbum extends ViewV2 {
+    constructor(parent, params, __localStorage, elmtId = -1, paramsLambda, extraInfo) {
+        super(parent, elmtId, extraInfo);
+        this.prop = AppStorageV2.connect(MainStat, () => new MainStat());
+        this.description = '';
+        this.name = '';
+        this.childId = '';
+        this.childName = 'è¯·é€‰æ‹©';
+        this.childIndex = 0;
+        this.categoryId = '';
+        this.categoryName = 'è¯·é€‰æ‹©';
+        this.categoryIndex = 0;
+        this.albumId = '';
+        this.createTime = new Date();
+        this.pageInfos = new NavPathStack();
+        this.agcDataBase = undefined;
+        this.finalizeConstruction();
+    }
+    aboutToAppear() {
+        // åˆå§‹åŒ–æ•°æ®åº“è¿æ¥
+        this.agcDataBase = cloudDatabase.zone(AppConfig.dbZone);
+        setTimeout(async () => {
+            // è·å–é¡µé¢å‚æ•°
+            let params = this.pageInfos.getParamByName('addAlbum')[0];
+            console.log('littleGallery', 'addAlbum', JSON.stringify(params));
+            if (params["categoryId"] != null && params['id'] == null) {
+                // è®¾ç½®åˆ†ç±»ä¿¡æ¯
+                this.categoryId = params['categoryId'];
+                this.categoryIndex = this.prop.categories.findIndex(category => category.id == this.categoryId) + 1;
+                if (this.categoryIndex == 0) {
+                    this.categoryName = 'è¯·é€‰æ‹©';
+                }
+                else {
+                    this.categoryName = this.prop.categories[this.categoryIndex - 1].name;
+                }
+            }
+            else {
+                // è®¾ç½®ç›¸å†Œä¿¡æ¯
+                let album = this.pageInfos.getParamByName('addAlbum')[0];
+                this.name = album.name;
+                this.description = album.description;
+                this.categoryId = album.categoryId;
+                this.categoryIndex = this.prop.categories.findIndex(category => category.id == this.categoryId) + 1;
+                if (this.categoryIndex == 0) {
+                    this.categoryName = 'è¯·é€‰æ‹©';
+                }
+                else {
+                    this.categoryName = this.prop.categories[this.categoryIndex - 1].name;
+                }
+                console.log('littleGallery', 'child', JSON.stringify(this.prop.child));
+                this.childIndex = this.prop.child.findIndex(child => child.id == album.childId) + 1;
+                console.log('littleGallery', 'childIndex', this.childIndex);
+                this.childId = album.childId;
+                if (this.childIndex == 0) {
+                    this.childName = 'è¯·é€‰æ‹©';
+                }
+                else {
+                    this.childName = this.prop.child[this.childIndex - 1].name;
+                }
+                this.albumId = album.id;
+                this.createTime = album.createTime;
+            }
+        }, 100);
+    }
+    async onSave() {
+        // éªŒè¯è¾“å…¥
+        if (this.name.length == 0) {
+            promptAction.showToast({
+                message: 'è¯·è¾“å…¥ç”»å†Œåç§°',
+                duration: 2000
+            });
+            return;
+        }
+        if (this.childId == '') {
+            promptAction.showToast({
+                message: 'è¯·é€‰æ‹©å­©å­',
+                duration: 2000
+            });
+            return;
+        }
+        if (this.categoryId == '') {
+            promptAction.showToast({
+                message: 'è¯·é€‰æ‹©åˆ†ç±»',
+                duration: 2000
+            });
+            return;
+        }
+        try {
+            // åˆ›å»ºå¹¶ä¿å­˜ç›¸å†Œ
+            const album = new Album();
+            album.id = this.albumId == '' ? util.generateRandomUUID(true) : this.albumId;
+            album.userId = this.prop.userId;
+            album.name = this.name;
+            album.description = this.description;
+            album.childId = this.childId;
+            album.categoryId = this.categoryId;
+            album.createTime = this.createTime;
+            await this.agcDataBase?.upsert(album);
+            promptAction.showToast({
+                message: 'ä¿å­˜æˆåŠŸ',
+                duration: 2000
+            });
+            this.pageInfos.pop(new resultClass(1));
+        }
+        catch (err) {
+            console.log('littleGallery', 'onSave', err);
+            promptAction.showToast({
+                message: 'ä¿å­˜å¤±è´¥',
+                duration: 2000
+            });
+        }
+    }
+    initialRender() {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            NavDestination.create(() => {
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Column.create({ space: 8 });
+                    Column.width('100%');
+                    Column.height('100%');
+                    Column.padding({ left: 20, right: 20, top: 20 });
+                }, Column);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    // ç”»å†Œåç§°è¾“å…¥
+                    Column.create();
+                }, Column);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Row.create();
+                    Row.width('100%');
+                    Row.height(40);
+                    Row.justifyContent(FlexAlign.SpaceBetween);
+                    Row.margin({ bottom: 8 });
+                }, Row);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Text.create('ç”»å†Œåç§°');
+                    Text.width('20%');
+                }, Text);
+                Text.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    TextInput.create({ placeholder: 'è¯·è¾“å…¥', text: this.name });
+                    TextInput.width('70%');
+                    TextInput.textAlign(TextAlign.End);
+                    TextInput.backgroundColor(Color.Transparent);
+                    TextInput.onChange((value) => {
+                        this.name = value;
+                    });
+                }, TextInput);
+                Row.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Divider.create();
+                }, Divider);
+                // ç”»å†Œåç§°è¾“å…¥
+                Column.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    // æè¿°è¾“å…¥
+                    Column.create();
+                }, Column);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Column.create({ space: 8 });
+                    Column.alignItems(HorizontalAlign.Start);
+                    Column.width('100%');
+                    Column.padding({ top: 8 });
+                    Column.margin({ bottom: 8 });
+                }, Column);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Text.create('æè¿°');
+                }, Text);
+                Text.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    TextArea.create({ placeholder: 'æ·»åŠ ç”»å†Œæè¿°', text: this.description });
+                    TextArea.height(120);
+                    TextArea.onChange((value) => {
+                        this.description = value;
+                    });
+                }, TextArea);
+                Column.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Divider.create();
+                }, Divider);
+                // æè¿°è¾“å…¥
+                Column.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    // å­©å­é€‰æ‹©
+                    Column.create();
+                }, Column);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Row.create();
+                    Row.width('100%');
+                    Row.height(40);
+                    Row.justifyContent(FlexAlign.SpaceBetween);
+                    Row.margin({ bottom: 8 });
+                }, Row);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Text.create('å­©å­');
+                    Text.width('20%');
+                }, Text);
+                Text.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Select.create([{ value: 'è¯·é€‰æ‹©' }, ...this.prop.child.map(child => ({ value: child.name }))]);
+                    Select.selected(this.childIndex);
+                    Select.enabled(this.albumId == '');
+                    Select.value(this.childName);
+                    Select.onSelect((index, text) => {
+                        if (index == 0) {
+                            this.childId = '';
+                            this.childName = 'è¯·é€‰æ‹©';
+                        }
+                        else {
+                            let child = this.prop.child[index - 1];
+                            this.childId = child.id;
+                            this.childName = child.name;
+                        }
+                    });
+                }, Select);
+                Select.pop();
+                Row.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Divider.create();
+                }, Divider);
+                // å­©å­é€‰æ‹©
+                Column.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    // åˆ†ç±»é€‰æ‹©
+                    Column.create();
+                }, Column);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Row.create();
+                    Row.width('100%');
+                    Row.height(40);
+                    Row.justifyContent(FlexAlign.SpaceBetween);
+                    Row.margin({ bottom: 8 });
+                }, Row);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Text.create('åˆ†ç±»');
+                    Text.width('20%');
+                }, Text);
+                Text.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Select.create([{ value: 'è¯·é€‰æ‹©' }, ...this.prop.categories.map(category => ({ value: category.name }))]);
+                    Select.selected(this.categoryIndex);
+                    Select.enabled(this.albumId == '');
+                    Select.value(this.categoryName);
+                    Select.onSelect((index, text) => {
+                        if (index == 0) {
+                            this.categoryId = '';
+                            this.categoryName = 'è¯·é€‰æ‹©';
+                        }
+                        else {
+                            let category = this.prop.categories[index - 1];
+                            this.categoryId = category.id;
+                            this.categoryName = category.name;
+                        }
+                    });
+                }, Select);
+                Select.pop();
+                Row.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Divider.create();
+                }, Divider);
+                // åˆ†ç±»é€‰æ‹©
+                Column.pop();
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    // ä¿å­˜æŒ‰é’®
+                    Column.create();
+                }, Column);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Row.create();
+                    Row.width('100%');
+                    Row.height(40);
+                    Row.justifyContent(FlexAlign.SpaceBetween);
+                    Row.margin({ top: 20 });
+                }, Row);
+                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                    Button.createWithLabel('ä¿å­˜', { type: ButtonType.Normal, stateEffect: true });
+                    Button.borderRadius(8);
+                    Button.width('100%');
+                    Button.onClick(() => {
+                        this.onSave();
+                    });
+                }, Button);
+                Button.pop();
+                Row.pop();
+                // ä¿å­˜æŒ‰é’®
+                Column.pop();
+                Column.pop();
+            }, { moduleName: "entry", pagePath: "entry/src/main/ets/pages/AddAlbum" });
+            NavDestination.title('æ·»åŠ ç”»å†Œ');
+            NavDestination.onBackPressed(() => {
+                this.pageInfos.pop(new resultClass(0));
+                return true;
+            });
+            NavDestination.onReady((context) => {
+                this.pageInfos = context.pathStack;
+            });
+        }, NavDestination);
+        NavDestination.pop();
+    }
+    rerender() {
+        this.updateDirtyElements();
+    }
+    static getEntryName() {
+        return "AddAlbum";
+    }
+}
+__decorate([
+    Local
+], AddAlbum.prototype, "prop", void 0);
+__decorate([
+    Local
+], AddAlbum.prototype, "description", void 0);
+__decorate([
+    Local
+], AddAlbum.prototype, "name", void 0);
+__decorate([
+    Local
+], AddAlbum.prototype, "childId", void 0);
+__decorate([
+    Local
+], AddAlbum.prototype, "childName", void 0);
+__decorate([
+    Local
+], AddAlbum.prototype, "childIndex", void 0);
+__decorate([
+    Local
+], AddAlbum.prototype, "categoryId", void 0);
+__decorate([
+    Local
+], AddAlbum.prototype, "categoryName", void 0);
+__decorate([
+    Local
+], AddAlbum.prototype, "categoryIndex", void 0);
+registerNamedRoute(() => new AddAlbum(undefined, {}), "", { bundleName: "com.atomicservice.5765880207856138875", moduleName: "entry", pagePath: "pages/AddAlbum", pageFullPath: "entry/src/main/ets/pages/AddAlbum", integratedHsp: "false", moduleType: "followWithHap" });
+(function () {
+    if (typeof NavigationBuilderRegister === "function") {
+        NavigationBuilderRegister("addAlbum", wrapBuilder(PageBuilder));
+    }
+})();
+//# sourceMappingURL=AddAlbum.js.mapÂ–Ùh hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_kits_@kit.ArkUI.d.tsÙm hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_hms_ets_kits_@kit.CloudFoundationKit.d.tsÙh hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_kits_@kit.ArkTS.d.tsÙ`/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/module/Album.tsÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/common/MainStat.etsÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/utils/AppConfig.etsÙc/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AddAlbum.etsÔrB›ªmoduleName±isLocalDependency¯isNodeEntryFile§pkgPath±belongProjectPath§pkgNameªpkgVersion±dependencyPkgInfo°belongModulePath¬shouldEmitJs¯hostModulesInfo¥entryÃÂÙC/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entryÙ=/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application¥entry¥1.0.0Ô  ÙC/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entryÃÃÚ /**
+ * Copyright (c) 2024 é£å(QQ:12446006)
+ * 
+ * æ­¤ä»£ç ä»…ä¾›å­¦ä¹ ä½¿ç”¨,ç¦æ­¢:
+ * 1. åœ¨åä¸ºåº”ç”¨å•†åº—å‘å¸ƒ
+ * 2. é”€å”®æˆ–ç”¨äºå•†ä¸šç”¨é€”
+ * 3. ç”¨äºä»»ä½•ç›ˆåˆ©ç›®çš„
+ * 
+ * æ·»åŠ /ç¼–è¾‘ç”»å†Œé¡µé¢
+ * åŠŸèƒ½:
+ * - åˆ›å»ºæ–°ç”»å†Œ
+ * - ç¼–è¾‘ç°æœ‰ç”»å†Œä¿¡æ¯
+ * - é€‰æ‹©ç”»å†Œåˆ†ç±»å’Œå…³è”å­©å­
+ * - ä¿å­˜ç”»å†Œæ•°æ®
+ */
+
+import { AppStorageV2, promptAction } from "@kit.ArkUI"
+import { cloudDatabase } from "@kit.CloudFoundationKit"
+import { util } from "@kit.ArkTS"
+import { Album } from "../module/Album"
+import { MainStat, resultClass } from '../common/MainStat';
+import { AppConfig } from '../utils/AppConfig';
+
+// å®šä¹‰é€‰æ‹©é€‰é¡¹çš„æ¥å£
+interface SelectOption {
+  value: string
+}
+
+@Builder
+export function PageBuilder(name: string, param: Object) {
+  AddAlbum()
+}
+
+@Entry
+@ComponentV2
+struct AddAlbum {
+  // æœ¬åœ°çŠ¶æ€å˜é‡
+  @Local prop: MainStat = AppStorageV2.connect(MainStat, () => new MainStat())!
+  @Local description: string = ''
+  @Local name: string = ''
+  @Local childId: string = ''
+  @Local childName: string = 'è¯·é€‰æ‹©'  
+  @Local childIndex: number = 0
+  @Local categoryId: string = ''
+  @Local categoryName: string = 'è¯·é€‰æ‹©'
+  @Local categoryIndex: number = 0
+
+  albumId: string = ''
+  createTime: Date = new Date()
+
+  pageInfos: NavPathStack = new NavPathStack()
+  agcDataBase: cloudDatabase.DatabaseZone | undefined = undefined
+
+  aboutToAppear() {
+    // åˆå§‹åŒ–æ•°æ®åº“è¿æ¥
+    this.agcDataBase = cloudDatabase.zone(AppConfig.dbZone);
+
+    setTimeout(async () => {
+      // è·å–é¡µé¢å‚æ•°
+      let params: ESObject = this.pageInfos.getParamByName('addAlbum')[0] as ESObject;
+
+      console.log('littleGallery', 'addAlbum', JSON.stringify(params));
+      if (params["categoryId"] != null&&params['id']==null) {
+        // è®¾ç½®åˆ†ç±»ä¿¡æ¯
+        this.categoryId = params['categoryId'];
+        this.categoryIndex = this.prop.categories.findIndex(category => category.id == this.categoryId) + 1;
+        if (this.categoryIndex == 0) {
+          this.categoryName = 'è¯·é€‰æ‹©'
+        } else {
+          this.categoryName = this.prop.categories[this.categoryIndex - 1].name
+        }
+      } else {
+        // è®¾ç½®ç›¸å†Œä¿¡æ¯
+        let album = this.pageInfos.getParamByName('addAlbum')[0] as Album
+        this.name = album.name;
+        this.description = album.description;
+        
+        this.categoryId = album.categoryId;
+        this.categoryIndex = this.prop.categories.findIndex(category => category.id == this.categoryId) + 1;
+        if (this.categoryIndex == 0) {
+          this.categoryName = 'è¯·é€‰æ‹©'
+        } else {
+          this.categoryName = this.prop.categories[this.categoryIndex - 1].name
+        }
+
+        console.log('littleGallery', 'child',JSON.stringify(this.prop.child));
+        this.childIndex = this.prop.child.findIndex(child => child.id == album.childId) + 1;
+        console.log('littleGallery', 'childIndex',this.childIndex);
+        this.childId = album.childId;
+        if (this.childIndex == 0) {
+          this.childName = 'è¯·é€‰æ‹©'
+        } else {
+          this.childName = this.prop.child[this.childIndex - 1].name
+        }
+
+        this.albumId = album.id
+        this.createTime = album.createTime
+      }
+    }, 100)
+  }
+
+  async onSave() {
+    // éªŒè¯è¾“å…¥
+    if (this.name.length == 0) {
+      promptAction.showToast({
+        message: 'è¯·è¾“å…¥ç”»å†Œåç§°',
+        duration: 2000
+      })
+      return
+    }
+    if (this.childId == '') {
+      promptAction.showToast({
+        message: 'è¯·é€‰æ‹©å­©å­',
+        duration: 2000
+      })
+      return
+    }
+    if (this.categoryId == '') {
+      promptAction.showToast({
+        message: 'è¯·é€‰æ‹©åˆ†ç±»',
+        duration: 2000
+      })
+      return
+    }
+
+    try {
+      // åˆ›å»ºå¹¶ä¿å­˜ç›¸å†Œ
+      const album = new Album();
+      album.id = this.albumId == '' ? util.generateRandomUUID(true) : this.albumId;
+      album.userId = this.prop.userId;
+      album.name = this.name;
+      album.description = this.description;
+      album.childId = this.childId;
+      album.categoryId = this.categoryId;
+      album.createTime = this.createTime;
+      
+      await this.agcDataBase?.upsert(album)
+      promptAction.showToast({
+        message: 'ä¿å­˜æˆåŠŸ',
+        duration: 2000
+      })
+      this.pageInfos.pop(new resultClass(1));
+    } catch (err) {
+      console.log('littleGallery', 'onSave', err)
+      promptAction.showToast({
+        message: 'ä¿å­˜å¤±è´¥',
+        duration: 2000
+      })
+    }
+  }
+
+  build() {
+    NavDestination() {
+      Column({ space: 8 }) {
+        // ç”»å†Œåç§°è¾“å…¥
+        Column() {
+          Row() {
+            Text('ç”»å†Œåç§°').width('20%')
+            TextInput({ placeholder: 'è¯·è¾“å…¥', text: this.name }).width('70%')
+              .textAlign(TextAlign.End)
+              .backgroundColor(Color.Transparent)
+              .onChange((value: string) => {
+                this.name = value
+              })
+          }
+          .width('100%')
+          .height(40)
+          .justifyContent(FlexAlign.SpaceBetween)
+          .margin({ bottom: 8 })
+          Divider()
+        }
+
+        // æè¿°è¾“å…¥
+        Column() {
+          Column({ space: 8 }) {
+            Text('æè¿°')
+            TextArea({ placeholder: 'æ·»åŠ ç”»å†Œæè¿°', text: this.description }).height(120)
+              .onChange((value: string) => {
+                this.description = value
+              })
+          }.alignItems(HorizontalAlign.Start)
+          .width('100%').padding({ top: 8 })
+          .margin({ bottom: 8 })
+          Divider()
+        }
+
+        // å­©å­é€‰æ‹©
+        Column() {
+          Row() {
+            Text('å­©å­').width('20%')
+            Select([{ value: 'è¯·é€‰æ‹©' } as SelectOption, ...this.prop.child.map(child => ({ value: child.name } as SelectOption))])
+              .selected(this.childIndex)
+              .enabled(this.albumId == '')
+              .value(this.childName).onSelect((index: number, text?: string | undefined) => {
+                if (index == 0) {
+                  this.childId = ''
+                  this.childName = 'è¯·é€‰æ‹©'
+                } else {
+                  let child = this.prop.child[index - 1]
+                  this.childId = child.id
+                  this.childName = child.name
+                }
+            })
+          }
+          .width('100%')
+          .height(40)
+          .justifyContent(FlexAlign.SpaceBetween)
+          .margin({ bottom: 8 })
+          Divider()
+        }
+
+        // åˆ†ç±»é€‰æ‹©
+        Column() {
+          Row() {
+            Text('åˆ†ç±»').width('20%')
+            Select([{ value: 'è¯·é€‰æ‹©' } as SelectOption, ...this.prop.categories.map(category => ({ value: category.name } as SelectOption))])
+              .selected(this.categoryIndex)
+              .enabled(this.albumId == '')
+              .value(this.categoryName).onSelect((index: number, text?: string | undefined) => {
+                if (index == 0) {
+                  this.categoryId = ''
+                  this.categoryName = 'è¯·é€‰æ‹©'
+                } else {
+                  let category = this.prop.categories[index - 1]
+                  this.categoryId = category.id
+                  this.categoryName = category.name
+                }
+            })
+          }
+          .width('100%')
+          .height(40)
+          .justifyContent(FlexAlign.SpaceBetween)
+          .margin({ bottom: 8 })
+          Divider()
+        }
+
+        // ä¿å­˜æŒ‰é’®
+        Column() {
+          Row() {
+            Button('ä¿å­˜', { type: ButtonType.Normal, stateEffect: true })
+              .borderRadius(8)
+              .width('100%')
+              .onClick(() => {
+                this.onSave()
+              })
+          }
+          .width('100%')
+          .height(40)
+          .justifyContent(FlexAlign.SpaceBetween)
+          .margin({ top: 20 })
+        }
+      }
+      .width('100%')
+      .height('100%')
+      .padding({ left: 20, right: 20, top: 20 })
+    }
+    .title('æ·»åŠ ç”»å†Œ')
+    .onBackPressed(() => {
+      this.pageInfos.pop(new resultClass(0));
+      return true;
+    })
+    .onReady((context: NavDestinationContext) => {
+      this.pageInfos = context.pathStack
+    })
+  }
+}
+ÀÔrC–ª@kit.ArkUI·@kit.CloudFoundationKitª@kit.ArkTS²../common/MainStat²../utils/AppConfig¯../module/AlbumÔrD—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙh hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_kits_@kit.ArkUI.d.tsAÃªoh-resolveÂDAÃÙm hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_hms_ets_kits_@kit.CloudFoundationKit.d.tsAÃªoh-resolveÂDAÃÙh hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_kits_@kit.ArkTS.d.tsAÃªoh-resolveÂDAÂÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/common/MainStat.etsAÃªoh-resolveÂDAÂÙd/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/utils/AppConfig.etsAÃªoh-resolveÂDAÂÙ`/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/module/Album.tsAÃªoh-resolveÂ’ÔrE–§version¤fileªsourceRoot§sources¥names¨mappings«AddAlbum.js ‘¬AddAlbum.etsÜy‘”    ‘” š”   ” ”	 	” ” ”# #”% %”+ +”7 7”8 7˜”   ” ”	 	” ” ” ”7 7”8 7˜”   ” ”	 	” ” ” ”! !”" !˜”   ” ”	 	” ” ” ”' '”( 'š”   ” ”	 	” ” ” ”   ”& &”: :”; ;˜”   ” ”	 	” ” ” ”. .”/ /˜”   ” ” ” ” ”  (”" *”' 7’”( ”0 
+‘” ’” #” #‘” ! ” %”  %&”! %'”( %.”) %/”1 %7”3 %9”6 %<”8 %>”9 %?”= %ÌC”ÌE %ÌK”ÌG %ÌM”ÌH %ÌO’” &” &!’” '” '’” (” (’” )” )"’” *” *’” +” + ’” , ”! ,%’” -!” -"’” /” /”” 0” 0”" 0”$ 0”” 2” 2 ”) 2,”+ 2.’” 38”$ 3ÌA‘” ’” 5” 5’” 6” 6” 7” 7” 7	” 7” 7”( 7$”) 7%”- 7)”. 7*”7 73”8 74”> 7:”? 7;”Ì@ 7<–” 9” 9” 9” 9” 9” 9’” :” :Ü ” ;” ;
+” ;” ;” ;!” ;"”' ;+”( ;,”6 ;:”7 ;;”ÌA ;ÌE”ÌB ;ÌF”ÌC ;ÌG”ÌD ;ÌH”ÌE ;ÌU”ÌF ;ÌVÜ ” =” =” =” =” =”' =!”) =#”3 =-”5 =/”9 =3”: =4”ÌC ==”ÌD =>”ÌJ =ÌD”ÌK =ÌE”ÌL =ÌF”ÌM =ÌGÜ ” >” >
+” >” >”# >”$ >”( >"”, >&”0 >(”6 >.”7 >/”; >3”< >4”Ì@ >6”ÌD >:”ÌF ><’” ?” ?š” Ì@” Ì@” Ì@” Ì@”" Ì@”( Ì@ ”) Ì@!”5 Ì@-”6 Ì@.”7 Ì@/Ü ” ÌA” ÌA” ÌA”" ÌA”% ÌA”) ÌA!”* ÌA"”. ÌA&”/ ÌA'”9 ÌA1”: ÌA2”ÌC ÌA;”ÌD ÌA<”ÌL ÌAÌD”ÌM ÌAÌE”ÌO ÌAÌG”ÌP ÌAÌH”ÌX ÌAÌP”ÌY ÌAÌQ”Ì[ ÌAÌS”Ì_ ÌAÌW”Ìc ÌAÌ[”Ìd ÌAÌ\”Ìn ÌAÌf”Ìo ÌAÌg”Ìr ÌAÌj”Ìs ÌAÌk”Ìt ÌAÌl˜” ÌB” ÌB” ÌB” ÌB”& ÌB”* ÌB"”+ ÌB#”- ÌB%—” ÌC
+” ÌC” ÌC”% ÌC”( ÌC”- ÌC#”. ÌC#‘” ÌD	‘” ÌDÜ ” ÌE
+” ÌE” ÌE”% ÌE”( ÌE”, ÌE"”- ÌE#”1 ÌE'”2 ÌE(”< ÌE2”= ÌE3”ÌA ÌE7”ÌB ÌE8”ÌO ÌEÌE”ÌR ÌEÌH”ÌS ÌEÌI”ÌT ÌEÌJ”ÌU ÌEÌK”ÌY ÌEÌO”ÌZ ÌEÌO‘” ÌF	‘” ÌG‘” ÌG’” ÌH” ÌHÜ ” ÌI” ÌI” ÌI” ÌI”  ÌI”! ÌI”* ÌI"”+ ÌI#”9 ÌI1”: ÌI2”ÌD ÌI<”ÌE ÌI=”ÌF ÌI>”ÌG ÌI?”ÌH ÌIÌI”ÌI ÌIÌI™” ÌJ” ÌJ” ÌJ” ÌJ” ÌJ”! ÌJ”" ÌJ”& ÌJ”' ÌJ™” ÌK” ÌK” ÌK”  ÌK”# ÌK”( ÌK ”) ÌK!”4 ÌK,”5 ÌK-™” ÌM” ÌM” ÌM” ÌM”" ÌM”' ÌM”( ÌM ”2 ÌM*”3 ÌM+Ü ” ÌN” ÌN” ÌN”" ÌN”% ÌN”) ÌN!”* ÌN"”. ÌN&”/ ÌN'”9 ÌN1”: ÌN2”ÌC ÌN;”ÌD ÌN<”ÌL ÌNÌD”ÌM ÌNÌE”ÌO ÌNÌG”ÌP ÌNÌH”ÌX ÌNÌP”ÌY ÌNÌQ”Ì[ ÌNÌS”Ì_ ÌNÌW”Ìc ÌNÌ[”Ìd ÌNÌ\”Ìn ÌNÌf”Ìo ÌNÌg”Ìr ÌNÌj”Ìs ÌNÌk”Ìt ÌNÌl˜” ÌO” ÌO” ÌO” ÌO”& ÌO”* ÌO"”+ ÌO#”- ÌO%—” ÌP
+” ÌP” ÌP”% ÌP”( ÌP”- ÌP#”. ÌP#‘” ÌQ	‘” ÌQÜ ” ÌR
+” ÌR” ÌR”% ÌR”( ÌR”, ÌR"”- ÌR#”1 ÌR'”2 ÌR(”< ÌR2”= ÌR3”ÌA ÌR7”ÌB ÌR8”ÌO ÌRÌE”ÌR ÌRÌH”ÌS ÌRÌI”ÌT ÌRÌJ”ÌU ÌRÌK”ÌY ÌRÌO”ÌZ ÌRÌO‘” ÌS	Ü ” ÌU” ÌU” ÌU” ÌU” ÌU”+ ÌU#”- ÌU%”4 ÌU,”6 ÌU-”: ÌU1”; ÌU2”ÌD ÌU;”ÌE ÌU<”ÌI ÌUÌ@”ÌJ ÌUÌA”ÌN ÌUÌE”ÌO ÌUÌF”ÌT ÌUÌK”ÌU ÌUÌL”ÌV ÌUÌM”ÌW ÌUÌNÜ ” ÌV” ÌV” ÌV” ÌV”" ÌV”& ÌV”' ÌV”+ ÌV#”, ÌV$”1 ÌV)”2 ÌV*”; ÌV3”< ÌV4”ÌA ÌV9”ÌB ÌV:”ÌD ÌV<”ÌE ÌV=”ÌJ ÌVÌB”ÌK ÌVÌC”ÌM ÌVÌE”ÌQ ÌVÌI”ÌV ÌVÌN”ÌW ÌVÌO”Ì^ ÌVÌV”Ì_ ÌVÌW”Ìb ÌVÌZ”Ìc ÌVÌ[”Ìd ÌVÌ\” ÌW” ÌW” ÌW” ÌW” ÌW”+ ÌW#”- ÌW%”9 ÌW1”; ÌW2”? ÌW6”Ì@ ÌW7”ÌJ ÌWÌA”ÌK ÌWÌB”ÌL ÌWÌC™” ÌX” ÌX” ÌX” ÌX” ÌX”$ ÌX”% ÌX”, ÌX$”- ÌX%˜” ÌY” ÌY” ÌY” ÌY”# ÌY”' ÌY”( ÌY ”* ÌY"—” ÌZ
+” ÌZ” ÌZ”" ÌZ”% ÌZ”* ÌZ ”+ ÌZ ‘” Ì[	‘” Ì[Ü ” Ì\
+” Ì\” Ì\”" Ì\”% Ì\”) Ì\”* Ì\ ”. Ì\$”/ Ì\%”4 Ì\*”5 Ì\+”9 Ì\/”: Ì\0”ÌD Ì\:”ÌG Ì\=”ÌH Ì\>”ÌI Ì\?”ÌJ Ì\Ì@”ÌN Ì\ÌD”ÌO Ì\ÌD‘” Ì]	™” Ì_” Ì_” Ì_” Ì_” Ì_”$ Ì_”% Ì_”' Ì_”( Ì_™” Ì`” Ì`” Ì`” Ì`”" Ì`”' Ì`”( Ì` ”2 Ì`*”3 Ì`*‘” Ìa–” Ìb”	 Ìb” Ìb” Ìb
+” Ìb” Ìb’” Ìc” Ìc”” Ìe”	 Ìe”
+ Ìe” Ìe’” Ìf” Ìfš” Ìg” Ìg” Ìg” Ìg” Ìg” Ìg” Ìg”  Ìg”! Ìg”# Ìg•” Ìh” Ìh” Ìh”" Ìh”# Ìh”” Ìi” Ìi” Ìi”" Ìi”” Ìj” Ìj” Ìj” Ìj“” Ìk” Ìk” Ìk’” Ìl” Ìl‘”	 Ìm˜” Ìn” Ìn” Ìn” Ìn” Ìn” Ìn” Ìn”  Ìn•” Ìo” Ìo” Ìo”" Ìo”# Ìo”” Ìp” Ìp” Ìp”  Ìp”” Ìq” Ìq” Ìq” Ìq“” Ìr” Ìr” Ìr’” Ìs” Ìs‘”	 Ìt˜” Ìu” Ìu” Ìu” Ìu” Ìu” Ìu”! Ìu”# Ìu•” Ìv” Ìv” Ìv”" Ìv”# Ìv”” Ìw” Ìw” Ìw”  Ìw”” Ìx” Ìx” Ìx” Ìx“” Ìy” Ìy” Ìy’” Ìz” Ìz‘”	 Ì{’” Ì}” Ì}’” Ì~” Ì~˜” Ì” Ì” Ì” Ì” Ì”# Ì”% Ì”& Ì Ü ” Ì€” Ì€” Ì€” Ì€” Ì€” Ì€” Ì€”# Ì€”' Ì€!”) Ì€#”* Ì€$”+ Ì€%”, Ì€&”0 Ì€*”1 Ì€+”ÌC Ì€=”ÌD Ì€>”ÌH Ì€ÌB”ÌI Ì€ÌC”ÌJ Ì€ÌD”ÌK Ì€ÌE”ÌL Ì€ÌF”ÌP Ì€ÌJ”ÌQ Ì€ÌK”ÌX Ì€ÌR”ÌY Ì€ÌS›” Ì” Ì” Ì” Ì” Ì” Ì”  Ì”$ Ì”% Ì”+ Ì%”, Ì&™” Ì‚” Ì‚” Ì‚” Ì‚” Ì‚” Ì‚” Ì‚”" Ì‚”# Ì‚™” Ìƒ” Ìƒ” Ìƒ” Ìƒ”  Ìƒ”$ Ìƒ”% Ìƒ”0 Ìƒ*”1 Ìƒ+™” Ì„” Ì„” Ì„” Ì„” Ì„”  Ì„”! Ì„”( Ì„"”) Ì„#™” Ì…” Ì…” Ì…” Ì…” Ì…”# Ì…”$ Ì…”. Ì…(”/ Ì…)™” Ì†” Ì†” Ì†” Ì†” Ì†”# Ì†”$ Ì†”. Ì†(”/ Ì†)›” Ìˆ” Ìˆ” Ìˆ” Ìˆ”" Ìˆ”$ Ìˆ”* Ìˆ$”+ Ìˆ%”0 Ìˆ*”1 Ìˆ+”2 Ìˆ+•” Ì‰” Ì‰” Ì‰”" Ì‰”# Ì‰”” ÌŠ” ÌŠ” ÌŠ” ÌŠ”” Ì‹” Ì‹” Ì‹” Ì‹“” ÌŒ” ÌŒ” ÌŒ” Ì” Ì
+” Ì” Ì” Ì” Ì” Ì”# Ì”. Ì(”/ Ì)”0 Ì*”1 Ì+”2 Ì,”3 Ì-‘”	 Ì”” Ì” Ì” Ì” Ìœ” Ì” Ì” Ì” Ì” Ì”' Ì!”) Ì#”1 Ì+”3 Ì-”6 Ì0”7 Ì1”8 Ì1•” Ì” Ì” Ì”" Ì”# Ì”” Ì‘” Ì‘” Ì‘” Ì‘”” Ì’” Ì’” Ì’” Ì’“” Ì“” Ì“” Ì“‘”	 Ì”’” Ì•” Ì•‘” Ì—˜” Ì™” Ì™”" Ì™”$ Ì™”) Ì™”+ Ì™”, Ì™”. Ì™–” Ì™” Ì™” Ìü”  Ìü”! Ìü”' Ìü–” Ì™” Ì™” Ìı”! Ìı”" Ìı”( ÌıÜ ” Ì™” Ì™” Ìş”" Ìş”# Ìş”% Ìş”) Ìş”+ Ìş”- Ìş”/ Ìş”4 Ìş ”6 Ìş"”8 Ìş$”: Ìş&”= Ìş)”? Ìş+”ÌA Ìş-”ÌC Ìş/’” Ìš” Ìš’” Ì›” Ì›’” Ìœ
+” Ìœ–” Ìœ
+” Ìœ” Ì¥” Ì¥” Ì¥”$ Ì¥–” Ìœ
+” Ìœ” Ì¦” Ì¦” Ì¦”! Ì¦˜” Ìœ
+” Ìœ” Ì§”& Ì§”' Ì§”0 Ì§#”1 Ì§$”= Ì§0š” Ìœ
+” Ìœ” Ì¨” Ì¨” Ì¨”! Ì¨”' Ì¨”) Ì¨”* Ì¨”, Ì¨”” Ì” Ì”  Ì”& Ì–” Ì” Ì” Ì” Ì” Ì”$ Ì$’” Ì” Ì” Ì” Ì”% Ì”' Ì”2 Ì#”4 Ì%”9 Ì*”; Ì,”? Ì0”ÌA Ì2”ÌE Ì6”ÌF Ì7”ÌJ Ì;”ÌL Ì=–” Ì” Ì” Ì?”# ÌÌD”$ ÌÌE”) ÌÌJ˜” Ì” Ì” ÌŸ”' ÌŸ”( ÌŸ”1 ÌŸ"”2 ÌŸ#”5 ÌŸ&˜” Ì” Ì” Ì ”- Ì ”. Ì ”3 Ì $”4 Ì %”? Ì 0™” Ì” Ì” Ì¡”& Ì¡”' Ì¡”( Ì¡”- Ì¡&”/ Ì¡(”1 Ì¡*—” Ì¢” Ì¢” Ì¢”! Ì¢”$ Ì¢”) Ì¢!”* Ì¢!’” Ì£” Ì£’” Ìœ
+” Ìœ’” Ì©
+” Ì©’” Ìš” Ìš’” Ì›” Ì›’” Ì¬” Ì¬’” Ì­” Ì­˜” Ì®
+” Ì®”" Ì®”$ Ì®”) Ì®”+ Ì®”, Ì®”. Ì®˜” Ì®
+” Ì®” Ì´”% Ì´”& Ì´”5 Ì´&”6 Ì´'”; Ì´,–” Ì®
+” Ì®” Ìµ”  Ìµ”! Ìµ”' Ìµš” Ì®
+” Ì®” Ìµ”" Ìµ ”# Ìµ!”% Ìµ#”( Ìµ&”* Ìµ(”+ Ìµ)”- Ìµ+š” Ì®
+” Ì®” Ì¶”! Ì¶”" Ì¶”$ Ì¶”* Ì¶”, Ì¶”- Ì¶”/ Ì¶”” Ì¯” Ì¯”  Ì¯”$ Ì¯’” Ì¯” Ì¯” Ì°” Ì°”$ Ì°”& Ì°”1 Ì°"”3 Ì°$”; Ì°,”= Ì°.”ÌA Ì°2”ÌC Ì°4”ÌG Ì°8”ÌH Ì°9”ÌS Ì°ÌD”ÌU Ì°ÌF–” Ì°” Ì°” Ì°ÌH”# Ì°ÌN”$ Ì°ÌO”' Ì°ÌR™” Ì°” Ì°” Ì±”% Ì±”& Ì±”' Ì±”, Ì±&”. Ì±(”0 Ì±*—” Ì²” Ì²” Ì²”( Ì² ”+ Ì²#”0 Ì²(”1 Ì²(’” Ì³” Ì³’” Ì®
+” Ì®’” Ì·
+” Ì·’” Ì¬” Ì¬’” Ì­” Ì­’” Ìº” Ìº’” Ì»” Ì»’” Ì¼
+” Ì¼–” Ì¼
+” Ì¼” ÌÌ” ÌÌ” ÌÌ”$ ÌÌ–” Ì¼
+” Ì¼” ÌÍ” ÌÍ” ÌÍ”! ÌÍ˜” Ì¼
+” Ì¼” ÌÎ”& ÌÎ”' ÌÎ”0 ÌÎ#”1 ÌÎ$”= ÌÎ0š” Ì¼
+” Ì¼” ÌÏ” ÌÏ” ÌÏ”! ÌÏ”' ÌÏ”) ÌÏ”* ÌÏ”, ÌÏ”” Ì½” Ì½”  Ì½”$ Ì½–” Ì½” Ì½” Ì½” Ì½” Ì½”$ Ì½"’” Ì½” Ì½Ü "” Ì¾” Ì¾”" Ì¾”# Ì¾”% Ì¾”* Ì¾”, Ì¾”1 Ì¾"”3 Ì¾4”5 Ì¾6”8 Ì¾9”< Ì¾=”= Ì¾>”ÌA Ì¾ÌB”ÌB Ì¾ÌC”ÌG Ì¾ÌH”ÌH Ì¾ÌI”ÌK Ì¾ÌL”ÌL Ì¾ÌM”ÌQ Ì¾ÌR”ÌR Ì¾ÌS”ÌT Ì¾ÌU”ÌU Ì¾ÌV”ÌV Ì¾ÌW”ÌX Ì¾ÌY”Ì] Ì¾Ì^”Ì_ Ì¾Ì`”Ìd Ì¾Ìe”Ìe Ì¾Ìf”Ìi Ì¾Ìj”Ìk Ì¾Ì}”Ìl Ì¾Ì}”Ìm Ì¾Ì~”Ìn Ì¾Ì˜” Ì¾” Ì¾” Ì¿”# Ì¿”$ Ì¿”( Ì¿”) Ì¿”3 Ì¿'š” Ì¾” Ì¾” ÌÀ”" ÌÀ”# ÌÀ”' ÌÀ”( ÌÀ”/ ÌÀ#”3 ÌÀ'”5 ÌÀ)˜” Ì¾” Ì¾” ÌÁ”  ÌÁ”! ÌÁ”% ÌÁ”& ÌÁ”/ ÌÁ#›” Ì¾” Ì¾” ÌÁ%”# ÌÁ-”$ ÌÁ.”% ÌÁ/”* ÌÁ<”, ÌÁ>”0 ÌÁÌW”2 ÌÁÌY”4 ÌÁÌ[–” ÌÂ” ÌÂ”! ÌÂ”% ÌÂ”& ÌÂ”( ÌÂ —” ÌÃ”  ÌÃ”! ÌÃ”( ÌÃ”+ ÌÃ!”- ÌÃ#”. ÌÃ#—” ÌÄ”  ÌÄ”! ÌÄ”* ÌÄ ”- ÌÄ#”2 ÌÄ(”3 ÌÄ(‘” ÌÅ‘” ÌÅŸ” ÌÆ”  ÌÆ”% ÌÆ”( ÌÆ”, ÌÆ"”- ÌÆ#”1 ÌÆ'”2 ÌÆ(”7 ÌÆ-”8 ÌÆ.”= ÌÆ3”Ì@ ÌÆ6”ÌA ÌÆ7”ÌB ÌÆ8”ÌC ÌÆ8™” ÌÇ”  ÌÇ”! ÌÇ”( ÌÇ”+ ÌÇ!”0 ÌÇ&”1 ÌÇ'”3 ÌÇ)”4 ÌÇ)™” ÌÈ”  ÌÈ”! ÌÈ”* ÌÈ ”- ÌÈ#”2 ÌÈ(”3 ÌÈ)”7 ÌÈ-”8 ÌÈ-‘” ÌÉ’” ÌÊ” ÌÊ’” Ì¾” Ì¾’” Ì¼
+” Ì¼’” ÌĞ
+” ÌĞ’” Ìº” Ìº’” Ì»” Ì»’” ÌÓ” ÌÓ’” ÌÔ” ÌÔ’” ÌÕ
+” ÌÕ–” ÌÕ
+” ÌÕ” Ìå” Ìå” Ìå”$ Ìå–” ÌÕ
+” ÌÕ” Ìæ” Ìæ” Ìæ”! Ìæ˜” ÌÕ
+” ÌÕ” Ìç”& Ìç”' Ìç”0 Ìç#”1 Ìç$”= Ìç0š” ÌÕ
+” ÌÕ” Ìè” Ìè” Ìè”! Ìè”' Ìè”) Ìè”* Ìè”, Ìè”” ÌÖ” ÌÖ”  ÌÖ”$ ÌÖ–” ÌÖ” ÌÖ” ÌÖ” ÌÖ” ÌÖ”$ ÌÖ"’” ÌÖ” ÌÖÜ "” Ì×” Ì×”" Ì×”# Ì×”% Ì×”* Ì×”, Ì×”1 Ì×"”3 Ì×4”5 Ì×6”8 Ì×9”< Ì×=”= Ì×>”ÌA Ì×ÌB”ÌB Ì×ÌC”ÌL Ì×ÌM”ÌM Ì×ÌN”ÌP Ì×ÌQ”ÌQ Ì×ÌR”ÌY Ì×ÌZ”ÌZ Ì×Ì[”Ì\ Ì×Ì]”Ì] Ì×Ì^”Ì^ Ì×Ì_”Ì` Ì×Ìa”Ìe Ì×Ìf”Ìg Ì×Ìh”Ìo Ì×Ìp”Ìp Ì×Ìq”Ìt Ì×Ìu”Ìv Ì×Ìˆ”Ìw Ì×Ìˆ”Ìx Ì×Ì‰”Ìy Ì×ÌŠ˜” Ì×” Ì×” ÌØ”# ÌØ”$ ÌØ”( ÌØ”) ÌØ”6 ÌØ*š” Ì×” Ì×” ÌÙ”" ÌÙ”# ÌÙ”' ÌÙ”( ÌÙ”/ ÌÙ#”3 ÌÙ'”5 ÌÙ)˜” Ì×” Ì×” ÌÚ”  ÌÚ”! ÌÚ”% ÌÚ”& ÌÚ”2 ÌÚ&›” Ì×” Ì×” ÌÚ(”# ÌÚ0”$ ÌÚ1”% ÌÚ2”* ÌÚ?”, ÌÚÌA”0 ÌÚÌZ”2 ÌÚÌ\”4 ÌÚÌ^–” ÌÛ” ÌÛ”! ÌÛ”% ÌÛ”& ÌÛ”( ÌÛ —” ÌÜ”  ÌÜ”! ÌÜ”+ ÌÜ!”. ÌÜ$”0 ÌÜ&”1 ÌÜ&—” Ìİ”  Ìİ”! Ìİ”- Ìİ#”0 Ìİ&”5 Ìİ+”6 Ìİ+‘” ÌŞ‘” ÌŞŸ” Ìß”  Ìß”( Ìß”+ Ìß!”/ Ìß%”0 Ìß&”4 Ìß*”5 Ìß+”? Ìß5”Ì@ Ìß6”ÌE Ìß;”ÌH Ìß>”ÌI Ìß?”ÌJ ÌßÌ@”ÌK ÌßÌ@™” Ìà”  Ìà”! Ìà”+ Ìà!”. Ìà$”6 Ìà,”7 Ìà-”9 Ìà/”: Ìà/™” Ìá”  Ìá”! Ìá”- Ìá#”0 Ìá&”8 Ìá.”9 Ìá/”= Ìá3”> Ìá3‘” Ìâ’” Ìã” Ìã’” Ì×” Ì×’” ÌÕ
+” ÌÕ’” Ìé
+” Ìé’” ÌÓ” ÌÓ’” ÌÔ” ÌÔ’” Ìì” Ìì’” Ìí” Ìí’” Ìî
+” Ìî–” Ìî
+” Ìî” Ìö” Ìö” Ìö”$ Ìö–” Ìî
+” Ìî” Ì÷” Ì÷” Ì÷”! Ì÷˜” Ìî
+” Ìî” Ìø”& Ìø”' Ìø”0 Ìø#”1 Ìø$”= Ìø0š” Ìî
+” Ìî” Ìù” Ìù” Ìù”! Ìù”$ Ìù”& Ìù”( Ìù”* ÌùÜ ” Ìï” Ìï”+ Ìï”/ Ìï”1 Ìï”3 Ìï”7 Ìï”9 Ìï!”ÌC Ìï+”ÌD Ìï,”ÌJ Ìï2”ÌL Ìï4”ÌW Ìï?”ÌY ÌïÌA”Ì] ÌïÌE”Ì_ ÌïÌG–” Ìï” Ìï” Ìğ”' Ìğ”( Ìğ”) Ìğ–” Ìï” Ìï” Ìñ”  Ìñ”! Ìñ”' Ìñ—” Ìï” Ìï” Ìò”" Ìò”# Ìò”& Ìò”( Ìò–” Ìó” Ìó” Ìó”# Ìó”% Ìó”& Ìó’” Ìô” Ìô’” Ìï” Ìï’” Ìî
+” Ìî’” Ìì” Ìì’” Ìí” Ìí’” Ì™” Ì™”” Í ”  Í 
+”! Í ”' Í •” Í”( Í”) Í”, Í”. Í” Í” Í
+” Í” Í” Í”" Í”# Í”' Í”2 Í(”3 Í)”4 Í*”5 Í+”6 Í,”7 Í-”” Í” Í” Í” Í’” Í” Í—” Í”" Í”# Í”$ Í”+ Í,”- Í.”/ Í0™” Í” Í
+” Í” Í”! Í”( Í”) Í”2 Í(”3 Í(’” Í” Í‘” Í‘”  %	’” %”	 %‘”& %ÌO‘”  &	’” &”	 &‘”- &!‘”  '	’” '”	 '‘”& '‘”  (	’” (”	 (‘”) (‘”  )	’” )”	 )‘”+ )"‘”  *	’” *”	 *‘”, *‘”  +	’” +”	 +‘”, + ‘”  ,	’” ,”	 ,‘”. ,%‘”  -	’” -”	 -‘”/ -"ÔrF–§version¤file§sources®sourcesContent¥names¨mappingsÀ‘À‘ÀÜ€‘”    ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”  	 ‘”  
+ ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”    ‘”  ! ‘”  " ‘”  # ‘”  $ ‘”  % ‘”  & ‘”  ' ‘”  ( ‘”  ) ‘”  * ‘”  + ‘”  , ‘”  - ‘”  . ‘”  / ‘”  0 ‘”  1 ‘”  2 ‘”  3 ‘”  4 ‘”  5 ‘”  6 ‘”  7 ‘”  8 ‘”  9 ‘”  : ‘”  ; ‘”  < ‘”  = ‘”  > ‘”  ? ‘”  Ì@ ‘”  ÌA ‘”  ÌB ‘”  ÌC ‘”  ÌD ‘”  ÌE ‘”  ÌF ‘”  ÌG ‘”  ÌH ‘”  ÌI ‘”  ÌJ ‘”  ÌK ‘”  ÌL ‘”  ÌM ‘”  ÌN ‘”  ÌO ‘”  ÌP ‘”  ÌQ ‘”  ÌR ‘”  ÌS ‘”  ÌT ‘”  ÌU ‘”  ÌV ‘”  ÌW ‘”  ÌX ‘”  ÌY ‘”  ÌZ ‘”  Ì[ ‘”  Ì\ ‘”  Ì] ‘”  Ì^ ‘”  Ì_ ‘”  Ì` ‘”  Ìa ‘”  Ìb ‘”  Ìc ‘”  Ìd ‘”  Ìe ‘”  Ìf ‘”  Ìg ‘”  Ìh ‘”  Ìi ‘”  Ìj ‘”  Ìk ‘”  Ìl ‘”  Ìm ‘”  Ìn ‘”  Ìo ‘”  Ìp ‘”  Ìq ‘”  Ìr ‘”  Ìs ‘”  Ìt ‘”  Ìu ‘”  Ìv ‘”  Ìw ‘”  Ìx ‘”  Ìy ‘”  Ìz ‘”  Ì{ ‘”  Ì| ‘”  Ì} ‘”  Ì~ ‘”  Ì ‘”  Ì€ ‘”  Ì ‘”  Ì‚ ‘”  Ìƒ ‘”  Ì„ ‘”  Ì… ‘”  Ì† ‘”  Ì‡ ‘”  Ìˆ ‘”  Ì‰ ‘”  ÌŠ ‘”  Ì‹ ‘”  ÌŒ ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì‘ ‘”  Ì’ ‘”  Ì“ ‘”  Ì” ‘”  Ì• ‘”  Ì– ‘”  Ì— ‘”  Ì˜ ‘”  Ì™ ‘”  Ìš ‘”  Ì› ‘”  Ìœ ‘”  Ì ‘”  Ì ‘”  ÌŸ ‘”  Ì  ‘”  Ì¡ ‘”  Ì¢ ‘”  Ì£ ‘”  Ì¤ ‘”  Ì¥ ‘”  Ì¦ ‘”  Ì§ ‘”  Ì¨ ‘”  Ì© ‘”  Ìª ‘”  Ì« ‘”  Ì¬ ‘”  Ì­ ‘”  Ì® ‘”  Ì¯ ‘”  Ì° ‘”  Ì± ‘”  Ì² ‘”  Ì³ ‘”  Ì´ ‘”  Ìµ ‘”  Ì¶ ‘”  Ì· ‘”  Ì¸ ‘”  Ì¹ ‘”  Ìº ‘”  Ì» ‘”  Ì¼ ‘”  Ì½ ‘”  Ì¾ ‘”  Ì¿ ‘”  ÌÀ ‘”  ÌÁ ‘”  ÌÂ ‘”  ÌÃ ‘”  ÌÄ ‘”  ÌÅ ‘”  ÌÆ ‘”  ÌÇ ‘”  ÌÈ ‘”  ÌÉ ‘”  ÌÊ ‘”  ÌË ‘”  ÌÌ ‘”  ÌÍ ‘”  ÌÎ ‘”  ÌÏ ‘”  ÌĞ ‘”  ÌÑ ‘”  ÌÒ ‘”  ÌÓ ‘”  ÌÔ ‘”  ÌÕ ‘”  ÌÖ ‘”  Ì× ‘”  ÌØ ‘”  ÌÙ ‘”  ÌÚ ‘”  ÌÛ ‘”  ÌÜ ‘”  Ìİ ‘”  ÌŞ ‘”  Ìß ‘”  Ìà ‘”  Ìá ‘”  Ìâ ‘”  Ìã ‘”  Ìä ‘”  Ìå ‘”  Ìæ ‘”  Ìç ‘”  Ìè ‘”  Ìé ‘”  Ìê ‘”  Ìë ‘”  Ìì ‘”  Ìí ‘”  Ìî ‘”  Ìï ‘”  Ìğ ‘”  Ìñ ‘”  Ìò ‘”  Ìó ‘”  Ìô ‘”  Ìõ ‘”  Ìö ‘”  Ì÷ ‘”  Ìø ‘”  Ìù ‘”  Ìú ‘”  Ìû ‘”  Ìü ‘”  Ìı ‘”  Ìş ‘”  Ìÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ‘”  ÍQ ‘”  ÍR ‘”  ÍS ‘”  ÍT ‘”  ÍU ‘”  ÍV ‘”  ÍW ‘”  ÍX ‘”  ÍY ‘”  ÍZ ‘”  Í[ ‘”  Í\ ‘”  Í] ‘”  Í^ ‘”  Í_ ‘”  Í` ‘”  Ía ‘”  Íb ‘”  Íc ‘”  Íd ‘”  Íe ‘”  Íf ‘”  Íg ‘”  Íh ‘”  Íi ‘”  Íj ‘”  Ík ‘”  Íl ‘”  Ím ‘”  Ín ‘”  Ío ‘”  Íp ‘”  Íq ‘”  Ír ‘”  Ís ‘”  Ít ‘”  Íu ‘”  Ív ‘”  Íw ‘”  Íx ‘”  Íy ‘”  Íz ‘”  Í{ ‘”  Í| ‘”  Í} ‘”  Í~ ‘”  Í ÂÔ  ÔrG”²dynamicImportCache¹exportAllDeclarationCache»exportNamedDeclarationCache«importCache‘ÔrH–¤type¥start£end«declarationªspecifiers¦source¶ExportNamedDeclarationÍ¿Í´ÔrI™¤type¥start£end¢idªexpression©generator¥async¦params¤body³FunctionDeclarationÍÆÍ´ÔrJ”¤type¥start£end¤nameªIdentifierÍÏÍÚ«PageBuilderÂÂÂ“JªIdentifierÍÛÍß¤nameJªIdentifierÍáÍæ¥paramÔrK•¤type¥start£end¤left¥right±AssignmentPatternÍèÍõJªIdentifierÍèÍî¦parentÔrL•¤type¥start£end¥value£raw§LiteralÍñÍõÀ¤nullÔrM”¤type¥start£end¤body®BlockStatementÍ÷Í´‘M®BlockStatementÍşÍ±‘ÔrN”¤type¥start£endªexpression³ExpressionStatementÍ	ÍªÔrO–¤type¥start£end¦callee©arguments¨optional®CallExpressionÍ	Í©ÔrP—¤type¥start£end¦object¨property¨computed¨optional°MemberExpressionÍ	Í;ÔrQ–¤type¥start£end¤testªconsequent©alternateµConditionalExpressionÍ
+Í JªIdentifierÍ
+Í¦parentJªIdentifierÍÍ¦parentÔrR“¤type¥start£end®ThisExpressionÍÍ JªIdentifierÍ"Í;¹observeComponentCreation2ÂÂ’I·ArrowFunctionExpressionÍ<Í’ÀÂÂÂ’JªIdentifierÍ=ÍC¦elmtIdJªIdentifierÍEÍT¯isInitialRenderM®BlockStatementÍYÍ’‘Q«IfStatementÍhÍ‡JªIdentifierÍlÍ{¯isInitialRenderM®BlockStatementÍ}Í”ÔrS•¤type¥start£end¬declarations¤kind³VariableDeclarationÍÍ0‘ÔrT•¤type¥start£end¢id¤init²VariableDeclaratorÍ”Í/JªIdentifierÍ”Í¡­componentCallÔrU•¤type¥start£end¦callee©arguments­NewExpressionÍ¤Í/JªIdentifierÍ¨Í°¨AddAlbum–QµConditionalExpressionÍ±ÍÇJªIdentifierÍ±Í·¦parentJªIdentifierÍºÍÀ¦parentR®ThisExpressionÍÃÍÇÔrV”¤type¥start£endªproperties°ObjectExpressionÍÉÍËJªIdentifierÍÍÍÖ©undefinedJªIdentifierÍØÍŞ¦elmtIdI·ArrowFunctionExpressionÍàÍéÀÂÂÂM®BlockStatementÍæÍéV°ObjectExpressionÍëÍ.“ÔrW™¤type¥start£end¦method©shorthand¨computed£key¥value¤kind¨PropertyÍíÍÂÂÂJªIdentifierÍíÍñ¤pageL§LiteralÍóÍÙ%entry/src/main/ets/pages/AddAlbum.etsÙ'"entry/src/main/ets/pages/AddAlbum.ets"¤initW¨PropertyÍÍ$ÂÂÂJªIdentifierÍÍ ¤lineL§LiteralÍ"Í$¢31¤initW¨PropertyÍ&Í,ÂÂÂJªIdentifierÍ&Í)£colL§LiteralÍ+Í,¡3¤init£letN³ExpressionStatementÍBÍ_O®CallExpressionÍBÍ^P°MemberExpressionÍBÍOJªIdentifierÍBÍH¦ViewV2JªIdentifierÍIÍO¦createÂÂ‘JªIdentifierÍPÍ]­componentCallÂS³VariableDeclarationÍqÍ¿‘T²VariableDeclaratorÍuÍ¾JªIdentifierÍuÍ¬paramsLambdaI·ArrowFunctionExpressionÍ„Í¾ÀÂÂÂM®BlockStatementÍŠÍ¾‘ÔrX”¤type¥start£end¨argument¯ReturnStatementÍ¡Í«V°ObjectExpressionÍ¨Íª£letN³ExpressionStatementÍÑÍÿÔrY–¤type¥start£end¨operator¤left¥right´AssignmentExpressionÍÑÍş¡=P°MemberExpressionÍÑÍïJªIdentifierÍÑÍŞ­componentCallJªIdentifierÍßÍï°paramsGenerator_ÂÂJªIdentifierÍòÍş¬paramsLambdaM®BlockStatementÍ!Í‡‘N³ExpressionStatementÍ4ÍxO®CallExpressionÍ4ÍwP°MemberExpressionÍ4ÍkQµConditionalExpressionÍ5ÍKJªIdentifierÍ5Í;¦parentJªIdentifierÍ>ÍD¦parentR®ThisExpressionÍGÍKJªIdentifierÍMÍk¾updateStateVarsOfChildByElmtIdÂÂ’JªIdentifierÍlÍr¦elmtIdV°ObjectExpressionÍtÍvÂV°ObjectExpressionÍ”Í¨‘W¨PropertyÍ–Í¦ÂÂÂJªIdentifierÍ–Íš¤nameL§LiteralÍœÍ¦¨AddAlbumª"AddAlbum"¤initÂÀ–ÔrZ•¤type¥start£endªspecifiers¦source±ImportDeclarationÍÍÇ’Ôr[•¤type¥start£end¨imported¥local¯ImportSpecifierÍ˜Í¤JªIdentifierÍ˜Í¤¬AppStorageV2JªIdentifierÍ˜Í¤¬AppStorageV2[¯ImportSpecifierÍ¦Í²JªIdentifierÍ¦Í²¬promptActionJªIdentifierÍ¦Í²¬promptActionL§LiteralÍºÍÆª@kit.ArkUI¬"@kit.ArkUI"Z±ImportDeclarationÍÉÍ‘[¯ImportSpecifierÍÒÍßJªIdentifierÍÒÍß­cloudDatabaseJªIdentifierÍÒÍß­cloudDatabaseL§LiteralÍçÍ ·@kit.CloudFoundationKit¹"@kit.CloudFoundationKit"Z±ImportDeclarationÍÍ%‘[¯ImportSpecifierÍÍJªIdentifierÍÍ¤utilJªIdentifierÍÍ¤utilL§LiteralÍÍ$ª@kit.ArkTS¬"@kit.ArkTS"Z±ImportDeclarationÍ'ÍO‘[¯ImportSpecifierÍ0Í5JªIdentifierÍ0Í5¥AlbumJªIdentifierÍ0Í5¥AlbumL§LiteralÍ=ÍN¯../module/Album±"../module/Album"Z±ImportDeclarationÍQÍŒ’[¯ImportSpecifierÍZÍbJªIdentifierÍZÍb¨MainStatJªIdentifierÍZÍb¨MainStat[¯ImportSpecifierÍdÍoJªIdentifierÍdÍo«resultClassJªIdentifierÍdÍo«resultClassL§LiteralÍwÍ‹²../common/MainStat´'../common/MainStat'Z±ImportDeclarationÍÍ½‘[¯ImportSpecifierÍ—Í JªIdentifierÍ—Í ©AppConfigJªIdentifierÍ—Í ©AppConfigL§LiteralÍ¨Í¼²../utils/AppConfig´'../utils/AppConfig'

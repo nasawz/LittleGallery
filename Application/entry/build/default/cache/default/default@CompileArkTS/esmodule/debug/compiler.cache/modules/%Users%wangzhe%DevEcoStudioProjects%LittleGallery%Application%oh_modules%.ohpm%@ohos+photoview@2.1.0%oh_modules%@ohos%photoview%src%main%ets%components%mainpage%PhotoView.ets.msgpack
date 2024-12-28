@@ -1,0 +1,1759 @@
+Ôr@Ÿªassertions¤code´customTransformCache¬dependencies¢id¤meta±moduleSideEffects¬originalCode±originalSourcemap«resolvedIds®sourcemapChainµsyntheticNamedExportsµtransformDependencies®transformFiles¨cacheAstÔrAÚx@var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+if (!("finalizeConstruction" in ViewPU.prototype)) {
+    Reflect.set(ViewPU.prototype, "finalizeConstruction", () => { });
+}
+/*
+ * Copyright (C) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import Matrix4 from '@ohos.matrix4';
+import RectF from './RectF';
+class PhotoView extends ViewV2 {
+    constructor(parent, params, __localStorage, elmtId = -1, paramsLambda, extraInfo) {
+        super(parent, elmtId, extraInfo);
+        this.initParam("model", (params && "model" in params) ? params.model : new PhotoView.Model());
+        this.finalizeConstruction();
+    }
+    zoomTo(scale, durationMs) {
+        let currentScale = 0;
+        if (scale > this.model.getMaximumScale()) {
+            currentScale = this.model.getMaximumScale();
+        }
+        else if (scale < this.model.getMinimumScale()) {
+            currentScale = this.model.getMinimumScale();
+        }
+        else {
+            currentScale = scale;
+        }
+        Context.animateTo({
+            duration: durationMs,
+            tempo: 0.5,
+            curve: Curve.EaseInOut,
+            delay: 0,
+            iterations: 1,
+            playMode: PlayMode.Normal,
+            onFinish: () => {
+            }
+        }, () => {
+            this.model.scale = currentScale;
+            this.model.updateMatrix();
+        });
+    }
+    initialRender() {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Flex.create({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center });
+            Gesture.create(GesturePriority.Low);
+            GestureGroup.create(GestureMode.Exclusive);
+            TapGesture.create({ count: 2, fingers: 1 });
+            TapGesture.onAction((event) => {
+                console.debug("photo double tap:");
+                if (this.model.isZoom) {
+                    if (this.model.scale == this.model.scaleMax) {
+                        this.model.scale = this.model.scaleMin;
+                        this.model.childSpan = false;
+                        this.model.resetMatrix();
+                    }
+                    else {
+                        if (this.model.scale < this.model.scaleMax) {
+                            this.model.scale = this.model.scaleMax;
+                            this.model.panDirection = PanDirection.All;
+                            this.model.swipeDirection = SwipeDirection.None;
+                            this.model.childSpan = true;
+                        }
+                        else {
+                            this.model.scale = this.model.scaleMin;
+                            this.model.panDirection = PanDirection.None;
+                            this.model.swipeDirection = this.model.cacheSwipeDirection;
+                            this.model.childSpan = false;
+                        }
+                        if (this.model.animate) {
+                            this.zoomTo(this.model.scale, this.model.mZoomDuration);
+                        }
+                        else {
+                            this.model.updateMatrix();
+                        }
+                    }
+                }
+                if (this.model.matrixChangedListener != null) {
+                    this.model.matrixChangedListener.onMatrixChanged(this.model.rect);
+                }
+                if (this.model.scaleChangeListener != null) {
+                    this.model.scaleChangeListener.onScaleChange(this.model.scale, 0, 0);
+                }
+                if (this.model.doubleTapListener != null) {
+                    this.model.doubleTapListener.onDoubleTap(event);
+                }
+            });
+            TapGesture.pop();
+            TapGesture.create({ count: 1, fingers: 1 });
+            TapGesture.onAction((event) => {
+                console.debug("photo single tap:");
+                if (this.model.clickListener != null) {
+                    this.model.clickListener.onClick(event);
+                }
+                if (!event || !event.fingerList || !event.fingerList[0]) {
+                    return;
+                }
+                if (this.model.viewTapListener != null) {
+                    this.model.viewTapListener.onViewTap(vp2px(event.fingerList[0].globalX), vp2px(event.fingerList[0].globalY));
+                }
+                if (this.model.rect != null) {
+                    // Check to see if the user tapped on the photo
+                    if (this.model.rect.contains(vp2px(event.fingerList[0].globalX), vp2px(event.fingerList[0].globalY))) {
+                        let xResult = (vp2px(event.fingerList[0].globalX) - this.model.rect.left)
+                            / this.model.rect.width();
+                        let yResult = (vp2px(event.fingerList[0].globalY) - this.model.rect.top)
+                            / this.model.rect.height();
+                        if (this.model.photoTapListener != null) {
+                            this.model.photoTapListener.onPhotoTap(xResult, yResult);
+                        }
+                    }
+                    else {
+                        if (this.model.outsidePhotoTapListener != null) {
+                            this.model.outsidePhotoTapListener.onOutsidePhotoTap();
+                        }
+                    }
+                }
+            });
+            TapGesture.pop();
+            LongPressGesture.create();
+            LongPressGesture.onAction((event) => {
+                console.debug("PhotoView long press:");
+                if (event && this.model.longPressListener != null) {
+                    this.model.longPressListener.onLongPress(event);
+                }
+            });
+            LongPressGesture.onActionEnd((event) => {
+                // if (this.model.longPressListener != null) {
+                //   this.model.longPressListener.onLongPress(event)
+                // }
+            });
+            LongPressGesture.pop();
+            PanGesture.create(this.model.panOption);
+            PanGesture.onActionStart(() => {
+                this.model.preOffsetX = this.model.offsetX;
+                this.model.preOffsetY = this.model.offsetY;
+            });
+            PanGesture.onActionUpdate((event) => {
+                if (this.model.isZoom && this.model.scale != this.model.scaleMin) {
+                    this.model.setOffset(this.model.preOffsetX + event.offsetX * this.model.scale, this.model.preOffsetY + event.offsetY * this.model.scale);
+                }
+            });
+            PanGesture.onActionEnd((event) => {
+                if (this.model.viewDragListener != null) {
+                    this.model.viewDragListener.onDrag(this.model.offsetX, this.model.offsetY);
+                }
+                if (this.model.matrixChangedListener != null) {
+                    this.model.matrixChangedListener.onMatrixChanged(this.model.rect);
+                }
+            });
+            PanGesture.pop();
+            PinchGesture.create({ fingers: 2 });
+            PinchGesture.onActionUpdate((event) => {
+                if (this.model.isZoom) {
+                    this.model.isPinch = true;
+                    this.model.scale = this.model.currentScale * event.scale;
+                    if (this.model.animate) {
+                        this.zoomTo(this.model.scale, this.model.mZoomDuration);
+                    }
+                    else {
+                        this.model.offsetX = 0;
+                        this.model.offsetY = 0;
+                        this.model.updateMatrix();
+                    }
+                }
+            });
+            PinchGesture.onActionEnd((event) => {
+                this.model.isPinch = false;
+                if (this.model.scale < this.model.scaleMin) {
+                    this.model.scale = this.model.scaleMin;
+                }
+                if (this.model.scale > this.model.scaleMax) {
+                    this.model.scale = this.model.scaleMax;
+                }
+                this.model.currentScale = this.model.scale;
+                this.model.preOffsetX = 0;
+                this.model.preOffsetY = 0;
+                if (this.model.animate) {
+                    this.zoomTo(this.model.scale, this.model.mZoomDuration);
+                }
+                else {
+                    this.model.offsetX = 0;
+                    this.model.offsetY = 0;
+                    this.model.updateMatrix();
+                }
+                this.model.isZooming = (this.model.scale > 1);
+                if (this.model.matrixChangedListener != null) {
+                    this.model.matrixChangedListener.onMatrixChanged(this.model.rect);
+                }
+                if (this.model.scaleChangeListener != null) {
+                    this.model.scaleChangeListener.onScaleChange(this.model.scale, 0, 0);
+                }
+            });
+            PinchGesture.pop();
+            SwipeGesture.create({ direction: this.model.swipeDirection });
+            SwipeGesture.onAction((event) => {
+                console.info("xxx photo swipe:");
+            });
+            SwipeGesture.pop();
+            GestureGroup.pop();
+            Gesture.pop();
+            Flex.onTouch((event) => {
+                if (event) {
+                    if (event.type == TouchType.Up) {
+                        //æ”¾å¤§å›¾ç‰‡æ‹–æ‹½åˆ°è¾¹ç•Œåï¼Œå¯åŠ¨æ»‘åŠ¨æ‰‹åŠ¿ï¼Œå°†æ‹–æ‹½æ‰‹åŠ¿æ–¹å‘è°ƒæ•´
+                        if (!this.model.vertical && this.model.enableSwipe) {
+                            if (this.model.isBoundary_X) {
+                                this.model.isBoundary_X = false;
+                                console.log("xxx this.gestureConversion1 PanDirection.Vertical, SwipeDirection.Horizontal");
+                                this.model.gestureConversion(PanDirection.Vertical, SwipeDirection.Horizontal);
+                            }
+                        }
+                        else if (this.model.vertical && this.model.enableSwipe) {
+                            if (this.model.isBoundary_Y) {
+                                this.model.isBoundary_Y = false;
+                                console.log("xxx this.gestureConversion2 PanDirection.Horizontal, SwipeDirection.Vertical");
+                                this.model.gestureConversion(PanDirection.Horizontal, SwipeDirection.Vertical);
+                            }
+                        }
+                    }
+                }
+            });
+        }, Flex);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Image.create(this.model.src);
+            Image.alt(this.model.previewImage);
+            Image.objectFit(this.model.imageFit);
+            Image.transform(this.model.matrix);
+            Image.interpolation(ImageInterpolation.Low);
+            Image.draggable(false);
+            Image.onComplete((event) => {
+                this.model.sWidth = event.width;
+                this.model.sHeight = event.height;
+                this.model.componentWidth = event.componentWidth;
+                this.model.componentHeight = event.componentHeight;
+                this.model.contentHeight = event.contentHeight;
+                this.model.contentWidth = event.contentWidth;
+                this.model.contentOffSetX = event.contentOffsetX;
+                this.model.contentOffSetY = event.contentOffsetY;
+                const left = event.contentOffsetX;
+                const top = event.contentOffsetY;
+                const right = event.contentOffsetX + event.contentWidth;
+                const bottom = event.contentOffsetY + event.contentHeight;
+                this.model.rect = new RectF(left, top, right, bottom);
+            });
+        }, Image);
+        Flex.pop();
+    }
+    updateStateVars(params) {
+        if (params === undefined) {
+            return;
+        }
+        if ("model" in params) {
+            this.updateParam("model", params.model);
+        }
+    }
+    rerender() {
+        this.updateDirtyElements();
+    }
+}
+__decorate([
+    Param
+], PhotoView.prototype, "model", void 0);
+(function (PhotoView) {
+    let Model = class Model {
+        constructor() {
+            this.src = '';
+            this.sWidth = 0;
+            this.sHeight = 0;
+            this.componentWidth = 0;
+            this.componentHeight = 0;
+            this.baseAngle = 0;
+            this.rotateAngle = 0;
+            this.scale = 1;
+            this.currentScale = 1;
+            this.animate = false; //  æ˜¯å¦å¯æ‰‹åŠ¿ç¼©æ”¾
+            this.imageFit = ImageFit.Contain;
+            this.scaleMin = 1.0;
+            this.scaleMed = 2;
+            this.scaleMax = 3.0;
+            this.isZoom = true;
+            this.centerX = 0;
+            this.centerY = 0;
+            this.centerZ = 0;
+            this.offsetX = 0;
+            this.offsetY = 0;
+            this.preOffsetX = 0;
+            this.preOffsetY = 0;
+            this.verticalEnd = false;
+            //ç¼©æ”¾å å¹³ç§»åˆ°åŠå±è¾¹ç•Œçš„å¡«å……å€¼
+            this.startOffsetX = 10;
+            this.startOffsetY = 23;
+            this.photoTapListener = null;
+            this.doubleTapListener = null;
+            this.longPressListener = null;
+            this.clickListener = null;
+            this.matrixChangedListener = null;
+            this.viewTapListener = null;
+            this.viewDragListener = null;
+            this.scaleChangeListener = null;
+            this.outsidePhotoTapListener = null;
+            this.onSwipeListener = null;
+            this.rect = null;
+            this.iterations = 0;
+            this.mZoomDuration = 200;
+            this.scaledDensity = 0;
+            this.isZooming = false;
+            this.dragging = false;
+            this.contentHeight = 0;
+            this.contentWidth = 0;
+            this.contentOffSetX = 0;
+            this.contentOffSetY = 0;
+            this.previewImage = '';
+            this.panDirection = PanDirection.None;
+            this.swipeDirection = SwipeDirection.Horizontal;
+            this.cacheSwipeDirection = SwipeDirection.Horizontal;
+            this.childSpan = false;
+            this.parentIsSwiper = false;
+            this.matrix = Matrix4.identity()
+                .rotate({
+                x: 0,
+                y: 0,
+                z: 1,
+                angle: this.rotateAngle
+            })
+                .translate({ x: this.offsetX, y: this.offsetY })
+                .scale({ x: this.scale, y: this.scale });
+            //æ˜¯å¦æ‹–æ‹½åˆ°è¾¹ç•Œ
+            this.isBoundary_X = false;
+            this.isBoundary_Y = false;
+            // æ˜¯å¦åŒæŒ‡ç¼©æ”¾
+            this.isPinch = false;
+            //æ˜¯å¦å‚ç›´æ»‘åŠ¨
+            this.vertical = false;
+            //æ˜¯å¦å¯åŠ¨æ»‘åŠ¨
+            this.enableSwipe = true;
+            // æ‹–æ‹½æ‰‹åŠ¿å‚æ•°
+            this.panOption = new PanGestureOptions({ fingers: 1, direction: PanDirection.None });
+            console.debug("PhotoView create");
+        }
+        setVertical(isVertical) {
+            this.vertical = isVertical;
+            return this;
+        }
+        setImageURI(src) {
+            this.src = src;
+            return this;
+        }
+        setImageResource(src) {
+            this.src = src;
+            return this;
+        }
+        setImageElement(src) {
+            this.src = src;
+            return this;
+        }
+        setSwipeDirection(swipeDirection) {
+            this.swipeDirection = swipeDirection;
+            this.cacheSwipeDirection = swipeDirection;
+            return this;
+        }
+        isParentSwiper(parentIsSwiper) {
+            this.parentIsSwiper = parentIsSwiper;
+            return this;
+        }
+        setImageFit(imageFit) {
+            this.imageFit = imageFit;
+            console.log("imageFit");
+            return this;
+        }
+        setPreviewImage(src) {
+            this.previewImage = src;
+            return this;
+        }
+        setScale(scale, animate) {
+            this.scale = scale;
+            if (this.scale < this.scaleMin) {
+                this.scale = this.scaleMin;
+            }
+            if (this.scale > this.scaleMax) {
+                this.scale = this.scaleMax;
+            }
+            if (animate) {
+                this.iterations = 1;
+            }
+            else {
+                this.iterations = 0;
+            }
+            this.animate = animate;
+            return this;
+        }
+        setZoomTransitionDuration(milliseconds) {
+            this.mZoomDuration = milliseconds;
+            return this;
+        }
+        getMinimumScale() {
+            return this.scaleMin;
+        }
+        getMediumScale() {
+            return this.scaleMed;
+        }
+        getMaximumScale() {
+            return this.scaleMax;
+        }
+        getScale() {
+            return this.scale;
+        }
+        setMinimumScale(minimumScale) {
+            this.scaleMin = minimumScale;
+            return this;
+        }
+        setMediumScale(mediumScale) {
+            this.scaleMed = mediumScale;
+            return this;
+        }
+        setMaximumScale(maximumScale) {
+            this.scaleMax = maximumScale;
+            return this;
+        }
+        setScaleLevels(minimumScale, mediumScale, maximumScale) {
+            this.scaleMin = minimumScale;
+            this.scaleMed = mediumScale;
+            this.scaleMax = maximumScale;
+            return this;
+        }
+        setBaseRotation(degrees) {
+            this.rotateAngle = degrees % 360;
+            this.setRotationBy(this.rotateAngle);
+            return this;
+        }
+        setRotationTo(rotationDegree) {
+            this.rotateAngle = rotationDegree % 360;
+            this.matrix = Matrix4.identity()
+                .rotate({
+                x: 0,
+                y: 0,
+                z: 1,
+                angle: this.rotateAngle
+            });
+            return this;
+        }
+        setRotationBy(rotationDegree) {
+            this.rotateAngle = (this.rotateAngle + rotationDegree) % 360;
+            this.matrix = Matrix4.identity()
+                .rotate({
+                x: 0,
+                y: 0,
+                z: 1,
+                angle: this.rotateAngle
+            });
+            return this;
+        }
+        setRotationCenter(x, y, z) {
+            this.centerX = z;
+            this.centerY = y;
+            this.centerZ = z;
+            return this;
+        }
+        setZoomable(zoomable) {
+            if (!zoomable) {
+                this.scale = this.scaleMin;
+                this.setImageFit(ImageFit.None);
+                this.isZoom = false;
+                return this;
+            }
+            this.isZoom = zoomable;
+            return this;
+        }
+        isZoomEnabled() {
+            return this.isZoom;
+        }
+        setImageOffset(pointX, pointY) {
+            this.offsetX = pointX;
+            this.offsetY = pointY;
+            return this;
+        }
+        setOnClickListener(listener) {
+            this.clickListener = listener;
+            return this;
+        }
+        setOnLongClickListener(listener) {
+            this.longPressListener = listener;
+            return this;
+        }
+        setOnMatrixChangeListener(listener) {
+            this.matrixChangedListener = listener;
+            return this;
+        }
+        setOnPhotoTapListener(listener) {
+            this.photoTapListener = listener;
+            return this;
+        }
+        setOnViewTapListener(listener) {
+            this.viewTapListener = listener;
+            return this;
+        }
+        setOnViewDragListener(listener) {
+            this.viewDragListener = listener;
+            return this;
+        }
+        setOnScaleChangeListener(scaleChangeListener) {
+            this.scaleChangeListener = scaleChangeListener;
+            return this;
+        }
+        setOnOutsidePhotoTapListener(outsidePhotoTapListener) {
+            this.outsidePhotoTapListener = outsidePhotoTapListener;
+            return this;
+        }
+        setOnDoubleTapListener(onDoubleTapListener) {
+            this.doubleTapListener = onDoubleTapListener;
+            return this;
+        }
+        setOnSwipeListener(onSwipeListener) {
+            this.onSwipeListener = onSwipeListener;
+            return this;
+        }
+        updateMatrix() {
+            if (!!this.rect) {
+                const originLeft = this.contentOffSetX;
+                const originTop = this.contentOffSetY;
+                const originWidth = this.contentWidth;
+                const originHeight = this.contentHeight;
+                const scaledWidth = originWidth * this.scale;
+                const scaledHeight = originHeight * this.scale;
+                const centerXOffset = (scaledWidth - originWidth) / 2;
+                const centerYOffset = (scaledHeight - originHeight) / 2;
+                this.rect.left = originLeft + this.offsetX - centerXOffset;
+                this.rect.top = originTop + this.offsetY - centerYOffset;
+                this.rect.right = this.rect.left + scaledWidth + centerXOffset;
+                this.rect.bottom = this.rect.top + scaledHeight + centerYOffset;
+            }
+            if (this.enableSwipe && !this.isPinch) {
+                //å›¾ç‰‡æ”¾å¤§æ—¶ç¦ç”¨æ»‘åŠ¨æ‰‹åŠ¿ï¼Œå¯åŠ¨æ‹–åŠ¨æ‰‹åŠ¿
+                //å›¾ç‰‡å¤åŸæ—¶å¯åŠ¨æ»‘åŠ¨æ‰‹åŠ¿ï¼Œç¦ç”¨æ‹–åŠ¨æ‰‹åŠ¿
+                if (this.scale == this.scaleMin) {
+                    if (!this.vertical) {
+                        console.log("xxx this.gestureConversion3 PanDirection.None, SwipeDirection.Horizontal");
+                        this.gestureConversion(PanDirection.None, SwipeDirection.Horizontal);
+                    }
+                    else {
+                        console.log("xxx this.gestureConversion4 PanDirection.None, SwipeDirection.Vertical");
+                        this.gestureConversion(PanDirection.None, SwipeDirection.Vertical);
+                    }
+                }
+                else {
+                    console.log("xxx this.gestureConversion5 PanDirection.All, SwipeDirection.None");
+                    this.gestureConversion(PanDirection.All, SwipeDirection.None);
+                }
+            }
+            this.matrix = Matrix4.identity()
+                .rotate({
+                x: 0,
+                y: 0,
+                z: 1,
+                angle: this.rotateAngle
+            })
+                .translate({ x: this.offsetX, y: this.offsetY, z: 1 })
+                .scale({
+                x: this.scale,
+                y: this.scale,
+                centerX: this.centerX,
+                centerY: this.centerY
+            });
+            if (this.onSwipeListener != null) {
+                this.onSwipeListener.onSwipeListener(this.childSpan);
+            }
+        }
+        //è®¾ç½®æ»‘åŠ¨æ‰‹åŠ¿ä¸æ‹–æ‹½æ‰‹åŠ¿çš„æ–¹å‘
+        gestureConversion(panDirection, swipeDirection, vertical) {
+            this.panOption.setDirection(panDirection);
+            if (swipeDirection !== undefined) {
+                this.swipeDirection = swipeDirection;
+                if (vertical !== undefined) {
+                    this.vertical = vertical;
+                }
+                if (!this.enableSwipe) {
+                    this.enableSwipe = true;
+                }
+            }
+            else {
+                this.enableSwipe = false;
+                this.swipeDirection = SwipeDirection.None;
+            }
+            return this;
+        }
+        resetMatrix() {
+            this.scale = 1;
+            this.currentScale = 1;
+            this.centerX = 0;
+            this.centerY = 0;
+            this.offsetX = 0;
+            this.offsetY = 0;
+            this.rotateAngle = 0;
+            this.panDirection = PanDirection.None;
+            this.swipeDirection = this.cacheSwipeDirection;
+            this.updateMatrix();
+        }
+        getSuppMatrix(matrix) {
+            this.matrix;
+        }
+        setSuppMatrix(matrix) {
+            this.matrix = matrix;
+            return this;
+        }
+        isScaling() {
+            return this.scale != 1;
+        }
+        isDragging() {
+            return this.offsetX != 0 || this.offsetY != 0;
+        }
+        getRectF() {
+            return this.rect;
+        }
+        setOffset(offsetX, offsetY) {
+            let maxOffsetX = (this.contentWidth * this.scale - this.componentWidth) / 2 / this.scale + 10;
+            let maxOffsetY = (this.contentHeight * this.scale - this.componentHeight) / 2 / this.scale + 10;
+            console.log("xxx maxOffsetX = " + maxOffsetX);
+            if (this.contentWidth * this.scale > this.componentWidth) {
+                this.offsetX = offsetX;
+                if (this.offsetX > maxOffsetX) {
+                    //å·¦è¾¹
+                    this.offsetX = maxOffsetX;
+                    this.isBoundary_X = true;
+                }
+                else if (this.offsetX < -maxOffsetX) {
+                    //å³è¾¹
+                    this.offsetX = -maxOffsetX;
+                    this.isBoundary_X = true;
+                }
+            }
+            if (this.contentHeight * this.scale > this.componentHeight) {
+                this.offsetY = offsetY;
+                if (this.offsetY > maxOffsetY) {
+                    this.offsetY = maxOffsetY;
+                    this.isBoundary_Y = true;
+                }
+                else if (this.offsetY < -maxOffsetY) {
+                    this.offsetY = -maxOffsetY;
+                    this.isBoundary_Y = true;
+                }
+            }
+            this.updateMatrix();
+        }
+    };
+    __decorate([
+        Trace
+    ], Model.prototype, "src", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "sWidth", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "sHeight", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "componentWidth", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "componentHeight", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "baseAngle", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "rotateAngle", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "scale", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "currentScale", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "animate", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "imageFit", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "scaleMin", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "scaleMed", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "scaleMax", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "isZoom", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "centerX", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "centerY", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "centerZ", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "offsetX", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "offsetY", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "preOffsetX", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "preOffsetY", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "verticalEnd", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "startOffsetX", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "startOffsetY", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "rect", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "iterations", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "mZoomDuration", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "scaledDensity", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "isZooming", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "dragging", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "contentHeight", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "contentWidth", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "contentOffSetX", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "contentOffSetY", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "previewImage", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "panDirection", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "swipeDirection", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "cacheSwipeDirection", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "childSpan", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "parentIsSwiper", void 0);
+    __decorate([
+        Trace
+    ], Model.prototype, "matrix", void 0);
+    Model = __decorate([
+        ObservedV2
+    ], Model);
+    PhotoView.Model = Model;
+})(PhotoView || (PhotoView = {}));
+export { PhotoView };
+//# sourceMappingURL=PhotoView.js.mapÂ’Ùj hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_api_@ohos.matrix4.d.tsÙª/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@ohos+photoview@2.1.0/oh_modules/@ohos/photoview/src/main/ets/components/mainpage/RectF.etsÙ®/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@ohos+photoview@2.1.0/oh_modules/@ohos/photoview/src/main/ets/components/mainpage/PhotoView.etsÔrB™±isLocalDependency¯isNodeEntryFile§pkgPath§pkgNameªpkgVersion±belongProjectPath±dependencyPkgInfo¬shouldEmitJs¯hostModulesInfoÂÂÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@ohos+photoview@2.1.0/oh_modules/@ohos/photoview¯@ohos/photoview¥2.1.0Ù=/Users/wangzhe/DevEcoStudioProjects/LittleGallery/ApplicationÔrC’§pkgNameªpkgVersion¯@ohos/photoview¥2.1.0ÃÃÚf)/*
+ * Copyright (C) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import Matrix4 from '@ohos.matrix4';
+import display from '@ohos.display';
+import RectF from './RectF'
+
+declare type ResourceStr = string | Resource | PixelMap;
+
+export interface OnSwipeListener {
+  onSwipeListener(ableSwipe: boolean): void;
+}
+
+export interface OnPhotoTapListener {
+  /**
+   * A callback to receive where the user taps on a photo. You will only receive a callback if
+   * the user taps on the actual photo, tapping on 'whitespace' will be ignored.
+   *
+   * @param x    where the user tapped from the of the Drawable, as percentage of the
+   *             Drawable width.
+   * @param y    where the user tapped from the top of the Drawable, as percentage of the
+   *             Drawable height.
+   */
+  onPhotoTap(x: number, y: number): void;
+}
+
+export interface OnDoubleTapListener {
+
+  onSingleTapConfirmed(event: GestureEvent): void;
+
+  onDoubleTap(event: GestureEvent): void;
+
+}
+
+export interface OnLongPressListener {
+  onLongPress(event: GestureEvent): void;
+}
+
+
+export interface OnMatrixChangedListener {
+  /**
+   * Callback for when the Matrix displaying the Drawable has changed. This could be because
+   * the View's bounds have changed, or the user has zoomed.
+   *
+   * @param rect - Rectangle displaying the Drawable's new bounds.
+   */
+  onMatrixChanged(rect: RectF | null): void;
+}
+
+export interface OnScaleChangedListener {
+  /**
+   * Callback for when the scale changes
+   *
+   * @param scaleFactor the scale factor (less than 1 for zoom out, greater than 1 for zoom in)
+   * @param focusX      focal point X position
+   * @param focusY      focal point Y position
+   */
+  onScaleChange(scaleFactor: number, focusX: number, focusY: number): void;
+}
+
+export interface OnOutsidePhotoTapListener {
+  onOutsidePhotoTap(): void;
+}
+
+export interface OnViewDragListener {
+
+  /**
+   * Callback for when the photo is experiencing a drag event. This cannot be invoked when the
+   * user is scaling.
+   *
+   * @param dx The change of the coordinates in the x-direction
+   * @param dy The change of the coordinates in the y-direction
+   */
+  onDrag(dx: number, dy: number): void;
+}
+
+export interface OnViewTapListener {
+
+  /**
+   * A callback to receive where the user taps on a ImageView. You will receive a callback if
+   * the user taps anywhere on the view, tapping on 'whitespace' will not be ignored.
+   *
+   * @param x    - where the user tapped from the left of the View.
+   * @param y    - where the user tapped from the top of the View.
+   */
+
+  onViewTap(x: number, y: number): void;
+
+}
+
+
+export interface OnClickListener {
+  onClick(event: GestureEvent): void;
+}
+
+@ComponentV2
+struct PhotoView {
+  @Param model: PhotoView.Model = new PhotoView.Model()
+
+  public zoomTo(scale: number, durationMs: number): void {
+    let currentScale = 0;
+    if (scale > this.model.getMaximumScale()) {
+      currentScale = this.model.getMaximumScale()
+    } else if (scale < this.model.getMinimumScale()) {
+      currentScale = this.model.getMinimumScale()
+    } else {
+      currentScale = scale;
+    }
+    animateTo({
+      duration: durationMs,
+      tempo: 0.5,
+      curve: Curve.EaseInOut,
+      delay: 0,
+      iterations: 1,
+      playMode: PlayMode.Normal,
+      onFinish: () => {
+      }
+    }, () => {
+      this.model.scale = currentScale;
+      this.model.updateMatrix();
+    })
+  }
+
+  build() {
+    Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
+      Image(this.model.src)
+        .alt(this.model.previewImage)
+        .objectFit(this.model.imageFit)
+        .transform(this.model.matrix)
+        .interpolation(ImageInterpolation.Low)
+        .draggable(false)
+        .onComplete((event: ESObject) => {
+          this.model.sWidth = event.width;
+          this.model.sHeight = event.height;
+          this.model.componentWidth = event.componentWidth;
+          this.model.componentHeight = event.componentHeight;
+          this.model.contentHeight = event.contentHeight;
+          this.model.contentWidth = event.contentWidth;
+          this.model.contentOffSetX = event.contentOffsetX;
+          this.model.contentOffSetY = event.contentOffsetY;
+
+          const left: number = event.contentOffsetX;
+          const top: number = event.contentOffsetY;
+          const right: number = event.contentOffsetX + event.contentWidth;
+          const bottom: number = event.contentOffsetY + event.contentHeight;
+          this.model.rect = new RectF(left, top, right, bottom)
+        })
+    }
+    .gesture(
+      GestureGroup(GestureMode.Exclusive,
+        TapGesture({ count: 2, fingers: 1 })
+          .onAction((event: GestureEvent) => {
+            console.debug("photo double tap:")
+            if (this.model.isZoom) {
+              if (this.model.scale == this.model.scaleMax) {
+                this.model.scale = this.model.scaleMin
+                this.model.childSpan = false;
+                this.model.resetMatrix();
+              } else {
+                if (this.model.scale < this.model.scaleMax) {
+                  this.model.scale = this.model.scaleMax
+                  this.model.panDirection = PanDirection.All
+                  this.model.swipeDirection = SwipeDirection.None
+                  this.model.childSpan = true;
+                } else {
+                  this.model.scale = this.model.scaleMin
+                  this.model.panDirection = PanDirection.None
+                  this.model.swipeDirection = this.model.cacheSwipeDirection
+                  this.model.childSpan = false;
+                }
+                if (this.model.animate) {
+                  this.zoomTo(this.model.scale, this.model.mZoomDuration)
+                } else {
+                  this.model.updateMatrix();
+                }
+              }
+            }
+            if (this.model.matrixChangedListener != null) {
+              this.model.matrixChangedListener.onMatrixChanged(this.model.rect)
+            }
+            if (this.model.scaleChangeListener != null) {
+              this.model.scaleChangeListener.onScaleChange(this.model.scale, 0, 0)
+            }
+            if (this.model.doubleTapListener != null) {
+              this.model.doubleTapListener.onDoubleTap(event)
+            }
+          }),
+        TapGesture({ count: 1, fingers: 1 })
+          .onAction((event: GestureEvent) => {
+            console.debug("photo single tap:")
+            if (this.model.clickListener != null) {
+              this.model.clickListener.onClick(event);
+            }
+            if (!event || !event.fingerList || !event.fingerList[0]) {
+              return;
+            }
+            if (this.model.viewTapListener != null) {
+              this.model.viewTapListener.onViewTap(vp2px(event.fingerList[0].globalX),
+                vp2px(event.fingerList[0].globalY))
+            }
+            if (this.model.rect != null) {
+              // Check to see if the user tapped on the photo
+              if (this.model.rect.contains(vp2px(event.fingerList[0].globalX), vp2px(event.fingerList[0].globalY))) {
+                let xResult: number = (vp2px(event.fingerList[0].globalX) - this.model.rect.left)
+                  / this.model.rect.width();
+                let yResult: number = (vp2px(event.fingerList[0].globalY) - this.model.rect.top)
+                  / this.model.rect.height();
+                if (this.model.photoTapListener != null) {
+                  this.model.photoTapListener.onPhotoTap(xResult, yResult);
+                }
+              } else {
+                if (this.model.outsidePhotoTapListener != null) {
+                  this.model.outsidePhotoTapListener.onOutsidePhotoTap();
+                }
+              }
+            }
+          }),
+        LongPressGesture()
+          .onAction((event: GestureEvent) => {
+            console.debug("PhotoView long press:")
+            if (event && this.model.longPressListener != null) {
+              this.model.longPressListener.onLongPress(event)
+            }
+          })
+          .onActionEnd((event: GestureEvent) => {
+            // if (this.model.longPressListener != null) {
+            //   this.model.longPressListener.onLongPress(event)
+            // }
+          }),
+        PanGesture(this.model.panOption)
+          .onActionStart(() => {
+            this.model.preOffsetX = this.model.offsetX;
+            this.model.preOffsetY = this.model.offsetY;
+          })
+          .onActionUpdate((event: GestureEvent) => {
+            if (this.model.isZoom && this.model.scale != this.model.scaleMin) {
+              this.model.setOffset(this.model.preOffsetX + event.offsetX * this.model.scale,
+                this.model.preOffsetY + event.offsetY * this.model.scale);
+            }
+          })
+          .onActionEnd((event: GestureEvent) => {
+            if (this.model.viewDragListener != null) {
+              this.model.viewDragListener.onDrag(this.model.offsetX, this.model.offsetY)
+            }
+            if (this.model.matrixChangedListener != null) {
+              this.model.matrixChangedListener.onMatrixChanged(this.model.rect)
+            }
+          }),
+        PinchGesture({ fingers: 2 })
+          .onActionUpdate((event: GestureEvent) => {
+            if (this.model.isZoom) {
+              this.model.isPinch = true;
+              this.model.scale = this.model.currentScale * event.scale;
+
+              if (this.model.animate) {
+                this.zoomTo(this.model.scale, this.model.mZoomDuration)
+              } else {
+                this.model.offsetX = 0;
+                this.model.offsetY = 0;
+                this.model.updateMatrix();
+              }
+            }
+          })
+          .onActionEnd((event: GestureEvent) => {
+            this.model.isPinch = false;
+            if (this.model.scale < this.model.scaleMin) {
+              this.model.scale = this.model.scaleMin
+            }
+            if (this.model.scale > this.model.scaleMax) {
+              this.model.scale = this.model.scaleMax
+            }
+
+            this.model.currentScale = this.model.scale;
+            this.model.preOffsetX = 0;
+            this.model.preOffsetY = 0;
+
+            if (this.model.animate) {
+              this.zoomTo(this.model.scale, this.model.mZoomDuration)
+            } else {
+              this.model.offsetX = 0;
+              this.model.offsetY = 0;
+              this.model.updateMatrix();
+            }
+
+            this.model.isZooming = (this.model.scale > 1)
+            if (this.model.matrixChangedListener != null) {
+              this.model.matrixChangedListener.onMatrixChanged(this.model.rect)
+            }
+            if (this.model.scaleChangeListener != null) {
+              this.model.scaleChangeListener.onScaleChange(this.model.scale, 0, 0)
+            }
+          })
+        , SwipeGesture({ direction: this.model.swipeDirection })
+          .onAction((event: GestureEvent) => {
+            console.info("xxx photo swipe:")
+          }),
+      )
+    ).onTouch((event?: TouchEvent): void => {
+      if (event) {
+        if (event.type == TouchType.Up) {
+          //æ”¾å¤§å›¾ç‰‡æ‹–æ‹½åˆ°è¾¹ç•Œåï¼Œå¯åŠ¨æ»‘åŠ¨æ‰‹åŠ¿ï¼Œå°†æ‹–æ‹½æ‰‹åŠ¿æ–¹å‘è°ƒæ•´
+          if (!this.model.vertical && this.model.enableSwipe) {
+            if (this.model.isBoundary_X) {
+              this.model.isBoundary_X = false;
+              console.log("xxx this.gestureConversion1 PanDirection.Vertical, SwipeDirection.Horizontal");
+              this.model.gestureConversion(PanDirection.Vertical, SwipeDirection.Horizontal);
+            }
+          } else if (this.model.vertical && this.model.enableSwipe) {
+            if (this.model.isBoundary_Y) {
+              this.model.isBoundary_Y = false;
+              console.log("xxx this.gestureConversion2 PanDirection.Horizontal, SwipeDirection.Vertical");
+              this.model.gestureConversion(PanDirection.Horizontal, SwipeDirection.Vertical);
+            }
+          }
+        }
+      }
+    })
+  }
+}
+
+namespace PhotoView {
+  @ObservedV2
+  export class Model {
+    @Trace src: ResourceStr = '';
+    @Trace sWidth: number = 0;
+    @Trace sHeight: number = 0;
+    @Trace componentWidth: number = 0;
+    @Trace componentHeight: number = 0;
+    @Trace baseAngle: number = 0
+    @Trace rotateAngle: number = 0
+    @Trace scale: number = 1
+    @Trace currentScale: number = 1
+    @Trace animate: boolean = false //  æ˜¯å¦å¯æ‰‹åŠ¿ç¼©æ”¾
+    @Trace imageFit: ImageFit = ImageFit.Contain;
+    @Trace scaleMin: number = 1.0
+    @Trace scaleMed: number = 2
+    @Trace scaleMax: number = 3.0
+    @Trace isZoom: boolean = true
+    @Trace centerX: number = 0
+    @Trace centerY: number = 0
+    @Trace centerZ: number = 0
+    @Trace offsetX: number = 0
+    @Trace offsetY: number = 0
+    @Trace preOffsetX: number = 0
+    @Trace preOffsetY: number = 0
+    @Trace verticalEnd: boolean = false;
+    //ç¼©æ”¾å å¹³ç§»åˆ°åŠå±è¾¹ç•Œçš„å¡«å……å€¼
+    @Trace startOffsetX: number = 10;
+    @Trace startOffsetY: number = 23;
+    photoTapListener: OnPhotoTapListener | null = null;
+    doubleTapListener: OnDoubleTapListener | null = null;
+    longPressListener: OnLongPressListener | null = null;
+    clickListener: OnClickListener | null = null;
+    matrixChangedListener: OnMatrixChangedListener | null = null;
+    viewTapListener: OnViewTapListener | null = null;
+    viewDragListener: OnViewDragListener | null = null;
+    scaleChangeListener: OnScaleChangedListener | null = null
+    outsidePhotoTapListener: OnOutsidePhotoTapListener | null = null
+    onSwipeListener: OnSwipeListener | null = null
+    @Trace rect: RectF | null = null;
+    @Trace iterations: number = 0
+    @Trace mZoomDuration: number = 200;
+    @Trace scaledDensity: number = 0;
+    @Trace isZooming: boolean = false;
+    @Trace dragging: boolean = false;
+    @Trace contentHeight: number = 0;
+    @Trace contentWidth: number = 0;
+    @Trace contentOffSetX: number = 0;
+    @Trace contentOffSetY: number = 0;
+    @Trace previewImage: string | Resource = '';
+    @Trace panDirection: PanDirection = PanDirection.None;
+    @Trace swipeDirection: SwipeDirection = SwipeDirection.Horizontal
+    @Trace cacheSwipeDirection: SwipeDirection = SwipeDirection.Horizontal
+    @Trace childSpan: boolean = false;
+    @Trace parentIsSwiper: boolean = false;
+    @Trace matrix: Matrix4.Matrix4Transit = Matrix4.identity()
+      .rotate({
+        x: 0,
+        y: 0,
+        z: 1,
+        angle: this.rotateAngle
+      })
+      .translate({ x: this.offsetX, y: this.offsetY })
+      .scale({ x: this.scale, y: this.scale });
+    //æ˜¯å¦æ‹–æ‹½åˆ°è¾¹ç•Œ
+    isBoundary_X: boolean = false;
+    isBoundary_Y: boolean = false;
+    // æ˜¯å¦åŒæŒ‡ç¼©æ”¾
+    isPinch: boolean = false
+    //æ˜¯å¦å‚ç›´æ»‘åŠ¨
+    vertical: boolean = false;
+    //æ˜¯å¦å¯åŠ¨æ»‘åŠ¨
+    enableSwipe: boolean = true;
+    // æ‹–æ‹½æ‰‹åŠ¿å‚æ•°
+    panOption: PanGestureOptions = new PanGestureOptions({ fingers: 1, direction: PanDirection.None })
+
+    constructor() {
+      console.debug("PhotoView create")
+    }
+
+    public setVertical(isVertical: boolean): Model {
+      this.vertical = isVertical;
+      return this
+    }
+
+    public setImageURI(src: string): Model {
+      this.src = src
+      return this
+    }
+
+    public setImageResource(src: Resource): Model {
+      this.src = src
+      return this
+    }
+
+    public setImageElement(src: PixelMap) {
+      this.src = src
+      return this
+    }
+
+    public setSwipeDirection(swipeDirection: SwipeDirection) {
+      this.swipeDirection = swipeDirection;
+      this.cacheSwipeDirection = swipeDirection;
+      return this;
+    }
+
+    public isParentSwiper(parentIsSwiper: boolean) {
+      this.parentIsSwiper = parentIsSwiper;
+      return this;
+    }
+
+    public setImageFit(imageFit: ImageFit): Model {
+      this.imageFit = imageFit
+      console.log("imageFit")
+      return this
+    }
+
+    public setPreviewImage(src: string | Resource) {
+      this.previewImage = src;
+      return this
+    }
+
+    public setScale(scale: number, animate: boolean): Model {
+      this.scale = scale
+      if (this.scale < this.scaleMin) {
+        this.scale = this.scaleMin
+      }
+      if (this.scale > this.scaleMax) {
+        this.scale = this.scaleMax
+      }
+
+      if (animate) {
+        this.iterations = 1
+      } else {
+        this.iterations = 0
+      }
+      this.animate = animate
+      return this
+    }
+
+    public setZoomTransitionDuration(milliseconds: number): Model {
+      this.mZoomDuration = milliseconds;
+      return this;
+    }
+
+    public getMinimumScale(): number {
+      return this.scaleMin
+    }
+
+    public getMediumScale(): number {
+      return this.scaleMed
+    }
+
+    public getMaximumScale(): number {
+      return this.scaleMax
+    }
+
+    public getScale(): number {
+      return this.scale
+    }
+
+    public setMinimumScale(minimumScale: number): Model {
+      this.scaleMin = minimumScale
+      return this
+    }
+
+    public setMediumScale(mediumScale: number): Model {
+      this.scaleMed = mediumScale
+      return this
+    }
+
+    public setMaximumScale(maximumScale: number): Model {
+      this.scaleMax = maximumScale
+      return this
+    }
+
+    public setScaleLevels(minimumScale: number, mediumScale: number, maximumScale: number): Model {
+      this.scaleMin = minimumScale
+      this.scaleMed = mediumScale
+      this.scaleMax = maximumScale
+      return this
+    }
+
+    public setBaseRotation(degrees: number): Model {
+      this.rotateAngle = degrees % 360
+      this.setRotationBy(this.rotateAngle)
+      return this
+    }
+
+    public setRotationTo(rotationDegree: number): Model {
+      this.rotateAngle = rotationDegree % 360
+      this.matrix = Matrix4.identity()
+        .rotate({
+          x: 0,
+          y: 0,
+          z: 1,
+          angle: this.rotateAngle
+        })
+      return this
+    }
+
+    public setRotationBy(rotationDegree: number): Model {
+      this.rotateAngle = (this.rotateAngle + rotationDegree) % 360
+      this.matrix = Matrix4.identity()
+        .rotate({
+          x: 0,
+          y: 0,
+          z: 1,
+          angle: this.rotateAngle
+        })
+      return this
+    }
+
+    public setRotationCenter(x: number, y: number, z: number): Model {
+      this.centerX = z
+      this.centerY = y
+      this.centerZ = z
+      return this
+    }
+
+    public setZoomable(zoomable: boolean): Model {
+      if (!zoomable) {
+        this.scale = this.scaleMin
+        this.setImageFit(ImageFit.None)
+        this.isZoom = false
+        return this
+      }
+      this.isZoom = zoomable
+      return this
+    }
+
+    public isZoomEnabled(): boolean {
+      return this.isZoom
+    }
+
+    public setImageOffset(pointX: number, pointY: number): Model {
+      this.offsetX = pointX
+      this.offsetY = pointY
+      return this
+    }
+
+    public setOnClickListener(listener: OnClickListener): Model {
+      this.clickListener = listener;
+      return this;
+    }
+
+    public setOnLongClickListener(listener: OnLongPressListener): Model {
+      this.longPressListener = listener;
+      return this;
+    }
+
+    public setOnMatrixChangeListener(listener: OnMatrixChangedListener): Model {
+      this.matrixChangedListener = listener;
+      return this;
+    }
+
+    public setOnPhotoTapListener(listener: OnPhotoTapListener): Model {
+      this.photoTapListener = listener;
+      return this;
+    }
+
+    public setOnViewTapListener(listener: OnViewTapListener): Model {
+      this.viewTapListener = listener;
+      return this;
+    }
+
+    public setOnViewDragListener(listener: OnViewDragListener): Model {
+      this.viewDragListener = listener;
+      return this;
+    }
+
+    public setOnScaleChangeListener(scaleChangeListener: OnScaleChangedListener): Model {
+      this.scaleChangeListener = scaleChangeListener;
+      return this;
+    }
+
+    public setOnOutsidePhotoTapListener(outsidePhotoTapListener: OnOutsidePhotoTapListener): Model {
+      this.outsidePhotoTapListener = outsidePhotoTapListener;
+      return this;
+    }
+
+    public setOnDoubleTapListener(onDoubleTapListener: OnDoubleTapListener): Model {
+      this.doubleTapListener = onDoubleTapListener;
+      return this;
+    }
+
+    public setOnSwipeListener(onSwipeListener: OnSwipeListener): Model {
+      this.onSwipeListener = onSwipeListener;
+      return this;
+    }
+
+    public updateMatrix(): void {
+      if (!!this.rect) {
+        const originLeft: number = this.contentOffSetX;
+        const originTop: number = this.contentOffSetY;
+        const originWidth: number = this.contentWidth;
+        const originHeight: number = this.contentHeight;
+
+        const scaledWidth: number = originWidth * this.scale;
+        const scaledHeight: number = originHeight * this.scale;
+
+        const centerXOffset = (scaledWidth - originWidth) / 2;
+        const centerYOffset = (scaledHeight - originHeight) / 2;
+
+        this.rect.left = originLeft + this.offsetX - centerXOffset;
+        this.rect.top = originTop + this.offsetY - centerYOffset;
+        this.rect.right = this.rect.left + scaledWidth + centerXOffset;
+        this.rect.bottom = this.rect.top + scaledHeight + centerYOffset;
+
+      }
+
+      if (this.enableSwipe && !this.isPinch) {
+        //å›¾ç‰‡æ”¾å¤§æ—¶ç¦ç”¨æ»‘åŠ¨æ‰‹åŠ¿ï¼Œå¯åŠ¨æ‹–åŠ¨æ‰‹åŠ¿
+        //å›¾ç‰‡å¤åŸæ—¶å¯åŠ¨æ»‘åŠ¨æ‰‹åŠ¿ï¼Œç¦ç”¨æ‹–åŠ¨æ‰‹åŠ¿
+        if (this.scale == this.scaleMin) {
+          if (!this.vertical) {
+            console.log("xxx this.gestureConversion3 PanDirection.None, SwipeDirection.Horizontal");
+            this.gestureConversion(PanDirection.None, SwipeDirection.Horizontal)
+          } else {
+            console.log("xxx this.gestureConversion4 PanDirection.None, SwipeDirection.Vertical");
+            this.gestureConversion(PanDirection.None, SwipeDirection.Vertical)
+          }
+        } else {
+          console.log("xxx this.gestureConversion5 PanDirection.All, SwipeDirection.None");
+          this.gestureConversion(PanDirection.All, SwipeDirection.None)
+        }
+      }
+
+      this.matrix = Matrix4.identity()
+        .rotate({
+          x: 0,
+          y: 0,
+          z: 1,
+          angle: this.rotateAngle
+        })
+        .translate({ x: this.offsetX, y: this.offsetY, z: 1 })
+        .scale({
+          x: this.scale,
+          y: this.scale,
+          centerX: this.centerX,
+          centerY: this.centerY
+        })
+      if (this.onSwipeListener != null) {
+        this.onSwipeListener.onSwipeListener(this.childSpan)
+      }
+    }
+
+    //è®¾ç½®æ»‘åŠ¨æ‰‹åŠ¿ä¸æ‹–æ‹½æ‰‹åŠ¿çš„æ–¹å‘
+    public gestureConversion(panDirection: PanDirection, swipeDirection?: SwipeDirection, vertical?: boolean): Model {
+      this.panOption.setDirection(panDirection)
+      if (swipeDirection !== undefined) {
+        this.swipeDirection = swipeDirection
+        if (vertical !== undefined) {
+          this.vertical = vertical
+        }
+        if (!this.enableSwipe) {
+          this.enableSwipe = true
+        }
+      } else {
+        this.enableSwipe = false;
+        this.swipeDirection = SwipeDirection.None;
+      }
+      return this;
+    }
+
+    public resetMatrix(): void {
+      this.scale = 1;
+      this.currentScale = 1;
+      this.centerX = 0;
+      this.centerY = 0;
+      this.offsetX = 0;
+      this.offsetY = 0;
+      this.rotateAngle = 0
+      this.panDirection = PanDirection.None;
+      this.swipeDirection = this.cacheSwipeDirection;
+      this.updateMatrix();
+    }
+
+    public getSuppMatrix(matrix: object): void {
+      this.matrix;
+    }
+
+    public setSuppMatrix(matrix: Matrix4.Matrix4Transit): Model {
+      this.matrix = matrix;
+      return this;
+    }
+
+    public isScaling(): boolean {
+      return this.scale != 1;
+    }
+
+    public isDragging(): boolean {
+      return this.offsetX != 0 || this.offsetY != 0;
+    }
+
+    public getRectF(): RectF | null {
+      return this.rect;
+    }
+
+    public setOffset(offsetX: number, offsetY: number): void {
+      let maxOffsetX = (this.contentWidth * this.scale - this.componentWidth) / 2 / this.scale + 10;
+      let maxOffsetY = (this.contentHeight * this.scale - this.componentHeight) / 2 / this.scale + 10;
+      console.log("xxx maxOffsetX = " + maxOffsetX);
+      if (this.contentWidth * this.scale > this.componentWidth) {
+        this.offsetX = offsetX;
+        if (this.offsetX > maxOffsetX) {
+          //å·¦è¾¹
+          this.offsetX = maxOffsetX;
+          this.isBoundary_X = true;
+        } else if (this.offsetX < -maxOffsetX) {
+          //å³è¾¹
+          this.offsetX = -maxOffsetX;
+          this.isBoundary_X = true;
+        }
+      }
+
+      if (this.contentHeight * this.scale > this.componentHeight) {
+        this.offsetY = offsetY;
+        if (this.offsetY > maxOffsetY) {
+          this.offsetY = maxOffsetY;
+          this.isBoundary_Y = true;
+        } else if (this.offsetY < -maxOffsetY) {
+          this.offsetY = -maxOffsetY;
+          this.isBoundary_Y = true;
+        }
+      }
+      this.updateMatrix();
+    }
+  }
+}
+
+export { PhotoView }ÀÔrD’­@ohos.matrix4§./RectFÔrE—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙj hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_api_@ohos.matrix4.d.tsAÃªoh-resolveÂEAÂÙª/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@ohos+photoview@2.1.0/oh_modules/@ohos/photoview/src/main/ets/components/mainpage/RectF.etsAÃªoh-resolveÂ’ÔrF–§version¤fileªsourceRoot§sources¥names¨mappings¬PhotoView.js ‘­PhotoView.etsÜ‘”    ‘” –”   ” ” ” ”# #”$ $–”   ” ” ” ” ” ’” Ìl” Ìl‘” Ìk –”ÌO Ìm"”ÌS Ìm&”Ì\ Ìm/”Ì] Ìm0”Ìb Ìm5”Ìd Ìm7‘” Ìi–” Ìo	”
+ Ìo” Ìo” Ìo” Ìo” Ìo1–” Ìp” Ìp” Ìp” Ìp” Ìp” Ìp›” Ìq” Ìq” Ìq” Ìq” Ìq” Ìq” Ìq” Ìq”. Ìq*”0 Ìq,”2 Ìq.š” Ìr” Ìr” Ìr” Ìr”  Ìr”% Ìr”& Ìr ”5 Ìr/”7 Ìr1”8 Ìr1‘”	 Ìs›” Ìs” Ìs” Ìs” Ìs” Ìs” Ìs”# Ìs!”$ Ìs"”3 Ìs1”5 Ìs3”7 Ìs5š” Ìt” Ìt” Ìt” Ìt”  Ìt”% Ìt”& Ìt ”5 Ìt/”7 Ìt1”8 Ìt1‘”	 Ìu‘” Ìu•” Ìv” Ìv” Ìv”  Ìv”! Ìv‘”	 Ìw’” Ìx” Ìx”” Ìy” Ìy” Ìy”  Ìy”” Ìz” Ìz” Ìz” Ìz–” Ì{” Ì{” Ì{” Ì{” Ì{”" Ì{”” Ì|” Ì|” Ì|” Ì|”” Ì}” Ì}” Ì}” Ì}–” Ì~” Ì~” Ì~” Ì~” Ì~”% Ì~•” Ì” Ì” Ì” Ì” Ì’” Ì€” Ì€””	 Ì” Ì” Ì
+” Ì™” Ì‚” Ì‚
+” Ì‚” Ì‚” Ì‚” Ì‚” Ì‚”+ Ì‚%”, Ì‚&˜” Ìƒ” Ìƒ
+” Ìƒ” Ìƒ” Ìƒ”# Ìƒ”% Ìƒ”& Ìƒ ”” Ì„”	 Ì„”
+ Ì„” Ì„’” Ì…” Ì…‘” Ì‡Ü ” Ìˆ” Ìˆ” Ìˆ	” Ìˆ”# Ìˆ”% Ìˆ”2 Ìˆ#”3 Ìˆ$”9 Ìˆ*”; Ìˆ,”ÌE Ìˆ6”ÌG Ìˆ8”ÌP ÌˆÌA”ÌQ ÌˆÌB”ÌW ÌˆÌH”ÌY ÌˆÌJ”Ìg ÌˆÌX”Ìi ÌˆÌZ”Ìr ÌˆÌc”Ìs ÌˆÌd”Ìy ÌˆÌj”Ì{ ÌˆÌl–” Ì¡” Ì¡”  Ì¡”+ Ì¡”, Ì¡”5 Ì¡(œ” Ì¢” Ì¢” Ì¢”  Ì¢”% Ì¢”' Ì¢”( Ì¢”* Ì¢”1 Ì¢&”3 Ì¢(”4 Ì¢)”6 Ì¢+™” Ì¢” Ì¢” Ì£” Ì£”  Ì£”! Ì£”& Ì£(”( Ì£*”* Ì£,˜” Ì¤” Ì¤” Ì¤” Ì¤” Ì¤”1 Ì¤-”2 Ì¤.”3 Ì¤.˜” Ì¥” Ì¥” Ì¥” Ì¥” Ì¥” Ì¥”% Ì¥!”' Ì¥#” Ì¦” Ì¦” Ì¦” Ì¦”" Ì¦”# Ì¦”( Ì¦"”, Ì¦&”0 Ì¦*”1 Ì¦+”6 Ì¦0”7 Ì¦1”? Ì¦9”ÌA Ì¦;” Ì§” Ì§” Ì§”" Ì§”# Ì§”( Ì§ ”+ Ì§#”/ Ì§'”0 Ì§(”5 Ì§-”6 Ì§.”> Ì§6”? Ì§6™” Ì¨” Ì¨” Ì¨”" Ì¨”# Ì¨”, Ì¨$”/ Ì¨'”4 Ì¨,”5 Ì¨-˜” Ì©” Ì©” Ì©”" Ì©”# Ì©”. Ì©&”0 Ì©(”1 Ì©)‘” Ìª‘” Ìª” Ì«” Ì«”  Ì«”! Ì«”& Ì«”' Ì«”, Ì«$”/ Ì«'”3 Ì«+”4 Ì«,”9 Ì«1”: Ì«2”ÌB Ì«:”ÌD Ì«<” Ì¬”  Ì¬”! Ì¬”& Ì¬”' Ì¬”, Ì¬"”/ Ì¬%”3 Ì¬)”4 Ì¬*”9 Ì¬/”: Ì¬0”ÌB Ì¬8”ÌC Ì¬8›” Ì­”  Ì­”! Ì­”& Ì­”' Ì­”3 Ì­)”6 Ì­,”ÌB Ì­8”ÌC Ì­9”ÌF Ì­<”ÌG Ì­<›” Ì®”  Ì®”! Ì®”& Ì®”' Ì®”5 Ì®+”8 Ì®.”ÌF Ì®<”ÌG Ì®=”ÌK Ì®ÌA”ÌL Ì®ÌA™” Ì¯”  Ì¯”! Ì¯”& Ì¯”' Ì¯”0 Ì¯&”3 Ì¯)”7 Ì¯-”8 Ì¯.‘” Ì°‘” Ì°” Ì±”  Ì±”! Ì±”& Ì±”' Ì±”, Ì±"”/ Ì±%”3 Ì±)”4 Ì±*”9 Ì±/”: Ì±0”ÌB Ì±8”ÌC Ì±8›” Ì²”  Ì²”! Ì²”& Ì²”' Ì²”3 Ì²)”6 Ì²,”ÌB Ì²8”ÌC Ì²9”ÌG Ì²=”ÌH Ì²=” Ì³”  Ì³”! Ì³”& Ì³”' Ì³”5 Ì³+”8 Ì³.”< Ì³2”= Ì³3”ÌB Ì³8”ÌC Ì³9”ÌV Ì³ÌL”ÌW Ì³ÌL™” Ì´”  Ì´”! Ì´”& Ì´”' Ì´”0 Ì´&”3 Ì´)”8 Ì´.”9 Ì´/‘” Ìµ˜” Ì¶” Ì¶”  Ì¶”! Ì¶”& Ì¶”' Ì¶”. Ì¶&”0 Ì¶(Ü ” Ì·”  Ì·”! Ì·”' Ì·”( Ì·”, Ì·"”- Ì·#”2 Ì·(”3 Ì·)”8 Ì·.”: Ì·0”> Ì·4”? Ì·5”ÌD Ì·:”ÌE Ì·;”ÌR Ì·ÌH”ÌS Ì·ÌI”ÌT Ì·ÌI‘” Ì¸‘” Ì¸˜” Ì¹”  Ì¹”! Ì¹”& Ì¹”' Ì¹”3 Ì¹)”5 Ì¹+”6 Ì¹,‘” Ìº‘” Ì»‘” Ì¼š” Ì½” Ì½” Ì½” Ì½” Ì½” Ì½”4 Ì½0”8 Ì½4”< Ì½8”> Ì½:Ü ” Ì¾” Ì¾” Ì¾” Ì¾” Ì¾”4 Ì¾.”5 Ì¾/”ÌD Ì¾>”ÌE Ì¾?”ÌI Ì¾ÌC”ÌJ Ì¾ÌD”ÌO Ì¾ÌI”ÌP Ì¾ÌJ”ÌT Ì¾ÌN”ÌU Ì¾ÌO”ÌV Ì¾ÌO‘” Ì¿š” ÌÀ” ÌÀ” ÌÀ” ÌÀ” ÌÀ” ÌÀ”2 ÌÀ.”6 ÌÀ2”: ÌÀ6”< ÌÀ8Ü ” ÌÁ” ÌÁ” ÌÁ” ÌÁ” ÌÁ”2 ÌÁ,”3 ÌÁ-”Ì@ ÌÁ:”ÌA ÌÁ;”ÌE ÌÁ?”ÌF ÌÁÌ@”ÌK ÌÁÌE”ÌL ÌÁÌF”ÌQ ÌÁÌK”ÌS ÌÁÌM”ÌT ÌÁÌN”ÌV ÌÁÌP”ÌW ÌÁÌQ”ÌX ÌÁÌR”ÌY ÌÁÌR‘” ÌÂš” ÌÃ” ÌÃ” ÌÃ” ÌÃ” ÌÃ” ÌÃ”0 ÌÃ,”4 ÌÃ0”8 ÌÃ4”: ÌÃ6œ” ÌÄ” ÌÄ” ÌÄ” ÌÄ” ÌÄ”0 ÌÄ*”1 ÌÄ+”< ÌÄ6”= ÌÄ7”ÌB ÌÄ<”ÌC ÌÄ=”ÌD ÌÄ=‘” ÌÅ’” ÌÆ
+” ÌÆ’” Ì¢” Ì¢œ” ÌÇ” ÌÇ” ÌÇ”  ÌÇ”% ÌÇ”' ÌÇ”( ÌÇ”* ÌÇ”1 ÌÇ&”3 ÌÇ(”4 ÌÇ)”6 ÌÇ+™” ÌÇ” ÌÇ” ÌÈ” ÌÈ”  ÌÈ”! ÌÈ”& ÌÈ(”( ÌÈ*”* ÌÈ,˜” ÌÉ” ÌÉ” ÌÉ” ÌÉ” ÌÉ”1 ÌÉ-”2 ÌÉ.”3 ÌÉ.š” ÌÊ” ÌÊ” ÌÊ” ÌÊ” ÌÊ” ÌÊ”, ÌÊ(”0 ÌÊ,”4 ÌÊ0”6 ÌÊ2œ” ÌË” ÌË” ÌË” ÌË” ÌË”, ÌË&”- ÌË'”4 ÌË.”5 ÌË/”: ÌË4”; ÌË5”< ÌË6‘” ÌÌÜ ” ÌÍ” ÌÍ” ÌÍ” ÌÍ” ÌÍ” ÌÍ”$ ÌÍ ”% ÌÍ!”/ ÌÍ+”3 ÌÍ/”4 ÌÍ0”9 ÌÍ5”: ÌÍ6”ÌD ÌÍÌ@”ÌE ÌÍÌA”ÌF ÌÍÌB”ÌG ÌÍÌC”ÌI ÌÍÌE’” ÌÎ” ÌÎ‘” ÌÏš” ÌĞ” ÌĞ” ÌĞ” ÌĞ” ÌĞ” ÌĞ”. ÌĞ*”2 ÌĞ.”6 ÌĞ2”8 ÌĞ4Ü "” ÌÑ” ÌÑ” ÌÑ” ÌÑ” ÌÑ”. ÌÑ(”/ ÌÑ)”8 ÌÑ2”9 ÌÑ3”> ÌÑ8”? ÌÑ9”ÌD ÌÑ>”ÌE ÌÑ?”ÌO ÌÑÌI”ÌP ÌÑÌJ”ÌQ ÌÑÌK”ÌR ÌÑÌL”ÌS ÌÑÌM”ÌZ ÌÑÌT”Ì[ ÌÑÌU”Ì] ÌÒ”Ìb ÌÒ”Ìc ÌÒ”Ìh ÌÒ”Ìi ÌÒ”Ìs ÌÒ&”Ìt ÌÒ'”Ìu ÌÒ(”Ìv ÌÒ)”Ìw ÌÒ*”Ì~ ÌÒ1”Ì ÌÒ2”Ì€ ÌÒ3”Ì ÌÒ3‘” ÌÓš” ÌÔ” ÌÔ” ÌÔ” ÌÔ” ÌÔ” ÌÔ”# ÌÔ”' ÌÔ#”+ ÌÔ'”- ÌÔ)’” ÌÕ”ÌC ÌÕ=Ü #” ÌÖ” ÌÖ” ÌÖ” ÌÖ”" ÌÖ”# ÌÖ”' ÌÖ!”( ÌÖ"”0 ÌÖ*”1 ÌÖ+”6 ÌÖ0”7 ÌÖ1”< ÌÖ6”= ÌÖ7”ÌG ÌÖÌA”ÌH ÌÖÌB”ÌI ÌÖÌC”ÌJ ÌÖÌD”ÌK ÌÖÌE”ÌR ÌÖÌL”ÌS ÌÖÌM”ÌU ÌÖÌO”ÌZ ÌÖÌT”Ì[ ÌÖÌU”Ì` ÌÖÌZ”Ìa ÌÖÌ[”Ìk ÌÖÌe”Ìl ÌÖÌf”Ìm ÌÖÌg”Ìn ÌÖÌh”Ìo ÌÖÌi”Ìv ÌÖÌp”Ìw ÌÖÌq”Ìx ÌÖÌr”Ìz ÌÖÌtÜ ” Ì×” Ì×”# Ì×”& Ì×&”' Ì×'”, Ì×,”- Ì×-”2 Ì×2”3 Ì×3”= Ì×=”> Ì×>”? Ì×?”Ì@ Ì×Ì@”ÌA Ì×ÌA”ÌH Ì×ÌH”ÌI Ì×ÌI”ÌL Ì×ÌL”ÌP Ì×ÌP”ÌQ Ì×ÌQ”ÌV Ì×ÌV”ÌW Ì×ÌW”Ì[ Ì×Ì[”Ì\ Ì×Ì\”Ì` Ì×Ì`”Ìa Ì×Ìaš” ÌØ”" ÌØ”# ÌØ”( ÌØ”) ÌØ”- ÌØ#”. ÌØ$”3 ÌØ)”5 ÌØ+”6 ÌØ,Ü ” ÌÙ” ÌÙ”# ÌÙ”& ÌÙ&”' ÌÙ'”, ÌÙ,”- ÌÙ-”2 ÌÙ2”3 ÌÙ3”= ÌÙ=”> ÌÙ>”? ÌÙ?”Ì@ ÌÙÌ@”ÌA ÌÙÌA”ÌH ÌÙÌH”ÌI ÌÙÌI”ÌL ÌÙÌL”ÌP ÌÙÌP”ÌQ ÌÙÌQ”ÌV ÌÙÌV”ÌW ÌÙÌW”Ì[ ÌÙÌ[”Ì\ ÌÙÌ\”Ì_ ÌÙÌ_”Ì` ÌÙÌ`š” ÌÚ”" ÌÚ”# ÌÚ”( ÌÚ”) ÌÚ”- ÌÚ#”. ÌÚ$”4 ÌÚ*”6 ÌÚ,”7 ÌÚ-š” ÌÛ” ÌÛ”  ÌÛ”! ÌÛ”& ÌÛ”' ÌÛ”7 ÌÛ/”; ÌÛ3”? ÌÛ7”ÌA ÌÛ9” ÌÜ”  ÌÜ”! ÌÜ”& ÌÜ”' ÌÜ”7 ÌÜ-”8 ÌÜ.”ÌB ÌÜ8”ÌC ÌÜ9”ÌJ ÌÜÌ@”ÌL ÌÜÌB”ÌS ÌÜÌI”ÌT ÌÜÌJ”ÌU ÌÜÌK‘” Ìİ‘” ÌŞ‘” ÌŞš” Ìß” Ìß”  Ìß”! Ìß”& Ìß”' Ìß”> Ìß6”ÌB Ìß:”ÌF Ìß>”ÌH ÌßÌ@š” Ìà”  Ìà”! Ìà”& Ìà”' Ìà”> Ìà4”? Ìà5”ÌP ÌàÌF”ÌR ÌàÌH”ÌS ÌàÌI‘” Ìá‘” Ìâ‘” Ìã’” Ìä
+” Ìä’” ÌÇ” ÌÇ’” Ìå” Ìå™” Ìå” Ìå” Ìæ”% Ìæ”& Ìæ”' Ìæ”, Ìæ(”. Ìæ*”0 Ìæ,˜” Ìç” Ìç” Ìç” Ìç” Ìç”5 Ìç1”6 Ìç2”7 Ìç2œ” Ìè” Ìè” Ìè” Ìè”! Ìè”" Ìè”' Ìè#”( Ìè$”9 Ìè5”= Ìè9”ÌA Ìè=”ÌC Ìè?œ” Ìé” Ìé” Ìé” Ìé” Ìé”0 Ìé*”1 Ìé+”< Ìé6”= Ìé7”ÌB Ìé<”ÌC Ìé=”ÌD Ìé=‘” Ìê’” Ìë
+” Ìë™” Ìå” Ìå” Ìì”( Ìì”) Ìì”* Ìì”/ Ìì+”1 Ìì-”3 Ìì/’” Ìí”> Ìí:’” Ìî”ÌD ÌîÌ@’” Ìï” Ìï’” Ìğ
+” Ìğ’” Ìå” Ìå˜” Ìñ” Ìñ” Ìñ”" Ìñ”# Ìñ”( Ìñ”) Ìñ”2 Ìñ'—” Ìñ” Ìñ” Ìò”$ Ìò”% Ìò”( Ìò”* Ìò” Ìó” Ìó” Ìó” Ìó” Ìó”% Ìó!”( Ìó$”, Ìó(”- Ìó)”2 Ìó.”3 Ìó/”: Ìó6”; Ìó7” Ìô” Ìô” Ìô” Ìô” Ìô”% Ìô!”( Ìô$”, Ìô(”- Ìô)”2 Ìô.”3 Ìô/”: Ìô6”; Ìô7’” Ìõ
+” Ìõ™” Ìñ” Ìñ” Ìö”% Ìö”& Ìö”' Ìö”, Ìö.”. Ìö0”0 Ìö2Ü ” Ì÷” Ì÷” Ì÷” Ì÷” Ì÷” Ì÷”% Ì÷!”) Ì÷%”- Ì÷)”. Ì÷*”3 Ì÷/”4 Ì÷0”9 Ì÷5”= Ì÷9”ÌA Ì÷=”ÌB Ì÷>”ÌG Ì÷ÌC”ÌH Ì÷ÌD”ÌP Ì÷ÌL”ÌR Ì÷ÌNÜ (” Ìø” Ìø” Ìø” Ìø” Ìø”( Ìø"”) Ìø#”- Ìø'”. Ìø(”3 Ìø-”4 Ìø.”> Ìø8”ÌA Ìø;”ÌF ÌøÌ@”ÌG ÌøÌA”ÌN ÌøÌH”ÌQ ÌøÌK”ÌU ÌøÌO”ÌV ÌøÌP”Ì[ ÌøÌU”Ì\ ÌøÌV”Ìa ÌøÌ[”Ìc Ìù”Ìg Ìù”Ìh Ìù”Ìm Ìù”Ìn Ìù”Ìx Ìù%”Ì{ Ìù(”Ì€ Ìù-”Ì Ìù.”Ìˆ Ìù5”Ì‹ Ìù8”Ì Ìù<”Ì Ìù=”Ì• ÌùÌB”Ì– ÌùÌC”Ì› ÌùÌH”Ìœ ÌùÌI”Ì ÌùÌJ‘” Ìú’” Ìû
+” Ìû™” Ìñ” Ìñ” Ìü”" Ìü”# Ìü”$ Ìü”) Ìü+”+ Ìü-”- Ìü/š” Ìı” Ìı” Ìı” Ìı” Ìı” Ìı”/ Ìı+”3 Ìı/”7 Ìı3”9 Ìı5Ü ” Ìş” Ìş” Ìş” Ìş” Ìş”/ Ìş)”0 Ìş*”6 Ìş0”7 Ìş1”; Ìş5”< Ìş6”ÌA Ìş;”ÌB Ìş<”ÌI ÌşÌC”ÌK ÌşÌE”ÌO ÌşÌI”ÌP ÌşÌJ”ÌU ÌşÌO”ÌV ÌşÌP”Ì] ÌşÌW”Ì^ ÌşÌX”Ì_ ÌşÌX‘” Ìÿš” Í ” Í ” Í ” Í ” Í ” Í ”4 Í 0”8 Í 4”< Í 8”> Í :Ü ” Í” Í” Í” Í” Í”4 Í.”5 Í/”ÌD Í>”ÌE Í?”ÌI ÍÌC”ÌJ ÍÌD”ÌO ÍÌI”ÌP ÍÌJ”ÌT ÍÌN”ÌU ÍÌO”ÌV ÍÌO‘” Í’” Í
+” Í’” Ìñ” Ìñ˜” Í” Í”  Í”" Í”) Í”+ Í ”, Í!”. Í#™” Í” Í” Í”' Í”( Í”) Í”. Í.”0 Í0”2 Í2˜” Í” Í” Í” Í” Í” Í”% Í!”' Í#™” Í” Í” Í” Í” Í”& Í ”) Í#”- Í'”. Í(Ü ” Í” Í” Í” Í” Í”$ Í”' Í!”+ Í%”, Í&”1 Í+”2 Í,”> Í8”ÌA Í;”ÌF ÍÌ@”ÌG ÍÌA”ÌL ÍÌF”ÌM ÍÌG˜” Í
+” Í
+” Í
+” Í
+”" Í
+”# Í
+”* Í
+$”, Í
+&Ü ” Í” Í” Í”# Í”$ Í”( Í ”) Í!”. Í&”/ Í'”4 Í,”6 Í.”: Í2”; Í3”Ì@ Í8”ÌA Í9”ÌN ÍÌF”ÌO ÍÌG”ÌP ÍÌG‘” Í‘” Í™” Í” Í” Í”" Í”# Í”* Í"”- Í%”. Í&”/ Í'™” Í” Í” Í”" Í”# Í”* Í"”- Í%”. Í&”/ Í'˜” Í” Í” Í”" Í”# Í”/ Í'”1 Í)”2 Í*‘” Í‘” Í’” Í
+” Í™” Í” Í” Í”$ Í”% Í”& Í”+ Í+”- Í-”/ Í/™” Í” Í” Í” Í” Í”" Í”% Í!”* Í&”+ Í'” Í” Í” Í” Í” Í” Í”$ Í ”' Í#”+ Í'”, Í(”1 Í-”2 Í.”: Í6”< Í8” Í” Í” Í” Í” Í”$ Í”' Í!”+ Í%”, Í&”1 Í+”2 Í,”: Í4”; Í4‘” Í” Í” Í” Í” Í” Í” Í”$ Í ”' Í#”+ Í'”, Í(”1 Í-”2 Í.”: Í6”< Í8” Í” Í” Í” Í” Í”$ Í”' Í!”+ Í%”, Í&”1 Í+”2 Í,”: Í4”; Í4‘” Í” Í” Í” Í” Í” Í”' Í#”* Í&”. Í*”/ Í+”4 Í0”5 Í1”: Í6”; Í7™” Í” Í” Í” Í” Í”% Í!”( Í$”) Í%”* Í&™” Í” Í” Í” Í” Í”% Í!”( Í$”) Í%”* Í&˜” Í ” Í ” Í ” Í ” Í ” Í ”& Í "”( Í $Ü ” Í!” Í!” Í!” Í!”  Í!”$ Í!”% Í!”* Í!$”+ Í!%”0 Í!*”2 Í!,”6 Í!0”7 Í!1”< Í!6”= Í!7”ÌJ Í!ÌD”ÌK Í!ÌE”ÌL Í!ÌE‘” Í"‘” Í"™” Í#” Í#” Í#” Í#” Í#”& Í# ”) Í##”* Í#$”+ Í#%™” Í$” Í$” Í$” Í$” Í$”& Í$ ”) Í$#”* Í$$”+ Í$%˜” Í%” Í%” Í%” Í%” Í%”+ Í%%”- Í%'”. Í%(‘” Í&Ü ” Í(” Í(” Í(” Í(” Í(”$ Í( ”' Í(#”( Í($”, Í((”- Í()”2 Í(.”3 Í(/”8 Í(4”; Í(7”< Í(8”= Í(9”> Í(9š” Í)” Í)” Í)” Í)” Í)” Í)”4 Í)0”8 Í)4”< Í)8”> Í):Ü ” Í*” Í*” Í*” Í*” Í*”4 Í*.”5 Í*/”ÌD Í*>”ÌE Í*?”ÌI Í*ÌC”ÌJ Í*ÌD”ÌO Í*ÌI”ÌP Í*ÌJ”ÌT Í*ÌN”ÌU Í*ÌO”ÌV Í*ÌO‘” Í+š” Í,” Í,” Í,” Í,” Í,” Í,”2 Í,.”6 Í,2”: Í,6”< Í,8Ü ” Í-” Í-” Í-” Í-” Í-”2 Í-,”3 Í--”Ì@ Í-:”ÌA Í-;”ÌE Í-?”ÌF Í-Ì@”ÌK Í-ÌE”ÌL Í-ÌF”ÌQ Í-ÌK”ÌS Í-ÌM”ÌT Í-ÌN”ÌV Í-ÌP”ÌW Í-ÌQ”ÌX Í-ÌR”ÌY Í-ÌR‘” Í.’” Í/
+” Í/’” Í” Íœ” Í0
+” Í0”  Í0”" Í0”+ Í0"”- Í0$”1 Í0(”2 Í0)”7 Í0.”8 Í0/”ÌF Í0=”ÌH Í0?™” Í0
+” Í0” Í1”! Í1”" Í1”# Í1”( Í1(”* Í1*”, Í1,˜” Í2” Í2” Í2” Í2” Í2”/ Í2+”0 Í2,”1 Í2,’” Í3
+” Í3’” Í0
+” Í0’” Ì¡” Ì¡™” Ìˆ” Ìˆ” Í5” Í5” Í5” Í5” Í5!”! Í5)”# Í5+”” Í6” Í6
+” Í6” Í6š” Í7” Í7” Í7” Í7”" Í7”& Í7”/ Í7#”0 Í7$”2 Í7&”4 Í7(’” Í8
+”5 Í8'Ÿ” Í9
+” Í9” Í9”! Í9”" Í9”' Í9”( Í9”0 Í9"”4 Í9&”8 Í9*”9 Í9+”> Í90”? Í91”ÌJ Í9<”ÌL Í9>˜” Í:”  Í:”$ Í:”% Í:”* Í:”+ Í:”7 Í:'”9 Í:)™”  Í;”$ Í;”% Í;”* Í;”+ Í;”7 Í;%”: Í;(”? Í;-”Ì@ Í;.˜”  Í<”' Í<”( Í<”+ Í<”, Í<”Ìz Í<Ìh”Ì{ Í<Ìi”Ì| Í<ÌjÜ ”  Í=”$ Í=”% Í=”* Í=”+ Í=”< Í=*”= Í=+”ÌI Í=7”ÌJ Í=8”ÌR Í=Ì@”ÌT Í=ÌB”Ìb Í=ÌP”Ìc Í=ÌQ”Ìm Í=Ì[”Ìn Í=Ì\”Ìo Í=Ì]‘” Í>‘” Í?” Í?”! Í?”% Í?”& Í?”+ Í?”, Í? ”4 Í?(”8 Í?,”< Í?0”= Í?1”ÌB Í?6”ÌC Í?7”ÌN Í?ÌB”ÌP Í?ÌD˜” Í@”  Í@”$ Í@”% Í@”* Í@”+ Í@”7 Í@'”9 Í@)™”  ÍA”$ ÍA”% ÍA”* ÍA”+ ÍA”7 ÍA%”: ÍA(”? ÍA-”Ì@ ÍA.˜”  ÍB”' ÍB”( ÍB”+ ÍB”, ÍB”Ìz ÍBÌh”Ì{ ÍBÌi”Ì| ÍBÌjÜ ”  ÍC”$ ÍC”% ÍC”* ÍC”+ ÍC”< ÍC*”= ÍC+”ÌI ÍC7”ÌJ ÍC8”ÌT ÍCÌB”ÌV ÍCÌD”Ìd ÍCÌR”Ìe ÍCÌS”Ìm ÍCÌ[”Ìn ÍCÌ\”Ìo ÍCÌ]‘” ÍD‘” ÍE‘” ÍF	‘” ÍG’” ÍH” ÍH˜” Ì‰” Ì‰” Ì‰” Ì‰” Ì‰”# Ì‰”$ Ì‰”' Ì‰š” Ì‰” Ì‰” ÌŠ	” ÌŠ” ÌŠ” ÌŠ” ÌŠ”  ÌŠ”! ÌŠ”- ÌŠ$š” Ì‰” Ì‰” Ì‹	” Ì‹” Ì‹”  Ì‹”! Ì‹”& Ì‹”' Ì‹”/ Ì‹&š” Ì‰” Ì‰” ÌŒ	” ÌŒ” ÌŒ”  ÌŒ”! ÌŒ”& ÌŒ”' ÌŒ”- ÌŒ$˜” Ì‰” Ì‰” Ì	” Ì”  Ì”2 Ì)”3 Ì*”6 Ì-–” Ì‰” Ì‰” Ì	” Ì” Ì”! Ì™” Ì‰” Ì‰” Ì	” Ì” Ì” Ì”# Ì$”% Ì&”' Ì(›” Ì
+” Ì” Ì” Ì” Ì”! Ì”$ Ì”) Ì#”* Ì$”/ Ì)”0 Ì*›” Ì‘
+” Ì‘” Ì‘” Ì‘” Ì‘”" Ì‘”% Ì‘”* Ì‘$”+ Ì‘%”1 Ì‘+”2 Ì‘,›” Ì’
+” Ì’” Ì’” Ì’” Ì’”) Ì’#”, Ì’&”1 Ì’+”2 Ì’,”Ì@ Ì’:”ÌA Ì’;›” Ì“
+” Ì“” Ì“” Ì“” Ì“”* Ì“$”- Ì“'”2 Ì“,”3 Ì“-”ÌB Ì“<”ÌC Ì“=›” Ì”
+” Ì”” Ì”” Ì”” Ì””( Ì”"”+ Ì”%”0 Ì”*”1 Ì”+”> Ì”8”? Ì”9›” Ì•
+” Ì•” Ì•” Ì•” Ì•”' Ì•!”* Ì•$”/ Ì•)”0 Ì•*”< Ì•6”= Ì•7›” Ì–
+” Ì–” Ì–” Ì–” Ì–”) Ì–#”, Ì–&”1 Ì–+”2 Ì–,”Ì@ Ì–:”ÌA Ì–;›” Ì—
+” Ì—” Ì—” Ì—” Ì—”) Ì—#”, Ì—&”1 Ì—+”2 Ì—,”Ì@ Ì—:”ÌA Ì—;˜” Ì™
+” Ì™” Ì™” Ì™”" Ì™$”# Ì™%”1 Ì™3”2 Ì™4˜” Ìš
+” Ìš” Ìš” Ìš”! Ìš#”" Ìš$”0 Ìš2”1 Ìš3œ” Ì›
+” Ì›” Ì›” Ì› ”# Ì›%”$ Ì›&”2 Ì›4”5 Ì›7”: Ì›<”; Ì›=”ÌG Ì›ÌI”ÌH Ì›ÌJœ” Ìœ
+” Ìœ” Ìœ” Ìœ!”$ Ìœ&”% Ìœ'”3 Ìœ5”6 Ìœ8”; Ìœ=”< Ìœ>”ÌI ÌœÌK”ÌJ ÌœÌLÜ ” Ì
+” Ì” Ì” Ì” Ì” Ì”" Ì”& Ì ”+ Ì%”, Ì&”0 Ì*”2 Ì,”5 Ì/”7 Ì1”< Ì6”> Ì8”ÌD Ì>”ÌE Ì?”ÌF Ì?’” Ì” Ì	’” Ìˆ” Ìˆ‘” ÍI‘”  Ìm	’” Ìm”	 Ìm‘”( Ìm7“”  ÍL ” ÍL
+” ÍL–” ÍN” ÍN” ÍN” ÍN” ÍN” ÍN‘” Í˜•” ÍO” ÍO” ÍO” ÍO ” ÍO!•” ÍP” ÍP” ÍP” ÍP” ÍP•” ÍQ” ÍQ” ÍQ” ÍQ” ÍQ•” ÍR” ÍR”" ÍR$”# ÍR%”$ ÍR&•” ÍS”  ÍS”# ÍS%”$ ÍS&”% ÍS'•” ÍT” ÍT” ÍT” ÍT ” ÍT •” ÍU” ÍU” ÍU!”  ÍU"”! ÍU"•” ÍV” ÍV” ÍV” ÍV” ÍV•” ÍW” ÍW”  ÍW"”! ÍW#”" ÍW#—” ÍX” ÍX” ÍX”  ÍX#”! ÍX#”" ÍX$”- ÍX/—” ÍY” ÍY” ÍY ”$ ÍY(”% ÍY)”, ÍY0”- ÍY1•” ÍZ” ÍZ” ÍZ” ÍZ!”  ÍZ!•” Í[” Í[” Í[” Í[” Í[•” Í\” Í\” Í\” Í\!”  Í\!•” Í]” Í]” Í]” Í]!” Í]!•” Í^” Í^” Í^” Í^” Í^•” Í_” Í_” Í_” Í_” Í_•” Í`” Í`” Í`” Í`” Í`•” Ía” Ía” Ía” Ía” Ía•” Íb” Íb” Íb” Íb” Íb•” Íc” Íc” Íc ” Íc!”  Íc!•” Íd” Íd” Íd ” Íd!”  Íd!•” Íe” Íe” Íe"”$ Íe'”% Íe(’” Íf” Íf•” Íg” Íg”  Íg"”" Íg$”# Íg%•” Íh” Íh”  Íh"”" Íh$”# Íh%•” Íi”! Íi”$ Íi2”( Íi6”) Íi7•” Íj”" Íj”% Íj4”) Íj8”* Íj9•” Ík”" Ík”% Ík4”) Ík8”* Ík9•” Íl” Íl”! Íl,”% Íl0”& Íl1•” Ím”& Ím”) Ím<”- ÍmÌ@”. ÍmÌA•” Ín”  Ín”# Ín0”' Ín4”( Ín5•” Ío”! Ío”$ Ío2”( Ío6”) Ío7•” Íp”$ Íp”' Íp9”+ Íp=”, Íp=•” Íq”( Íq”+ ÍqÌ@”/ ÍqÌD”0 ÍqÌD•” Ír”  Ír”# Ír.”' Ír2”( Ír2•” Ís” Ís” Ís ” Ís$” Ís%•” Ít” Ít” Ít ” Ít!”  Ít!•” Íu” Íu”! Íu#”$ Íu&”% Íu'•” Ív” Ív”! Ív#”" Ív$”# Ív%•” Íw” Íw” Íw ”" Íw%”# Íw&•” Íx” Íx” Íx”! Íx$”" Íx%•” Íy” Íy”! Íy#”" Íy$”# Íy%•” Íz” Íz”  Íz"”! Íz#”" Íz$•” Í{” Í{”" Í{$”# Í{%”$ Í{&•” Í|” Í|”" Í|$”# Í|%”$ Í|&•” Í}” Í}”  Í}-”" Í}/”# Í}0—” Í~” Í~”  Í~(”, Í~4”- Í~5”1 Í~9”2 Í~:—” Í” Í”" Í,”0 Í:”1 Í;”; ÍÌE”< ÍÌE—” Í€”$ Í€”' Í€1”5 Í€?”6 Í€Ì@”Ì@ Í€ÌJ”ÌA Í€ÌJ•” Í” Í” Í ”" Í%”# Í&•” Í‚” Í‚”" Í‚%”' Í‚*”( Í‚+—” Íƒ” Íƒ” Íƒ,”! Íƒ3”" Íƒ4”* Íƒ<”, Íƒ>“” Í„” Í„” Í„”” Í…” Í…	” Í…” Í…”” Í†” Í†	” Í†” Í†”” Í‡” Í‡	” Í‡” Í‡–” Íˆ” Íˆ” Íˆ” Íˆ” Íˆ”' Íˆ’” Í‰” Í‰Ü ” ÍŠ” ÍŠ” ÍŠ” ÍŠ” ÍŠ”  ÍŠ”$ ÍŠ”% ÍŠ”, ÍŠ"”. ÍŠ$”/ ÍŠ%”1 ÍŠ'”5 ÍŠ+”6 ÍŠ,”= ÍŠ3”? ÍŠ5”Ì@ ÍŠ6Ü ” Í‹” Í‹” Í‹” Í‹” Í‹” Í‹”  Í‹”! Í‹”& Í‹”( Í‹”) Í‹”+ Í‹!”/ Í‹%”0 Í‹&”5 Í‹+”7 Í‹-”8 Í‹.”9 Í‹/’” ÍŒ” ÍŒ•” Í” Í”  Í”% Í!”& Í"•” Í” Í”  Í”% Í!”& Í"’” Í” Í•” Í” Í” Í”  Í”! Í’” Í‘” Í‘•” Í’” Í’” Í’”! Í’”" Í’’” Í“” Í“•” Í”” Í”” Í””# Í””$ Í” ’” Í•” Í•Ü ” Í–” Í–” Í–#”! Í–'”2 Í–8”3 Í–9”5 Í–;”< Í–ÌB”> Í–ÌD”? Í–ÌE”ÌA Í–ÌG”ÌJ Í–ÌP”ÌL Í–ÌR”ÌX Í–Ì^”ÌY Í–Ì_”Ì] Í–Ìc”Ì_ Í–Ìe”Ì` Í–Ìf”Ìa Í–Ìf˜” Í™” Í™” Í™” Í™” Í™”, Í™&”- Í™'”. Í™'’” Íš”	 Íš”” Íœ” Íœ” Íœ” Íœ*—” Í” Í
+” Í” Í” Í”& Í ”' Í!”” Í” Í” Í” Í’” ÍŸ”	 ÍŸ”” Í¡” Í¡” Í¡” Í¡"—” Í¢” Í¢
+” Í¢” Í¢” Í¢” Í¢” Í¢”” Í£” Í£” Í£” Í£’” Í¤”	 Í¤”” Í¦” Í¦” Í¦” Í¦)—” Í§” Í§
+” Í§” Í§” Í§” Í§” Í§”” Í¨” Í¨” Í¨” Í¨’” Í©”	 Í©”” Í«” Í«” Í«” Í«(—” Í¬” Í¬
+” Í¬” Í¬” Í¬” Í¬” Í¬”” Í­” Í­” Í­” Í­’” Í®”	 Í®”” Í°” Í°” Í°”( Í°;—” Í±” Í±
+” Í±” Í±”" Í±”0 Í±*”1 Í±+—” Í²” Í²
+” Í²”$ Í²”' Í²!”5 Í²/”6 Í²0”” Í³” Í³” Í³” Í³’” Í´”	 Í´”” Í¶” Í¶” Í¶”% Í¶1—” Í·” Í·
+” Í·” Í·”" Í·”0 Í·*”1 Í·+”” Í¸” Í¸” Í¸” Í¸’” Í¹”	 Í¹”” Í»” Í»” Í»” Í»)—” Í¼” Í¼
+” Í¼” Í¼” Í¼”$ Í¼”% Í¼˜” Í½” Í½” Í½” Í½” Í½”" Í½”# Í½”$ Í½”” Í¾” Í¾” Í¾” Í¾’” Í¿”	 Í¿”” ÍÁ” ÍÁ” ÍÁ” ÍÁ1—” ÍÂ” ÍÂ
+” ÍÂ” ÍÂ”  ÍÂ”# ÍÂ”$ ÍÂ”” ÍÃ” ÍÃ” ÍÃ” ÍÃ’” ÍÄ”	 ÍÄ–” ÍÆ” ÍÆ” ÍÆ” ÍÆ!” ÍÆ#” ÍÆ3—” ÍÇ” ÍÇ
+” ÍÇ” ÍÇ” ÍÇ” ÍÇ” ÍÇš” ÍÈ” ÍÈ
+” ÍÈ” ÍÈ” ÍÈ” ÍÈ”! ÍÈ”" ÍÈ”* ÍÈ$”, ÍÈ&™” ÍÉ” ÍÉ” ÍÉ” ÍÉ” ÍÉ”! ÍÉ”" ÍÉ”* ÍÉ"”+ ÍÉ"‘” ÍÊš” ÍË” ÍË
+” ÍË” ÍË” ÍË” ÍË”! ÍË”" ÍË”* ÍË$”, ÍË&™” ÍÌ” ÍÌ” ÍÌ” ÍÌ” ÍÌ”! ÍÌ”" ÍÌ”* ÍÌ"”+ ÍÌ"‘” ÍÍ”” ÍÏ” ÍÏ
+” ÍÏ” ÍÏ—” ÍĞ” ÍĞ” ÍĞ” ÍĞ”" ÍĞ”# ÍĞ”$ ÍĞ‘” ÍÑ‘” ÍÑ—” ÍÒ” ÍÒ” ÍÒ” ÍÒ”" ÍÒ”# ÍÒ”$ ÍÒ‘” ÍÓ—” ÍÔ” ÍÔ
+” ÍÔ” ÍÔ” ÍÔ”" ÍÔ”# ÍÔ”” ÍÕ” ÍÕ” ÍÕ” ÍÕ’” ÍÖ”	 ÍÖ”” ÍØ”! ÍØ$”" ÍØ%”. ÍØ9—” ÍÙ” ÍÙ
+” ÍÙ” ÍÙ”! ÍÙ”- ÍÙ'”. ÍÙ(”” ÍÚ” ÍÚ” ÍÚ” ÍÚ’” ÍÛ”	 ÍÛ’” Íİ” Íİ–” ÍŞ” ÍŞ” ÍŞ” ÍŞ”  ÍŞ”! ÍŞ’” Íß”	 Íß’” Íá” Íá–” Íâ” Íâ” Íâ” Íâ”  Íâ”! Íâ’” Íã”	 Íã’” Íå” Íå–” Íæ” Íæ” Íæ” Íæ”  Íæ”! Íæ’” Íç”	 Íç’” Íé” Íé–” Íê” Íê” Íê” Íê” Íê” Íê’” Íë”	 Íë”” Íí” Íí” Íí”$ Íí/—” Íî” Íî
+” Íî” Íî” Íî”( Íî"”) Íî"”” Íï” Íï” Íï” Íï’” Íğ”	 Íğ”” Íò” Íò” Íò”" Íò-—” Íó” Íó
+” Íó” Íó” Íó”' Íó!”( Íó!”” Íô” Íô” Íô” Íô’” Íõ”	 Íõ”” Í÷” Í÷” Í÷”$ Í÷/—” Íø” Íø
+” Íø” Íø” Íø”( Íø"”) Íø"”” Íù” Íù” Íù” Íù’” Íú”	 Íú˜” Íü” Íü” Íü”# Íü.”% Íü0”0 ÍüÌC”2 ÍüÌE”> ÍüÌY—” Íı” Íı
+” Íı” Íı” Íı”( Íı"”) Íı"—” Íş” Íş
+” Íş” Íş” Íş”' Íş!”( Íş!—” Íÿ” Íÿ
+” Íÿ” Íÿ” Íÿ”( Íÿ"”) Íÿ"”” Í ” Í ” Í ” Í ’” Í”	 Í”” Í” Í” Í” Í*™” Í” Í
+” Í” Í” Í”& Í ”) Í#”, Í&”- Í&š” Í” Í
+” Í” Í” Í”# Í”$ Í”/ Í)”0 Í*”1 Í*”” Í” Í” Í” Í’” Í”	 Í”” Í	” Í	” Í	”$ Í	/™” Í
+” Í
+
+” Í
+” Í
+” Í
+”- Í
+'”0 Í
+*”3 Í
+-”4 Í
+-™” Í” Í
+” Í” Í” Í”! Í”" Í”* Í$”, Í&“” Í	” Í” Í”” Í
+” Í” Í” Í”” Í
+” Í” Í” Í”” Í
+” Í” Í” Í–” Í
+” Í” Í” Í” Í”' Í!“” Í	” Í
+” Í
+”” Í” Í” Í” Í’” Í”	 Í”” Í” Í” Í”$ Í/Ÿ” Í” Í
+” Í” Í” Í”  Í”$ Í”% Í”0 Í*”3 Í-”ÌA Í;”ÌB Í<”ÌE Í?”ÌH ÍÌB”ÌI ÍÌB™” Í” Í
+” Í” Í” Í”! Í”" Í”* Í$”, Í&“” Í	” Í” Í”” Í
+” Í” Í” Í”” Í
+” Í” Í” Í”” Í
+” Í” Í” Í–” Í
+” Í” Í” Í” Í”' Í!“” Í	” Í
+” Í
+”” Í” Í” Í” Í’” Í”	 Í˜” Í!” Í!” Í!” Í!&” Í!(” Í!1”  Í!3”! Í!<—” Í"” Í"
+” Í"” Í"” Í"” Í"” Í"—” Í#” Í#
+” Í#” Í#” Í#” Í#” Í#—” Í$” Í$
+” Í$” Í$” Í$” Í$” Í$”” Í%” Í%” Í%” Í%’” Í&”	 Í&”” Í(” Í(” Í(” Í((•” Í)” Í)
+” Í)” Í)” Í)™” Í*” Í*” Í*” Í*” Í*”! Í*”" Í*”* Í*"”+ Í*"š” Í+” Í+” Í+”  Í+”! Í+”) Í+!”* Í+"”. Í+&”/ Í+'”0 Í+'—” Í,” Í,” Í,” Í,” Í,”# Í,”$ Í,”” Í-” Í-” Í-” Í-‘” Í.—” Í/” Í/
+” Í/” Í/” Í/”" Í/”# Í/”” Í0” Í0” Í0” Í0’” Í1”	 Í1’” Í3” Í3–” Í4” Í4” Í4” Í4” Í4” Í4’” Í5”	 Í5–” Í7” Í7” Í7” Í7(” Í7*”% Í78—” Í8” Í8
+” Í8” Í8” Í8”! Í8”" Í8—” Í9” Í9
+” Í9” Í9” Í9”! Í9”" Í9”” Í:” Í:” Í:” Í:’” Í;”	 Í;”” Í=” Í=” Í=”# Í=7—” Í>” Í>
+” Í>” Í>”! Í>”) Í>#”* Í>$”” Í?” Í?” Í?” Í?’” Í@”	 Í@”” ÍB” ÍB!” ÍB"”' ÍB?—” ÍC” ÍC
+” ÍC”" ÍC”% ÍC”- ÍC'”. ÍC(”” ÍD” ÍD” ÍD” ÍD’” ÍE”	 ÍE”” ÍG”! ÍG$”" ÍG%”* ÍGÌF—” ÍH” ÍH
+” ÍH”& ÍH ”) ÍH#”1 ÍH+”2 ÍH,”” ÍI” ÍI” ÍI” ÍI’” ÍJ”	 ÍJ”” ÍL” ÍL ” ÍL!”& ÍL=—” ÍM” ÍM
+” ÍM”! ÍM”$ ÍM”, ÍM&”- ÍM'”” ÍN” ÍN” ÍN” ÍN’” ÍO”	 ÍO”” ÍQ” ÍQ” ÍQ ”% ÍQ;—” ÍR” ÍR
+” ÍR”  ÍR”# ÍR”+ ÍR%”, ÍR&”” ÍS” ÍS” ÍS” ÍS’” ÍT”	 ÍT”” ÍV” ÍV ” ÍV!”& ÍV=—” ÍW” ÍW
+” ÍW”! ÍW”$ ÍW”, ÍW&”- ÍW'”” ÍX” ÍX” ÍX” ÍX’” ÍY”	 ÍY”” Í[”  Í[#”! Í[$”4 Í[ÌO—” Í\” Í\
+” Í\”$ Í\”' Í\!”: Í\4”; Í\5”” Í]” Í]” Í]” Í]’” Í^”	 Í^”” Í`”$ Í`'”% Í`(”< Í`ÌZ—” Ía” Ía
+” Ía”( Ía"”+ Ía%”ÌB Ía<”ÌC Ía=”” Íb” Íb” Íb” Íb’” Íc”	 Íc”” Íe” Íe!” Íe"”2 ÍeÌJ—” Íf” Íf
+” Íf”" Íf”% Íf”8 Íf2”9 Íf3”” Íg” Íg” Íg” Íg’” Íh”	 Íh”” Íj” Íj” Íj”* Íj>—” Ík” Ík
+” Ík”  Ík”# Ík”2 Ík,”3 Ík-”” Íl” Íl” Íl” Íl’” Ím”	 Ím’” Ío” Ío˜” Íp” Íp
+” Íp” Íp” Íp” Íp” Íp” Íp˜” Íq” Íq”  Íq”# Íq#”' Íq'”( Íq(”6 Íq6”7 Íq7˜” Ír” Ír” Ír”" Ír"”& Ír&”' Ír'”5 Ír5”6 Ír6˜” Ís” Ís”! Ís”$ Ís$”( Ís(”) Ís)”5 Ís5”6 Ís6˜” Ít” Ít”" Ít”% Ít%”) Ít)”* Ít*”7 Ít7”8 Ít8š” Ív” Ív”! Ív”$ Ív$”/ Ív/”2 Ív2”6 Ív6”7 Ív7”< Ív<”= Ív=š” Íw” Íw”" Íw”% Íw%”1 Íw1”4 Íw4”8 Íw8”9 Íw9”> Íw>”? Íw?œ” Íy” Íy”# Íy”& Íy”' Íy”2 Íy*”5 Íy-”Ì@ Íy8”ÌA Íy9”ÌD Íy<”ÌE Íy=”ÌF Íy>œ” Íz” Íz”# Íz”& Íz”' Íz”3 Íz+”6 Íz.”ÌB Íz:”ÌC Íz;”ÌF Íz>”ÌG Íz?”ÌH ÍzÌ@Ÿ” Í|” Í|” Í|” Í|” Í|” Í|”! Í|”+ Í|#”. Í|&”2 Í|*”3 Í|+”: Í|2”= Í|5”ÌJ Í|ÌB”ÌK Í|ÌCŸ” Í}” Í}” Í}” Í}” Í}” Í}”  Í}”) Í}!”, Í}$”0 Í}(”1 Í})”8 Í}0”; Í}3”ÌH Í}Ì@”ÌI Í}ÌAÜ ” Í~” Í~” Í~” Í~” Í~” Í~”" Í~”& Í~”' Í~”+ Í~#”, Í~$”0 Í~(”3 Í~+”> Í~6”ÌA Í~9”ÌN Í~ÌF”ÌO Í~ÌGÜ ” Í” Í” Í” Í” Í”  Í”# Í”' Í”( Í ”, Í$”- Í%”0 Í(”3 Í+”? Í7”ÌB Í:”ÌO ÍÌG”ÌP ÍÌH‘” Í›” Íƒ” Íƒ
+” Íƒ” Íƒ”  Íƒ”$ Íƒ”% Íƒ”) Íƒ#”* Íƒ$”1 Íƒ+”3 Íƒ-’” Í„”$ Í„’” Í…”$ Í…š” Í†” Í†” Í†” Í†” Í†”" Í†”& Í†”' Í†”/ Í†'”1 Í†)—” Í‡
+” Í‡” Í‡” Í‡” Í‡”& Í‡”( Í‡˜” Íˆ” Íˆ”  Íˆ”# Íˆ”$ Íˆ”Ìn ÍˆÌb”Ìo ÍˆÌc”Ìp ÍˆÌd” Í‰” Í‰” Í‰”. Í‰"”/ Í‰#”; Í‰/”< Í‰0”Ì@ Í‰4”ÌB Í‰6”ÌP Í‰ÌD”ÌQ Í‰ÌE”Ì[ Í‰ÌO”Ì\ Í‰ÌP”Ì] Í‰ÌP‘” ÍŠ‘” ÍŠ˜” Í‹” Í‹”  Í‹”# Í‹”$ Í‹”Ìl Í‹Ì`”Ìm Í‹Ìa”Ìn Í‹Ìb” ÍŒ” ÍŒ” ÍŒ”. ÍŒ"”/ ÍŒ#”; ÍŒ/”< ÍŒ0”Ì@ ÍŒ4”ÌB ÍŒ6”ÌP ÍŒÌD”ÌQ ÍŒÌE”ÌY ÍŒÌM”ÌZ ÍŒÌN”Ì[ ÍŒÌN‘” Í‘” Í	‘” Í˜” Í
+” Í” Í” Í”  Í”Ìc ÍÌY”Ìd ÍÌZ”Ìe ÍÌ[” Í
+” Í” Í”* Í ”+ Í!”7 Í-”8 Í.”; Í1”= Í3”ÌK ÍÌA”ÌL ÍÌB”ÌP ÍÌF”ÌQ ÍÌG”ÌR ÍÌG‘” Í‘	‘” Í’™” Í”” Í”
+” Í”” Í”” Í””! Í””" Í””* Í”$”, Í”&“” Í•	” Í•” Í•”” Í–
+” Í–” Í–” Í–”” Í—
+” Í—” Í—” Í—”” Í˜
+” Í˜” Í˜” Í˜–” Í™
+” Í™” Í™” Í™” Í™”' Í™!’” Íš	” Íš
+Ü ” Í›	” Í›” Í›” Í›” Í›”  Í›”$ Í›”% Í›”, Í›$”. Í›&”/ Í›'”1 Í›)”5 Í›-”6 Í›.”= Í›5”? Í›7”Ì@ Í›8”ÌB Í›:”ÌC Í›;”ÌE Í›=”ÌF Í›>“” Íœ	” Íœ” Íœ–” Í
+” Í” Í” Í” Í” Í–” Í
+” Í” Í” Í” Í” Í–” ÍŸ
+” ÍŸ” ÍŸ” ÍŸ” ÍŸ”% ÍŸ–” Í 
+” Í ” Í ” Í ” Í ”% Í “” Í¡	” Í¡
+” Í¡
+˜” Í¢” Í¢
+” Í¢” Í¢”$ Í¢”( Í¢"”, Í¢&”. Í¢(œ” Í£” Í£” Í£”$ Í£”% Í£”4 Í£,”5 Í£-”9 Í£1”: Í£2”ÌC Í£;”ÌD Í£<”ÌE Í£<‘” Í¤’” Í¥”	 Í¥’” Í§” Í§˜” Í¨” Í¨” Í¨”& Í¨7”( Í¨9”6 Í¨ÌX”8 Í¨ÌZ”Ì@ Í¨Ìlš” Í©” Í©
+” Í©” Í©” Í©”' Í©!”( Í©"”4 Í©.”5 Í©/”6 Í©/–” Íª” Íª
+” Íª”# Íª”, Íª&”. Íª(—” Í«” Í«” Í«”# Í«”& Í«”4 Í«,”5 Í«,–” Í¬” Í¬” Í¬”! Í¬”* Í¬"”, Í¬$—” Í­
+” Í­” Í­”! Í­”$ Í­”, Í­"”- Í­"‘” Í®	—” Í¯” Í¯” Í¯” Í¯” Í¯”% Í¯”' Í¯—” Í°
+” Í°” Í°”$ Í°”' Í°”+ Í°!”, Í°!‘” Í±	‘” Í²‘” Í²—” Í³” Í³” Í³”  Í³”# Í³”( Í³ ”) Í³!™” Í´” Í´” Í´”# Í´”& Í´”4 Í´,”5 Í´-”9 Í´1”: Í´2‘” Íµ”” Í¶” Í¶” Í¶” Í¶’” Í·”	 Í·’” Í¹” Í¹—” Íº” Íº
+” Íº” Íº” Íº” Íº” Íº—” Í»” Í»
+” Í»” Í»”  Í»”! Í»”" Í»—” Í¼” Í¼
+” Í¼” Í¼” Í¼” Í¼” Í¼—” Í½” Í½
+” Í½” Í½” Í½” Í½” Í½—” Í¾” Í¾
+” Í¾” Í¾” Í¾” Í¾” Í¾—” Í¿” Í¿
+” Í¿” Í¿” Í¿” Í¿” Í¿—” ÍÀ” ÍÀ
+” ÍÀ” ÍÀ” ÍÀ”  ÍÀ”! ÍÀ™” ÍÁ” ÍÁ
+” ÍÁ” ÍÁ”  ÍÁ”, ÍÁ&”- ÍÁ'”1 ÍÁ+”2 ÍÁ,™” ÍÂ” ÍÂ
+” ÍÂ” ÍÂ”" ÍÂ”& ÍÂ ”' ÍÂ!”: ÍÂ4”; ÍÂ5–” ÍÃ” ÍÃ
+” ÍÃ” ÍÃ” ÍÃ”  ÍÃ’” ÍÄ”	 ÍÄ”” ÍÆ” ÍÆ” ÍÆ” ÍÆ'•” ÍÇ” ÍÇ
+” ÍÇ” ÍÇ” ÍÇ’” ÍÈ”	 ÍÈ”” ÍÊ” ÍÊ” ÍÊ” ÍÊ7—” ÍË” ÍË
+” ÍË” ÍË” ÍË”  ÍË”! ÍË”” ÍÌ” ÍÌ” ÍÌ” ÍÌ’” ÍÍ”	 ÍÍ’” ÍÏ” ÍÏ˜” ÍĞ” ÍĞ” ÍĞ” ÍĞ” ÍĞ”! ÍĞ”" ÍĞ”# ÍĞ’” ÍÑ”	 ÍÑ’” ÍÓ” ÍÓ” ÍÔ” ÍÔ” ÍÔ” ÍÔ” ÍÔ”# ÍÔ”$ ÍÔ”( ÍÔ"”, ÍÔ&”- ÍÔ'”4 ÍÔ.”8 ÍÔ2”9 ÍÔ3”: ÍÔ4’” ÍÕ”	 ÍÕ’” Í×” Í×–” ÍØ” ÍØ” ÍØ” ÍØ” ÍØ” ÍØ’” ÍÙ”	 ÍÙ–” ÍÛ” ÍÛ” ÍÛ” ÍÛ$” ÍÛ&”" ÍÛ5Ü ” ÍÜ” ÍÜ
+” ÍÜ” ÍÜ” ÍÜ”" ÍÜ”# ÍÜ”/ ÍÜ)”2 ÍÜ,”6 ÍÜ0”7 ÍÜ1”< ÍÜ6”? ÍÜ9”ÌC ÍÜ=”ÌD ÍÜ>”ÌR ÍÜÌL”ÌS ÍÜÌM”ÌV ÍÜÌP”ÌW ÍÜÌQ”ÌZ ÍÜÌT”Ì^ ÍÜÌX”Ì_ ÍÜÌY”Ìd ÍÜÌ^”Ìg ÍÜÌa”Ìi ÍÜÌc”Ìj ÍÜÌdÜ ” Íİ” Íİ
+” Íİ” Íİ” Íİ”" Íİ”# Íİ”0 Íİ*”3 Íİ-”7 Íİ1”8 Íİ2”= Íİ7”Ì@ Íİ:”ÌD Íİ>”ÌE Íİ?”ÌT ÍİÌN”ÌU ÍİÌO”ÌX ÍİÌR”ÌY ÍİÌS”Ì\ ÍİÌV”Ì` ÍİÌZ”Ìa ÍİÌ[”Ìf ÍİÌ`”Ìi ÍİÌc”Ìk ÍİÌe”Ìl ÍİÌfš” ÍŞ” ÍŞ” ÍŞ” ÍŞ” ÍŞ”+ ÍŞ%”. ÍŞ(”8 ÍŞ2”9 ÍŞ3”: ÍŞ4” Íß” Íß
+” Íß” Íß”! Íß”$ Íß”( Íß"”) Íß#”. Íß(”1 Íß+”5 Íß/”6 Íß0”ÌD Íß>”ÌF ÍßÌ@—” Íà” Íà” Íà” Íà” Íà”& Íà”' Íà˜” Íá” Íá” Íá” Íá”  Íá”# Íá”- Íá%”/ Íá'’” Íâ
+” Íâ—” Íã
+” Íã” Íã”  Íã”# Íã”- Íã#”. Íã$—” Íä
+” Íä” Íä”% Íä”( Íä”, Íä"”- Íä#‘” Íå	™” Íå” Íå” Íå” Íå”% Íå”( Íå"”) Íå#”3 Íå-”5 Íå/’” Íæ
+” Íæ˜” Íç
+” Íç” Íç”  Íç”# Íç”$ Íç”. Íç$”/ Íç%—” Íè
+” Íè” Íè”% Íè”( Íè”, Íè"”- Íè#‘” Íé	‘” Íê” Íì” Íì
+” Íì” Íì”" Íì”% Íì”) Íì#”* Íì$”/ Íì)”2 Íì,”6 Íì0”7 Íì1”ÌF ÍìÌ@”ÌH ÍìÌB—” Íí” Íí” Íí” Íí” Íí”& Íí”' Íí˜” Íî” Íî” Íî” Íî”  Íî”# Íî”- Íî%”/ Íî'—” Íï
+” Íï” Íï”  Íï”# Íï”- Íï#”. Íï$—” Íğ
+” Íğ” Íğ”% Íğ”( Íğ”, Íğ"”- Íğ#‘” Íñ	™” Íñ” Íñ” Íñ” Íñ”% Íñ”( Íñ"”) Íñ#”3 Íñ-”5 Íñ/˜” Íò
+” Íò” Íò”  Íò”# Íò”$ Íò”. Íò$”/ Íò%—” Íó
+” Íó” Íó”% Íó”( Íó”, Íó"”- Íó#‘” Íô	‘” Íõ–” Íö” Íö
+” Íö” Íö” Íö”  Íö’” Í÷”	 Í÷’” Íø” Íø‘” ÍO’” ÍO” ÍO
+‘”& ÍO!‘” ÍP’” ÍP” ÍP
+‘”) ÍP‘” ÍQ’” ÍQ” ÍQ
+‘”* ÍQ‘” ÍR’” ÍR” ÍR
+‘”1 ÍR&‘” ÍS’” ÍS” ÍS
+‘”2 ÍS'‘” ÍT’” ÍT” ÍT
+‘”, ÍT ‘” ÍU’” ÍU” ÍU
+‘”. ÍU"‘” ÍV’” ÍV” ÍV
+‘”( ÍV‘” ÍW’” ÍW” ÍW
+‘”/ ÍW#‘” ÍX’” ÍX” ÍX
+‘”* ÍX#‘” ÍY’” ÍY” ÍY
+‘”+ ÍY1‘” ÍZ’” ÍZ” ÍZ
+‘”+ ÍZ!‘” Í[’” Í[” Í[
+‘”+ Í[‘” Í\’” Í\” Í\
+‘”+ Í\!‘” Í]’” Í]” Í]
+‘”) Í]!‘” Í^’” Í^” Í^
+‘”* Í^‘” Í_’” Í_” Í_
+‘”* Í_‘” Í`’” Í`” Í`
+‘”* Í`‘” Ía’” Ía” Ía
+‘”* Ía‘” Íb’” Íb” Íb
+‘”* Íb‘” Íc’” Íc” Íc
+‘”- Íc!‘” Íd’” Íd” Íd
+‘”- Íd!‘” Íe’” Íe” Íe
+‘”. Íe(‘” Íg’” Íg” Íg
+‘”/ Íg%‘” Íh’” Íh” Íh
+‘”/ Íh%‘” Ís’” Ís” Ís
+‘”' Ís%‘” Ít’” Ít” Ít
+‘”- Ít!‘” Íu’” Íu” Íu
+‘”0 Íu'‘” Ív’” Ív” Ív
+‘”0 Ív%‘” Íw’” Íw” Íw
+‘”, Íw&‘” Íx’” Íx” Íx
+‘”+ Íx%‘” Íy’” Íy” Íy
+‘”0 Íy%‘” Íz’” Íz” Íz
+‘”/ Íz$‘” Í{’” Í{” Í{
+‘”1 Í{&‘” Í|’” Í|” Í|
+‘”1 Í|&‘” Í}’” Í}” Í}
+‘”/ Í}0‘” Í~’” Í~” Í~
+‘”/ Í~:‘” Í’” Í” Í
+‘”1 ÍÌE‘” Í€’” Í€” Í€
+‘”6 Í€ÌJ‘” Í’” Í” Í
+‘”, Í&‘” Í‚’” Í‚” Í‚
+‘”1 Í‚+‘” Íƒ’” Íƒ” Íƒ
+‘”) Í‹/’” ÍN”	 ÍN’” ÍM” ÍM“” ÍN” ÍN” Íø”” ÍN” ÍN” Íø” Íø—”  Íù ” Íù” ÍL
+” ÍL” ÍL
+” ÍL”" Íù–”  Íû ” Íû”	 Íû	” Íû” Íû” ÍûÔrG–§version¤file§sources®sourcesContent¥names¨mappingsÀ‘À‘ÀÜ‘”    ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”  	 ‘”  
+ ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”    ‘”  ! ‘”  " ‘”  # ‘”  $ ‘”  % ‘”  & ‘”  ' ‘”  ( ‘”  ) ‘”  * ‘”  + ‘”  , ‘”  - ‘”  . ‘”  / ‘”  0 ‘”  1 ‘”  2 ‘”  3 ‘”  4 ‘”  5 ‘”  6 ‘”  7 ‘”  8 ‘”  9 ‘”  : ‘”  ; ‘”  < ‘”  = ‘”  > ‘”  ? ‘”  Ì@ ‘”  ÌA ‘”  ÌB ‘”  ÌC ‘”  ÌD ‘”  ÌE ‘”  ÌF ‘”  ÌG ‘”  ÌH ‘”  ÌI ‘”  ÌJ ‘”  ÌK ‘”  ÌL ‘”  ÌM ‘”  ÌN ‘”  ÌO ‘”  ÌP ‘”  ÌQ ‘”  ÌR ‘”  ÌS ‘”  ÌT ‘”  ÌU ‘”  ÌV ‘”  ÌW ‘”  ÌX ‘”  ÌY ‘”  ÌZ ‘”  Ì[ ‘”  Ì\ ‘”  Ì] ‘”  Ì^ ‘”  Ì_ ‘”  Ì` ‘”  Ìa ‘”  Ìb ‘”  Ìc ‘”  Ìd ‘”  Ìe ‘”  Ìf ‘”  Ìg ‘”  Ìh ‘”  Ìi ‘”  Ìj ‘”  Ìk ‘”  Ìl ‘”  Ìm ‘”  Ìn ‘”  Ìo ‘”  Ìp ‘”  Ìq ‘”  Ìr ‘”  Ìs ‘”  Ìt ‘”  Ìu ‘”  Ìv ‘”  Ìw ‘”  Ìx ‘”  Ìy ‘”  Ìz ‘”  Ì{ ‘”  Ì| ‘”  Ì} ‘”  Ì~ ‘”  Ì ‘”  Ì€ ‘”  Ì ‘”  Ì‚ ‘”  Ìƒ ‘”  Ì„ ‘”  Ì… ‘”  Ì† ‘”  Ì‡ ‘”  Ìˆ ‘”  Ì‰ ‘”  ÌŠ ‘”  Ì‹ ‘”  ÌŒ ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì‘ ‘”  Ì’ ‘”  Ì“ ‘”  Ì” ‘”  Ì• ‘”  Ì– ‘”  Ì— ‘”  Ì˜ ‘”  Ì™ ‘”  Ìš ‘”  Ì› ‘”  Ìœ ‘”  Ì ‘”  Ì ‘”  ÌŸ ‘”  Ì  ‘”  Ì¡ ‘”  Ì¢ ‘”  Ì£ ‘”  Ì¤ ‘”  Ì¥ ‘”  Ì¦ ‘”  Ì§ ‘”  Ì¨ ‘”  Ì© ‘”  Ìª ‘”  Ì« ‘”  Ì¬ ‘”  Ì­ ‘”  Ì® ‘”  Ì¯ ‘”  Ì° ‘”  Ì± ‘”  Ì² ‘”  Ì³ ‘”  Ì´ ‘”  Ìµ ‘”  Ì¶ ‘”  Ì· ‘”  Ì¸ ‘”  Ì¹ ‘”  Ìº ‘”  Ì» ‘”  Ì¼ ‘”  Ì½ ‘”  Ì¾ ‘”  Ì¿ ‘”  ÌÀ ‘”  ÌÁ ‘”  ÌÂ ‘”  ÌÃ ‘”  ÌÄ ‘”  ÌÅ ‘”  ÌÆ ‘”  ÌÇ ‘”  ÌÈ ‘”  ÌÉ ‘”  ÌÊ ‘”  ÌË ‘”  ÌÌ ‘”  ÌÍ ‘”  ÌÎ ‘”  ÌÏ ‘”  ÌĞ ‘”  ÌÑ ‘”  ÌÒ ‘”  ÌÓ ‘”  ÌÔ ‘”  ÌÕ ‘”  ÌÖ ‘”  Ì× ‘”  ÌØ ‘”  ÌÙ ‘”  ÌÚ ‘”  ÌÛ ‘”  ÌÜ ‘”  Ìİ ‘”  ÌŞ ‘”  Ìß ‘”  Ìà ‘”  Ìá ‘”  Ìâ ‘”  Ìã ‘”  Ìä ‘”  Ìå ‘”  Ìæ ‘”  Ìç ‘”  Ìè ‘”  Ìé ‘”  Ìê ‘”  Ìë ‘”  Ìì ‘”  Ìí ‘”  Ìî ‘”  Ìï ‘”  Ìğ ‘”  Ìñ ‘”  Ìò ‘”  Ìó ‘”  Ìô ‘”  Ìõ ‘”  Ìö ‘”  Ì÷ ‘”  Ìø ‘”  Ìù ‘”  Ìú ‘”  Ìû ‘”  Ìü ‘”  Ìı ‘”  Ìş ‘”  Ìÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ‘”  ÍQ ‘”  ÍR ‘”  ÍS ‘”  ÍT ‘”  ÍU ‘”  ÍV ‘”  ÍW ‘”  ÍX ‘”  ÍY ‘”  ÍZ ‘”  Í[ ‘”  Í\ ‘”  Í] ‘”  Í^ ‘”  Í_ ‘”  Í` ‘”  Ía ‘”  Íb ‘”  Íc ‘”  Íd ‘”  Íe ‘”  Íf ‘”  Íg ‘”  Íh ‘”  Íi ‘”  Íj ‘”  Ík ‘”  Íl ‘”  Ím ‘”  Ín ‘”  Ío ‘”  Íp ‘”  Íq ‘”  Ír ‘”  Ís ‘”  Ít ‘”  Íu ‘”  Ív ‘”  Íw ‘”  Íx ‘”  Íy ‘”  Íz ‘”  Í{ ‘”  Í| ‘”  Í} ‘”  Í~ ‘”  Í ‘”  Í€ ‘”  Í ‘”  Í‚ ‘”  Íƒ ‘”  Í„ ‘”  Í… ‘”  Í† ‘”  Í‡ ‘”  Íˆ ‘”  Í‰ ‘”  ÍŠ ‘”  Í‹ ‘”  ÍŒ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í‘ ‘”  Í’ ‘”  Í“ ‘”  Í” ‘”  Í• ‘”  Í– ‘”  Í— ‘”  Í˜ ‘”  Í™ ‘”  Íš ‘”  Í› ‘”  Íœ ‘”  Í ‘”  Í ‘”  ÍŸ ‘”  Í  ‘”  Í¡ ‘”  Í¢ ‘”  Í£ ‘”  Í¤ ‘”  Í¥ ‘”  Í¦ ‘”  Í§ ‘”  Í¨ ‘”  Í© ‘”  Íª ‘”  Í« ‘”  Í¬ ‘”  Í­ ‘”  Í® ‘”  Í¯ ‘”  Í° ‘”  Í± ‘”  Í² ‘”  Í³ ‘”  Í´ ‘”  Íµ ‘”  Í¶ ‘”  Í· ‘”  Í¸ ‘”  Í¹ ‘”  Íº ‘”  Í» ‘”  Í¼ ‘”  Í½ ‘”  Í¾ ‘”  Í¿ ‘”  ÍÀ ‘”  ÍÁ ‘”  ÍÂ ‘”  ÍÃ ‘”  ÍÄ ‘”  ÍÅ ‘”  ÍÆ ‘”  ÍÇ ‘”  ÍÈ ‘”  ÍÉ ‘”  ÍÊ ‘”  ÍË ‘”  ÍÌ ‘”  ÍÍ ‘”  ÍÎ ‘”  ÍÏ ‘”  ÍĞ ‘”  ÍÑ ‘”  ÍÒ ‘”  ÍÓ ‘”  ÍÔ ‘”  ÍÕ ‘”  ÍÖ ‘”  Í× ‘”  ÍØ ‘”  ÍÙ ‘”  ÍÚ ‘”  ÍÛ ‘”  ÍÜ ‘”  Íİ ‘”  ÍŞ ‘”  Íß ‘”  Íà ‘”  Íá ‘”  Íâ ‘”  Íã ‘”  Íä ‘”  Íå ‘”  Íæ ‘”  Íç ‘”  Íè ‘”  Íé ‘”  Íê ‘”  Íë ‘”  Íì ‘”  Íí ‘”  Íî ‘”  Íï ‘”  Íğ ‘”  Íñ ‘”  Íò ‘”  Íó ‘”  Íô ‘”  Íõ ‘”  Íö ‘”  Í÷ ‘”  Íø ‘”  Íù ‘”  Íú ‘”  Íû ‘”  Íü ‘”  Íı ‘”  Íş ‘”  Íÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ‘”  ÍQ ‘”  ÍR ‘”  ÍS ‘”  ÍT ‘”  ÍU ‘”  ÍV ‘”  ÍW ‘”  ÍX ‘”  ÍY ‘”  ÍZ ‘”  Í[ ‘”  Í\ ‘”  Í] ‘”  Í^ ‘”  Í_ ‘”  Í` ‘”  Ía ‘”  Íb ‘”  Íc ‘”  Íd ‘”  Íe ‘”  Íf ‘”  Íg ‘”  Íh ‘”  Íi ‘”  Íj ‘”  Ík ‘”  Íl ‘”  Ím ‘”  Ín ‘”  Ío ‘”  Íp ‘”  Íq ‘”  Ír ‘”  Ís ‘”  Ít ‘”  Íu ‘”  Ív ‘”  Íw ‘”  Íx ‘”  Íy ‘”  Íz ‘”  Í{ ‘”  Í| ‘”  Í} ‘”  Í~ ‘”  Í ‘”  Í€ ‘”  Í ‘”  Í‚ ‘”  Íƒ ‘”  Í„ ‘”  Í… ‘”  Í† ‘”  Í‡ ‘”  Íˆ ‘”  Í‰ ‘”  ÍŠ ‘”  Í‹ ‘”  ÍŒ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í‘ ‘”  Í’ ‘”  Í“ ‘”  Í” ‘”  Í• ‘”  Í– ‘”  Í— ‘”  Í˜ ‘”  Í™ ‘”  Íš ‘”  Í› ‘”  Íœ ‘”  Í ‘”  Í ‘”  ÍŸ ‘”  Í  ‘”  Í¡ ‘”  Í¢ ‘”  Í£ ‘”  Í¤ ‘”  Í¥ ‘”  Í¦ ‘”  Í§ ‘”  Í¨ ‘”  Í© ‘”  Íª ‘”  Í« ‘”  Í¬ ‘”  Í­ ‘”  Í® ‘”  Í¯ ‘”  Í° ‘”  Í± ‘”  Í² ‘”  Í³ ‘”  Í´ ‘”  Íµ ‘”  Í¶ ‘”  Í· ‘”  Í¸ ‘”  Í¹ ‘”  Íº ‘”  Í» ‘”  Í¼ ‘”  Í½ ‘”  Í¾ ‘”  Í¿ ‘”  ÍÀ ‘”  ÍÁ ‘”  ÍÂ ‘”  ÍÃ ‘”  ÍÄ ‘”  ÍÅ ‘”  ÍÆ ‘”  ÍÇ ‘”  ÍÈ ‘”  ÍÉ ‘”  ÍÊ ‘”  ÍË ‘”  ÍÌ ‘”  ÍÍ ‘”  ÍÎ ‘”  ÍÏ ‘”  ÍĞ ‘”  ÍÑ ‘”  ÍÒ ‘”  ÍÓ ‘”  ÍÔ ‘”  ÍÕ ‘”  ÍÖ ‘”  Í× ‘”  ÍØ ‘”  ÍÙ ‘”  ÍÚ ‘”  ÍÛ ‘”  ÍÜ ‘”  Íİ ‘”  ÍŞ ‘”  Íß ‘”  Íà ‘”  Íá ‘”  Íâ ‘”  Íã ‘”  Íä ‘”  Íå ‘”  Íæ ‘”  Íç ‘”  Íè ‘”  Íé ‘”  Íê ‘”  Íë ‘”  Íì ‘”  Íí ‘”  Íî ‘”  Íï ‘”  Íğ ‘”  Íñ ‘”  Íò ‘”  Íó ‘”  Íô ‘”  Íõ ‘”  Íö ‘”  Í÷ ‘”  Íø ‘”  Íù ‘”  Íú ‘”  Íû ‘”  Íü ‘”  Íı ‘”  Íş ‘”  Íÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ÂÔ  ÔrH”²dynamicImportCache¹exportAllDeclarationCache»exportNamedDeclarationCache«importCache‘ÔrI–¤type¥start£end«declarationªspecifiers¦source¶ExportNamedDeclarationÍvúÍwÀ‘ÔrJ•¤type¥start£end¥local¨exported¯ExportSpecifierÍwÍwÔrK”¤type¥start£end¤nameªIdentifierÍwÍw©PhotoViewKªIdentifierÍwÍw©PhotoViewÀ’ÔrL•¤type¥start£endªspecifiers¦source±ImportDeclarationÍ0ÍT‘ÔrM”¤type¥start£end¥local¶ImportDefaultSpecifierÍ7Í>KªIdentifierÍ7Í>§Matrix4ÔrN•¤type¥start£end¥value£raw§LiteralÍDÍS­@ohos.matrix4¯'@ohos.matrix4'L±ImportDeclarationÍVÍr‘M¶ImportDefaultSpecifierÍ]ÍbKªIdentifierÍ]Íb¥RectFN§LiteralÍhÍq§./RectF©'./RectF'

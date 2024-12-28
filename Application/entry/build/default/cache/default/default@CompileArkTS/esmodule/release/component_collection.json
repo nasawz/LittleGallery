@@ -1,0 +1,184 @@
+{
+  "entry/src/main/ets/pages/AddChild.ets": [
+    "NavDestination",
+    "Column",
+    "Row",
+    "Text",
+    "TextInput",
+    "Divider",
+    "CalendarPicker",
+    "Select",
+    "Button",
+    "If"
+  ],
+  "entry/src/main/ets/pages/AddCategory.ets": [
+    "NavDestination",
+    "Column",
+    "Row",
+    "Text",
+    "TextInput",
+    "Divider",
+    "TextArea",
+    "Button",
+    "If"
+  ],
+  "entry/src/main/ets/pages/AddAlbum.ets": [
+    "NavDestination",
+    "Column",
+    "Row",
+    "Text",
+    "TextInput",
+    "Divider",
+    "TextArea",
+    "Select",
+    "Button",
+    "If"
+  ],
+  "entry/src/main/ets/pages/AddPicture.ets": [
+    "Column",
+    "Text",
+    "TextArea",
+    "Divider",
+    "Row",
+    "TextInput",
+    "Select",
+    "NavDestination",
+    "Scroll",
+    "Button",
+    "Image",
+    "If"
+  ],
+  "entry/src/main/ets/pages/AlbumDetail.ets": [
+    "Column",
+    "Text",
+    "NavDestination",
+    "Stack",
+    "WaterFlow",
+    "LazyForEach",
+    "Row",
+    "Button",
+    "Circle",
+    "Image",
+    "If"
+  ],
+  "entry/src/main/ets/common/WaterFlowDataSource.ets": [
+    "If"
+  ],
+  "entry/src/main/ets/services/CoreService.ets": [
+    "If"
+  ],
+  "entry/src/main/ets/components/PictureItem.ets": [
+    "Menu",
+    "MenuItem",
+    "FlowItem",
+    "Column",
+    "Stack",
+    "Image",
+    "ContextMenu",
+    "LoadingProgress",
+    "If"
+  ],
+  "entry/src/main/ets/pages/ListChild.ets": [
+    "Button",
+    "Menu",
+    "MenuItem",
+    "NavDestination",
+    "Column",
+    "Image",
+    "List",
+    "ForEach",
+    "ListItem",
+    "Row",
+    "Text",
+    "Circle",
+    "If"
+  ],
+  "entry/src/main/ets/pages/ListAlbum.ets": [
+    "Button",
+    "Menu",
+    "MenuItem",
+    "NavDestination",
+    "Column",
+    "Image",
+    "List",
+    "ForEach",
+    "ListItem",
+    "Row",
+    "Text",
+    "Circle",
+    "If"
+  ],
+  "entry/src/main/ets/pages/ListCategory.ets": [
+    "Button",
+    "Menu",
+    "MenuItem",
+    "NavDestination",
+    "Column",
+    "Image",
+    "List",
+    "ForEach",
+    "ListItem",
+    "Row",
+    "Text",
+    "Circle",
+    "If"
+  ],
+  "entry/src/main/ets/pages/PictureDetail.ets": [
+    "NavDestination"
+  ],
+  "oh_modules/.ohpm/@ohos+photoview@2.1.0/oh_modules/@ohos/photoview/src/main/ets/components/mainpage/PhotoView.ets": [
+    "Flex",
+    "Column",
+    "Image",
+    "GestureGroup",
+    "TapGesture",
+    "LongPressGesture",
+    "PanGesture",
+    "PinchGesture",
+    "SwipeGesture",
+    "If"
+  ],
+  "oh_modules/.ohpm/@ohos+photoview@2.1.0/oh_modules/@ohos/photoview/src/main/ets/components/mainpage/RectF.ets": [
+    "If"
+  ],
+  "entry/src/main/ets/frame/pages/FrameCard.ets": [
+    "Stack",
+    "Image"
+  ],
+  "entry/src/main/ets/entryability/EntryAbility.ets": [
+    "If"
+  ],
+  "entry/src/main/ets/pages/Index.ets": [
+    "CustomDialogController",
+    "Menu",
+    "MenuItem",
+    "Column",
+    "Row",
+    "Text",
+    "Button",
+    "Circle",
+    "Image",
+    "Stack",
+    "Navigation",
+    "List",
+    "ForEach",
+    "ListItem",
+    "ListItemGroup",
+    "If"
+  ],
+  "entry/src/main/ets/components/SettingDialog.ets": [
+    "CustomDialogController",
+    "Column",
+    "Text",
+    "Row",
+    "Image"
+  ],
+  "entry/src/main/ets/components/AlbumItem.ets": [
+    "Stack",
+    "Column",
+    "Row",
+    "Image",
+    "Text",
+    "If"
+  ]
+}

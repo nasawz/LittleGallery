@@ -1,0 +1,1163 @@
+Ôr@Ÿªassertions¤code´customTransformCache¬dependencies¢id¤meta±moduleSideEffects¬originalCode±originalSourcemap«resolvedIds®sourcemapChainµsyntheticNamedExportsµtransformDependencies®transformFiles¨cacheAstÔrAÚ;import { AGCAuthError, GRS_TYPE, } from "./b";
+import List from '@ohos.util.List';
+import { AuthBackend } from "./e/f";
+import { UserManagerBuilder } from "./g/h";
+import { VerifyCodeRequest } from "./e/i/j";
+import { PhoneUtil } from "./k/l";
+import { VerifyCodeResponse } from "./e/m/n";
+import { VerifyCodeResultImpl } from "./o/p";
+import { RegisterUserRequest } from "./e/i/q";
+import { AGConnectAuthCredentialProvider } from "./r";
+import { SignInResponse } from "./e/m/s";
+import { SignInResultImpl } from "./o/t";
+import { ResetPasswordRequest } from "./e/i/u";
+import { ResetPasswordResponse } from "./e/m/v";
+import { SignInRequest } from "./e/i/w";
+import { PhoneAuthProvider } from "./x/y";
+import { EmailAuthProvider } from "./x/z";
+import { SignInAnonymousRequest } from "./e/i/a1";
+import { SignInAnonymousResponse } from "./e/m/b1";
+import { DeleteUserRequest } from "./e/i/c1";
+import { DeleteUserResponse } from "./e/m/d1";
+import { Logger } from "./e1/f1/g1";
+import { SignOutRequest } from "./e/i/h1";
+import { SignOutResponse } from "./e/m/i1";
+import { UserStored } from "./j1/k1";
+import { AGCAuthErrorCode } from "./c/l1";
+import { DecryptExclamationMark } from "./e1/m1/n1";
+import { replace } from "./e1/m1/o1";
+import Credential from "./e1/p1/q1/r1";
+import { HwIdAuthProvider } from "./s1/x/t1";
+import { HwIdAuthManager } from "./s1/u1";
+import { CloudCommonAuthProvider } from "./g/v1";
+const TAG = 'AuthImpl';
+export class AuthImpl {
+    static getInstance() {
+        if (!AuthImpl.instance) {
+            AuthImpl.instance = new AuthImpl();
+        }
+        return AuthImpl.instance;
+    }
+    static getAuthInstance() {
+        return AuthImpl.getInstance();
+    }
+    getAuthProvider() {
+        return new CloudCommonAuthProvider();
+    }
+    async requestVerifyCode(verifyCodeParam) {
+        let requestMaker = {
+            'phone': () => {
+                let phoneVerifyCode = verifyCodeParam.verifyCodeType;
+                let req = new VerifyCodeRequest();
+                req.setPhone(PhoneUtil.combinatePhone(phoneVerifyCode.countryCode, phoneVerifyCode.phoneNumber));
+                return req;
+            },
+            'email': () => {
+                let emailVerifyCode = verifyCodeParam.verifyCodeType;
+                let req = new VerifyCodeRequest();
+                req.setEmail(emailVerifyCode.email);
+                return req;
+            }
+        };
+        let req = requestMaker[verifyCodeParam.verifyCodeType.kind]();
+        req.setAction(verifyCodeParam.action);
+        req.setLang(verifyCodeParam.lang);
+        req.setSendInterval(verifyCodeParam.sendInterval ? verifyCodeParam.sendInterval : 0);
+        let verifyCodeResponse = await this.authBackend.post(req, new VerifyCodeResponse());
+        return new VerifyCodeResultImpl(verifyCodeResponse.shortestInterval, verifyCodeResponse.validityPeriod);
+    }
+    async createUser(credentialInfo) {
+        let requestMaker = {
+            'phone': () => {
+                let phoneInfo = credentialInfo;
+                let req = new RegisterUserRequest();
+                req.phone = PhoneUtil.combinatePhone(phoneInfo.countryCode, phoneInfo.phoneNumber);
+                req.password = phoneInfo.password;
+                req.verifyCode = phoneInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Phone_Provider;
+                return req;
+            },
+            'email': () => {
+                let emailInfo = credentialInfo;
+                let req = new RegisterUserRequest();
+                req.email = emailInfo.email;
+                req.password = emailInfo.password;
+                req.verifyCode = emailInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Email_Provider;
+                return req;
+            }
+        };
+        let request = requestMaker[credentialInfo.kind]();
+        let signInResponse = await this.authBackend.post(request, new SignInResponse());
+        let user = await this.userManager.makeUserInstance(this.convertToUserInfo(signInResponse));
+        return new SignInResultImpl(user);
+    }
+    async resetPassword(credentialInfo) {
+        let requestMaker = {
+            'phone': () => {
+                let req = new ResetPasswordRequest();
+                let phoneInfo = credentialInfo;
+                req.account = PhoneUtil.combinatePhone(phoneInfo.countryCode, phoneInfo.phoneNumber);
+                req.newPassword = phoneInfo.password;
+                req.verifyCode = phoneInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Phone_Provider;
+                return req;
+            },
+            'email': () => {
+                let req = new ResetPasswordRequest();
+                let emailInfo = credentialInfo;
+                req.account = emailInfo.email;
+                req.newPassword = emailInfo.password;
+                req.verifyCode = emailInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Email_Provider;
+                return req;
+            }
+        };
+        let request = requestMaker[credentialInfo.kind]();
+        await this.authBackend.post(request, new ResetPasswordResponse());
+        return Promise.resolve();
+    }
+    async signIn(param) {
+        let signInParam = { 'autoCreateUser': true, 'credentialInfo': param.credentialInfo };
+        let user = await this.userManager.currentUserInstance();
+        if (user) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.ALREADY_SIGN_IN_USER));
+        }
+        let credentialInfo = signInParam.credentialInfo;
+        if (!credentialInfo) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.CREDENTIAL_INVALID));
+        }
+        let requestMaker = {
+            'phone': () => {
+                let req = new SignInRequest();
+                let phoneCredentialInfo = credentialInfo;
+                let credential = PhoneAuthProvider.credentialWithPasswordAndVerifyCode(phoneCredentialInfo.countryCode, phoneCredentialInfo.phoneNumber, phoneCredentialInfo.password, phoneCredentialInfo.verifyCode);
+                credential.prepareUserAuthRequest(req);
+                req.setAutoCreateUser(signInParam.autoCreateUser);
+                return req;
+            },
+            'email': () => {
+                let req = new SignInRequest();
+                let emailInfo = credentialInfo;
+                let credential = EmailAuthProvider.credentialWithPasswordAndVerifyCode(emailInfo.email, emailInfo.password, emailInfo.verifyCode);
+                credential.prepareUserAuthRequest(req);
+                req.setAutoCreateUser(signInParam.autoCreateUser);
+                return req;
+            },
+            'hwid': async () => {
+                let req = new SignInRequest();
+                let authCode = await HwIdAuthManager.getAuthCode(false);
+                let credential = HwIdAuthProvider.credentialWithToken(authCode);
+                credential.prepareUserAuthRequest(req);
+                req.setAutoCreateUser(signInParam.autoCreateUser);
+                return req;
+            }
+        };
+        let request = await requestMaker[signInParam.credentialInfo.kind]();
+        let signInResponse = await this.authBackend.post(request, new SignInResponse());
+        let newUser = await this.userManager.makeUserInstance(this.convertToUserInfo(signInResponse));
+        return new SignInResultImpl(newUser);
+    }
+    async signInAnonymously() {
+        let user = await this.userManager.currentUserInstance();
+        if (user) {
+            if (user.isAnonymous()) {
+                return new SignInResultImpl(user);
+            }
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.ALREADY_SIGN_IN_USER));
+        }
+        let request = new SignInAnonymousRequest();
+        let signInAnonymousResponse = await this.authBackend?.post(request, new SignInAnonymousResponse());
+        let newUser = await this.userManager.makeUserInstance(this.convertToUserInfo(signInAnonymousResponse, true));
+        return new SignInResultImpl(newUser);
+    }
+    async deleteUser() {
+        let user = await this.userManager.currentUserInstance();
+        if (!user) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.NOT_SIGN_IN));
+        }
+        let deleteUserRequest = new DeleteUserRequest();
+        let icList = new List();
+        icList.add(user.createTokenInterceptor());
+        await this.authBackend.post(deleteUserRequest, new DeleteUserResponse(), icList);
+        await this.userManager.disposeUserInstance();
+        return Promise.resolve();
+    }
+    async signOut() {
+        let user = await this.userManager.currentUserInstance();
+        if (!user) {
+            Logger.info(TAG, 'no user login in');
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.NOT_SIGN_IN));
+        }
+        let signOutRequest = new SignOutRequest();
+        signOutRequest.bodyAccessToken = user.getAccessToken();
+        signOutRequest.refreshToken = user.getRefreshToken();
+        try {
+            await this.authBackend.post(signOutRequest, new SignOutResponse());
+        }
+        catch (e) {
+            Logger.info(TAG, `logout error ${JSON.stringify(e)}`);
+        }
+        await this.userManager.disposeUserInstance();
+        return Promise.resolve();
+    }
+    async getCurrentUser() {
+        let user = await this.userManager.currentUserInstance();
+        return user;
+    }
+    init(applicationContext, json) {
+        this.appContext = applicationContext;
+        let packageName = applicationContext.applicationInfo.name;
+        let jsonObject = JSON.parse(json);
+        let config = replace(packageName, jsonObject);
+        this.json = config;
+        this.authBackend = new AuthBackend();
+        this.userManager = new UserManagerBuilder()
+            .setAuthBackend(this.authBackend)
+            .setStoredManager(new UserStored(this.getRegion()))
+            .build();
+    }
+    async setRegion(region) {
+        let user = await this.userManager.currentUserInstance();
+        if (user) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.ALREADY_SIGN_IN_USER));
+        }
+        if (this.getRegion() !== region) {
+            this.region = region;
+            this.userManager = new UserManagerBuilder()
+                .setAuthBackend(this.authBackend)
+                .setStoredManager(new UserStored(this.getRegion()))
+                .build();
+        }
+        return Promise.resolve();
+    }
+    getGrsConfig(type, region) {
+        if (!region) {
+            region = this.getRegion();
+        }
+        switch (type) {
+            case GRS_TYPE.AGC_GW:
+                return this.getString(`/agcgw_all/${region}`);
+            case GRS_TYPE.AGC_GW_BACK:
+                return this.getString(`/agcgw_all/${region}_back`);
+            case GRS_TYPE.WEBSOCKET_GW:
+                return this.getString(`/websocketgw_all/${region}`);
+            case GRS_TYPE.WEBSOCKET_GW_BACK:
+                return this.getString(`/websocketgw_all/${region}_back`);
+            case GRS_TYPE.STORAGE_GW:
+                return this.getString(`/service/cloudstorage/storage_url_${region.toLowerCase()}`);
+            case GRS_TYPE.STORAGE_GW_BACK:
+                return this.getString(`/service/cloudstorage/storage_url_${region.toLowerCase()}_back`);
+            default:
+                return this.getString(`agcgw/url`);
+        }
+    }
+    getProductId() {
+        let productId = this.getString('/client/product_id');
+        return productId ? productId : '';
+    }
+    getAppId() {
+        let appId = this.getString('/client/app_id');
+        return appId ? appId : '';
+    }
+    getClientId() {
+        if (this.clientId) {
+            return this.clientId;
+        }
+        this.clientId = this.getString('/client/client_id');
+        return this.clientId ? this.clientId : '';
+    }
+    setClientSecret(clientSecret) {
+        this.clientSecret = clientSecret;
+    }
+    setClientId(clientId) {
+        this.clientId = clientId;
+    }
+    async getClientSecret() {
+        if (this.clientSecret) {
+            return this.clientSecret;
+        }
+        this.clientSecret = await this.getDecryptString('/client/client_secret');
+        return this.clientSecret;
+    }
+    async getToken(refresh, region) {
+        if (!refresh) {
+            refresh = false;
+        }
+        if (!region) {
+            region = this.getDefaultRegion();
+        }
+        return Credential.getToken(refresh, region);
+    }
+    getRegion() {
+        if (this.region) {
+            return this.region;
+        }
+        return this.getDefaultRegion();
+    }
+    convertToUserInfo(response, isAnonymous = false) {
+        if (isAnonymous) {
+            let rsp = response;
+            return {
+                anonymous: true,
+                uid: rsp.getUserInfo().getUid(),
+                providerId: AGConnectAuthCredentialProvider.Anonymous.toString(),
+                accessToken: rsp.getAccessToken().getToken(),
+                accessTokenValidPeriod: rsp.getAccessToken().getValidPeriod(),
+                refreshToken: rsp.getRefreshToken().getToken(),
+                startTime: new Date().getTime()
+            };
+        }
+        let rsp = response;
+        return {
+            anonymous: false,
+            uid: rsp.getUserInfo().getUid(),
+            displayName: rsp.getUserInfo().getDisplayName(),
+            photoUrl: rsp.getUserInfo().getPhotoUrl(),
+            email: rsp.getUserInfo().getEmail(),
+            emailVerified: rsp.getUserInfo().getEmailVerified(),
+            passwordSetted: rsp.getUserInfo().getPasswordSetted(),
+            phone: rsp.getUserInfo().getPhone(),
+            providerId: rsp.getUserInfo().getProvider().toString(),
+            accessToken: rsp.getAccessToken().getToken(),
+            accessTokenValidPeriod: rsp.getAccessToken().getValidPeriod(),
+            refreshToken: rsp.getRefreshToken().getToken(),
+            providerInfo: rsp.getProviders(),
+            startTime: new Date().getTime()
+        };
+    }
+    getDefaultRegion() {
+        return this.getString('region');
+    }
+    getString(path) {
+        if (path.startsWith('/')) {
+            path = path.substring(1);
+        }
+        if (path.endsWith('/')) {
+            path = path.substring(0, path.length - 1);
+        }
+        let array = path.split('/');
+        let value = this.json;
+        if (value) {
+            for (let key = 0; key < array.length; key++) {
+                value = value[array[key]];
+            }
+            return value;
+        }
+        return '';
+    }
+    async getDecryptString(path) {
+        let originalValue = this.getString(path);
+        if (DecryptExclamationMark.isMatch(originalValue)) {
+            if (!this.decryptMark) {
+                this.decryptMark = new DecryptExclamationMark(this.json['code']['code1'], this.json['code']['code2'], this.json['code']['code3'], this.json['code']['code4']);
+            }
+            let decrypt = await this.decryptMark.decrypt(originalValue);
+            if (decrypt) {
+                return decrypt;
+            }
+        }
+        return originalValue;
+    }
+}
+export default AuthImpl.getAuthInstance();
+ÂÜ  Ù—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/b.jsÙl hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_api_@ohos.util.List.d.tsÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/f.jsÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/g/h.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/j.jsÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/k/l.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/n.jsÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/o/p.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/q.jsÙ—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/r.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/s.jsÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/o/t.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/u.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/v.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/w.jsÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/x/y.jsÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/x/z.jsÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/a1.jsÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/b1.jsÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/c1.jsÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/d1.jsÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/f1/g1.jsÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/h1.jsÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/i1.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/k1.jsÙš/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/c/l1.jsÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/m1/n1.jsÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/m1/o1.jsÙ¡/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/p1/q1/r1.jsÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/s1/x/t1.jsÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/s1/u1.jsÙš/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/g/v1.jsÙ—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/a.jsÔrB™±isLocalDependency¯isNodeEntryFile§pkgPath§pkgNameªpkgVersion±belongProjectPath±dependencyPkgInfo¨commonjs¯hostModulesInfoÂÂÙ…/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth²@hw-agconnect/auth¥1.0.2Ù=/Users/wangzhe/DevEcoStudioProjects/LittleGallery/ApplicationÔrC’§pkgNameªpkgVersion²@hw-agconnect/auth¥1.0.2ÔrD“°hasDefaultExport¯hasNamedExportsªisCommonJSÃÃÂÃÚ;import { AGCAuthError, GRS_TYPE, } from "./b";
+import List from '@ohos.util.List';
+import { AuthBackend } from "./e/f";
+import { UserManagerBuilder } from "./g/h";
+import { VerifyCodeRequest } from "./e/i/j";
+import { PhoneUtil } from "./k/l";
+import { VerifyCodeResponse } from "./e/m/n";
+import { VerifyCodeResultImpl } from "./o/p";
+import { RegisterUserRequest } from "./e/i/q";
+import { AGConnectAuthCredentialProvider } from "./r";
+import { SignInResponse } from "./e/m/s";
+import { SignInResultImpl } from "./o/t";
+import { ResetPasswordRequest } from "./e/i/u";
+import { ResetPasswordResponse } from "./e/m/v";
+import { SignInRequest } from "./e/i/w";
+import { PhoneAuthProvider } from "./x/y";
+import { EmailAuthProvider } from "./x/z";
+import { SignInAnonymousRequest } from "./e/i/a1";
+import { SignInAnonymousResponse } from "./e/m/b1";
+import { DeleteUserRequest } from "./e/i/c1";
+import { DeleteUserResponse } from "./e/m/d1";
+import { Logger } from "./e1/f1/g1";
+import { SignOutRequest } from "./e/i/h1";
+import { SignOutResponse } from "./e/m/i1";
+import { UserStored } from "./j1/k1";
+import { AGCAuthErrorCode } from "./c/l1";
+import { DecryptExclamationMark } from "./e1/m1/n1";
+import { replace } from "./e1/m1/o1";
+import Credential from "./e1/p1/q1/r1";
+import { HwIdAuthProvider } from "./s1/x/t1";
+import { HwIdAuthManager } from "./s1/u1";
+import { CloudCommonAuthProvider } from "./g/v1";
+const TAG = 'AuthImpl';
+export class AuthImpl {
+    static getInstance() {
+        if (!AuthImpl.instance) {
+            AuthImpl.instance = new AuthImpl();
+        }
+        return AuthImpl.instance;
+    }
+    static getAuthInstance() {
+        return AuthImpl.getInstance();
+    }
+    getAuthProvider() {
+        return new CloudCommonAuthProvider();
+    }
+    async requestVerifyCode(verifyCodeParam) {
+        let requestMaker = {
+            'phone': () => {
+                let phoneVerifyCode = verifyCodeParam.verifyCodeType;
+                let req = new VerifyCodeRequest();
+                req.setPhone(PhoneUtil.combinatePhone(phoneVerifyCode.countryCode, phoneVerifyCode.phoneNumber));
+                return req;
+            },
+            'email': () => {
+                let emailVerifyCode = verifyCodeParam.verifyCodeType;
+                let req = new VerifyCodeRequest();
+                req.setEmail(emailVerifyCode.email);
+                return req;
+            }
+        };
+        let req = requestMaker[verifyCodeParam.verifyCodeType.kind]();
+        req.setAction(verifyCodeParam.action);
+        req.setLang(verifyCodeParam.lang);
+        req.setSendInterval(verifyCodeParam.sendInterval ? verifyCodeParam.sendInterval : 0);
+        let verifyCodeResponse = await this.authBackend.post(req, new VerifyCodeResponse());
+        return new VerifyCodeResultImpl(verifyCodeResponse.shortestInterval, verifyCodeResponse.validityPeriod);
+    }
+    async createUser(credentialInfo) {
+        let requestMaker = {
+            'phone': () => {
+                let phoneInfo = credentialInfo;
+                let req = new RegisterUserRequest();
+                req.phone = PhoneUtil.combinatePhone(phoneInfo.countryCode, phoneInfo.phoneNumber);
+                req.password = phoneInfo.password;
+                req.verifyCode = phoneInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Phone_Provider;
+                return req;
+            },
+            'email': () => {
+                let emailInfo = credentialInfo;
+                let req = new RegisterUserRequest();
+                req.email = emailInfo.email;
+                req.password = emailInfo.password;
+                req.verifyCode = emailInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Email_Provider;
+                return req;
+            }
+        };
+        let request = requestMaker[credentialInfo.kind]();
+        let signInResponse = await this.authBackend.post(request, new SignInResponse());
+        let user = await this.userManager.makeUserInstance(this.convertToUserInfo(signInResponse));
+        return new SignInResultImpl(user);
+    }
+    async resetPassword(credentialInfo) {
+        let requestMaker = {
+            'phone': () => {
+                let req = new ResetPasswordRequest();
+                let phoneInfo = credentialInfo;
+                req.account = PhoneUtil.combinatePhone(phoneInfo.countryCode, phoneInfo.phoneNumber);
+                req.newPassword = phoneInfo.password;
+                req.verifyCode = phoneInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Phone_Provider;
+                return req;
+            },
+            'email': () => {
+                let req = new ResetPasswordRequest();
+                let emailInfo = credentialInfo;
+                req.account = emailInfo.email;
+                req.newPassword = emailInfo.password;
+                req.verifyCode = emailInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Email_Provider;
+                return req;
+            }
+        };
+        let request = requestMaker[credentialInfo.kind]();
+        await this.authBackend.post(request, new ResetPasswordResponse());
+        return Promise.resolve();
+    }
+    async signIn(param) {
+        let signInParam = { 'autoCreateUser': true, 'credentialInfo': param.credentialInfo };
+        let user = await this.userManager.currentUserInstance();
+        if (user) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.ALREADY_SIGN_IN_USER));
+        }
+        let credentialInfo = signInParam.credentialInfo;
+        if (!credentialInfo) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.CREDENTIAL_INVALID));
+        }
+        let requestMaker = {
+            'phone': () => {
+                let req = new SignInRequest();
+                let phoneCredentialInfo = credentialInfo;
+                let credential = PhoneAuthProvider.credentialWithPasswordAndVerifyCode(phoneCredentialInfo.countryCode, phoneCredentialInfo.phoneNumber, phoneCredentialInfo.password, phoneCredentialInfo.verifyCode);
+                credential.prepareUserAuthRequest(req);
+                req.setAutoCreateUser(signInParam.autoCreateUser);
+                return req;
+            },
+            'email': () => {
+                let req = new SignInRequest();
+                let emailInfo = credentialInfo;
+                let credential = EmailAuthProvider.credentialWithPasswordAndVerifyCode(emailInfo.email, emailInfo.password, emailInfo.verifyCode);
+                credential.prepareUserAuthRequest(req);
+                req.setAutoCreateUser(signInParam.autoCreateUser);
+                return req;
+            },
+            'hwid': async () => {
+                let req = new SignInRequest();
+                let authCode = await HwIdAuthManager.getAuthCode(false);
+                let credential = HwIdAuthProvider.credentialWithToken(authCode);
+                credential.prepareUserAuthRequest(req);
+                req.setAutoCreateUser(signInParam.autoCreateUser);
+                return req;
+            }
+        };
+        let request = await requestMaker[signInParam.credentialInfo.kind]();
+        let signInResponse = await this.authBackend.post(request, new SignInResponse());
+        let newUser = await this.userManager.makeUserInstance(this.convertToUserInfo(signInResponse));
+        return new SignInResultImpl(newUser);
+    }
+    async signInAnonymously() {
+        let user = await this.userManager.currentUserInstance();
+        if (user) {
+            if (user.isAnonymous()) {
+                return new SignInResultImpl(user);
+            }
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.ALREADY_SIGN_IN_USER));
+        }
+        let request = new SignInAnonymousRequest();
+        let signInAnonymousResponse = await this.authBackend?.post(request, new SignInAnonymousResponse());
+        let newUser = await this.userManager.makeUserInstance(this.convertToUserInfo(signInAnonymousResponse, true));
+        return new SignInResultImpl(newUser);
+    }
+    async deleteUser() {
+        let user = await this.userManager.currentUserInstance();
+        if (!user) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.NOT_SIGN_IN));
+        }
+        let deleteUserRequest = new DeleteUserRequest();
+        let icList = new List();
+        icList.add(user.createTokenInterceptor());
+        await this.authBackend.post(deleteUserRequest, new DeleteUserResponse(), icList);
+        await this.userManager.disposeUserInstance();
+        return Promise.resolve();
+    }
+    async signOut() {
+        let user = await this.userManager.currentUserInstance();
+        if (!user) {
+            Logger.info(TAG, 'no user login in');
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.NOT_SIGN_IN));
+        }
+        let signOutRequest = new SignOutRequest();
+        signOutRequest.bodyAccessToken = user.getAccessToken();
+        signOutRequest.refreshToken = user.getRefreshToken();
+        try {
+            await this.authBackend.post(signOutRequest, new SignOutResponse());
+        }
+        catch (e) {
+            Logger.info(TAG, `logout error ${JSON.stringify(e)}`);
+        }
+        await this.userManager.disposeUserInstance();
+        return Promise.resolve();
+    }
+    async getCurrentUser() {
+        let user = await this.userManager.currentUserInstance();
+        return user;
+    }
+    init(applicationContext, json) {
+        this.appContext = applicationContext;
+        let packageName = applicationContext.applicationInfo.name;
+        let jsonObject = JSON.parse(json);
+        let config = replace(packageName, jsonObject);
+        this.json = config;
+        this.authBackend = new AuthBackend();
+        this.userManager = new UserManagerBuilder()
+            .setAuthBackend(this.authBackend)
+            .setStoredManager(new UserStored(this.getRegion()))
+            .build();
+    }
+    async setRegion(region) {
+        let user = await this.userManager.currentUserInstance();
+        if (user) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.ALREADY_SIGN_IN_USER));
+        }
+        if (this.getRegion() !== region) {
+            this.region = region;
+            this.userManager = new UserManagerBuilder()
+                .setAuthBackend(this.authBackend)
+                .setStoredManager(new UserStored(this.getRegion()))
+                .build();
+        }
+        return Promise.resolve();
+    }
+    getGrsConfig(type, region) {
+        if (!region) {
+            region = this.getRegion();
+        }
+        switch (type) {
+            case GRS_TYPE.AGC_GW:
+                return this.getString(`/agcgw_all/${region}`);
+            case GRS_TYPE.AGC_GW_BACK:
+                return this.getString(`/agcgw_all/${region}_back`);
+            case GRS_TYPE.WEBSOCKET_GW:
+                return this.getString(`/websocketgw_all/${region}`);
+            case GRS_TYPE.WEBSOCKET_GW_BACK:
+                return this.getString(`/websocketgw_all/${region}_back`);
+            case GRS_TYPE.STORAGE_GW:
+                return this.getString(`/service/cloudstorage/storage_url_${region.toLowerCase()}`);
+            case GRS_TYPE.STORAGE_GW_BACK:
+                return this.getString(`/service/cloudstorage/storage_url_${region.toLowerCase()}_back`);
+            default:
+                return this.getString(`agcgw/url`);
+        }
+    }
+    getProductId() {
+        let productId = this.getString('/client/product_id');
+        return productId ? productId : '';
+    }
+    getAppId() {
+        let appId = this.getString('/client/app_id');
+        return appId ? appId : '';
+    }
+    getClientId() {
+        if (this.clientId) {
+            return this.clientId;
+        }
+        this.clientId = this.getString('/client/client_id');
+        return this.clientId ? this.clientId : '';
+    }
+    setClientSecret(clientSecret) {
+        this.clientSecret = clientSecret;
+    }
+    setClientId(clientId) {
+        this.clientId = clientId;
+    }
+    async getClientSecret() {
+        if (this.clientSecret) {
+            return this.clientSecret;
+        }
+        this.clientSecret = await this.getDecryptString('/client/client_secret');
+        return this.clientSecret;
+    }
+    async getToken(refresh, region) {
+        if (!refresh) {
+            refresh = false;
+        }
+        if (!region) {
+            region = this.getDefaultRegion();
+        }
+        return Credential.getToken(refresh, region);
+    }
+    getRegion() {
+        if (this.region) {
+            return this.region;
+        }
+        return this.getDefaultRegion();
+    }
+    convertToUserInfo(response, isAnonymous = false) {
+        if (isAnonymous) {
+            let rsp = response;
+            return {
+                anonymous: true,
+                uid: rsp.getUserInfo().getUid(),
+                providerId: AGConnectAuthCredentialProvider.Anonymous.toString(),
+                accessToken: rsp.getAccessToken().getToken(),
+                accessTokenValidPeriod: rsp.getAccessToken().getValidPeriod(),
+                refreshToken: rsp.getRefreshToken().getToken(),
+                startTime: new Date().getTime()
+            };
+        }
+        let rsp = response;
+        return {
+            anonymous: false,
+            uid: rsp.getUserInfo().getUid(),
+            displayName: rsp.getUserInfo().getDisplayName(),
+            photoUrl: rsp.getUserInfo().getPhotoUrl(),
+            email: rsp.getUserInfo().getEmail(),
+            emailVerified: rsp.getUserInfo().getEmailVerified(),
+            passwordSetted: rsp.getUserInfo().getPasswordSetted(),
+            phone: rsp.getUserInfo().getPhone(),
+            providerId: rsp.getUserInfo().getProvider().toString(),
+            accessToken: rsp.getAccessToken().getToken(),
+            accessTokenValidPeriod: rsp.getAccessToken().getValidPeriod(),
+            refreshToken: rsp.getRefreshToken().getToken(),
+            providerInfo: rsp.getProviders(),
+            startTime: new Date().getTime()
+        };
+    }
+    getDefaultRegion() {
+        return this.getString('region');
+    }
+    getString(path) {
+        if (path.startsWith('/')) {
+            path = path.substring(1);
+        }
+        if (path.endsWith('/')) {
+            path = path.substring(0, path.length - 1);
+        }
+        let array = path.split('/');
+        let value = this.json;
+        if (value) {
+            for (let key = 0; key < array.length; key++) {
+                value = value[array[key]];
+            }
+            return value;
+        }
+        return '';
+    }
+    async getDecryptString(path) {
+        let originalValue = this.getString(path);
+        if (DecryptExclamationMark.isMatch(originalValue)) {
+            if (!this.decryptMark) {
+                this.decryptMark = new DecryptExclamationMark(this.json['code']['code1'], this.json['code']['code2'], this.json['code']['code3'], this.json['code']['code4']);
+            }
+            let decrypt = await this.decryptMark.decrypt(originalValue);
+            if (decrypt) {
+                return decrypt;
+            }
+        }
+        return originalValue;
+    }
+}
+export default AuthImpl.getAuthInstance();
+ÔrE•§version¨mappings¥names§sources®sourcesContentÜl‘”    ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”  	 ‘”  
+ ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”    ‘”  ! ‘”  " ‘”  # ‘”  $ ‘”  % ‘”  & ‘”  ' ‘”  ( ‘”  ) ‘”  * ‘”  + ‘”  , ‘”  - ‘”  . ‘”  / ‘”  0 ‘”  1 ‘”  2 ‘”  3 ‘”  4 ‘”  5 ‘”  6 ‘”  7 ‘”  8 ‘”  9 ‘”  : ‘”  ; ‘”  < ‘”  = ‘”  > ‘”  ? ‘”  Ì@ ‘”  ÌA ‘”  ÌB ‘”  ÌC ‘”  ÌD ‘”  ÌE ‘”  ÌF ‘”  ÌG ‘”  ÌH ‘”  ÌI ‘”  ÌJ ‘”  ÌK ‘”  ÌL ‘”  ÌM ‘”  ÌN ‘”  ÌO ‘”  ÌP ‘”  ÌQ ‘”  ÌR ‘”  ÌS ‘”  ÌT ‘”  ÌU ‘”  ÌV ‘”  ÌW ‘”  ÌX ‘”  ÌY ‘”  ÌZ ‘”  Ì[ ‘”  Ì\ ‘”  Ì] ‘”  Ì^ ‘”  Ì_ ‘”  Ì` ‘”  Ìa ‘”  Ìb ‘”  Ìc ‘”  Ìd ‘”  Ìe ‘”  Ìf ‘”  Ìg ‘”  Ìh ‘”  Ìi ‘”  Ìj ‘”  Ìk ‘”  Ìl ‘”  Ìm ‘”  Ìn ‘”  Ìo ‘”  Ìp ‘”  Ìq ‘”  Ìr ‘”  Ìs ‘”  Ìt ‘”  Ìu ‘”  Ìv ‘”  Ìw ‘”  Ìx ‘”  Ìy ‘”  Ìz ‘”  Ì{ ‘”  Ì| ‘”  Ì} ‘”  Ì~ ‘”  Ì ‘”  Ì€ ‘”  Ì ‘”  Ì‚ ‘”  Ìƒ ‘”  Ì„ ‘”  Ì… ‘”  Ì† ‘”  Ì‡ ‘”  Ìˆ ‘”  Ì‰ ‘”  ÌŠ ‘”  Ì‹ ‘”  ÌŒ ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì‘ ‘”  Ì’ ‘”  Ì“ ‘”  Ì” ‘”  Ì• ‘”  Ì– ‘”  Ì— ‘”  Ì˜ ‘”  Ì™ ‘”  Ìš ‘”  Ì› ‘”  Ìœ ‘”  Ì ‘”  Ì ‘”  ÌŸ ‘”  Ì  ‘”  Ì¡ ‘”  Ì¢ ‘”  Ì£ ‘”  Ì¤ ‘”  Ì¥ ‘”  Ì¦ ‘”  Ì§ ‘”  Ì¨ ‘”  Ì© ‘”  Ìª ‘”  Ì« ‘”  Ì¬ ‘”  Ì­ ‘”  Ì® ‘”  Ì¯ ‘”  Ì° ‘”  Ì± ‘”  Ì² ‘”  Ì³ ‘”  Ì´ ‘”  Ìµ ‘”  Ì¶ ‘”  Ì· ‘”  Ì¸ ‘”  Ì¹ ‘”  Ìº ‘”  Ì» ‘”  Ì¼ ‘”  Ì½ ‘”  Ì¾ ‘”  Ì¿ ‘”  ÌÀ ‘”  ÌÁ ‘”  ÌÂ ‘”  ÌÃ ‘”  ÌÄ ‘”  ÌÅ ‘”  ÌÆ ‘”  ÌÇ ‘”  ÌÈ ‘”  ÌÉ ‘”  ÌÊ ‘”  ÌË ‘”  ÌÌ ‘”  ÌÍ ‘”  ÌÎ ‘”  ÌÏ ‘”  ÌĞ ‘”  ÌÑ ‘”  ÌÒ ‘”  ÌÓ ‘”  ÌÔ ‘”  ÌÕ ‘”  ÌÖ ‘”  Ì× ‘”  ÌØ ‘”  ÌÙ ‘”  ÌÚ ‘”  ÌÛ ‘”  ÌÜ ‘”  Ìİ ‘”  ÌŞ ‘”  Ìß ‘”  Ìà ‘”  Ìá ‘”  Ìâ ‘”  Ìã ‘”  Ìä ‘”  Ìå ‘”  Ìæ ‘”  Ìç ‘”  Ìè ‘”  Ìé ‘”  Ìê ‘”  Ìë ‘”  Ìì ‘”  Ìí ‘”  Ìî ‘”  Ìï ‘”  Ìğ ‘”  Ìñ ‘”  Ìò ‘”  Ìó ‘”  Ìô ‘”  Ìõ ‘”  Ìö ‘”  Ì÷ ‘”  Ìø ‘”  Ìù ‘”  Ìú ‘”  Ìû ‘”  Ìü ‘”  Ìı ‘”  Ìş ‘”  Ìÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ‘”  ÍQ ‘”  ÍR ‘”  ÍS ‘”  ÍT ‘”  ÍU ‘”  ÍV ‘”  ÍW ‘”  ÍX ‘”  ÍY ‘”  ÍZ ‘”  Í[ ‘”  Í\ ‘”  Í] ‘”  Í^ ‘”  Í_ ‘”  Í` ‘”  Ía ‘”  Íb ‘”  Íc ‘”  Íd ‘”  Íe ‘”  Íf ‘”  Íg ‘”  Íh ‘”  Íi ‘”  Íj ‘Ù—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/a.js‘Ú;import { AGCAuthError, GRS_TYPE, } from "./b";
+import List from '@ohos.util.List';
+import { AuthBackend } from "./e/f";
+import { UserManagerBuilder } from "./g/h";
+import { VerifyCodeRequest } from "./e/i/j";
+import { PhoneUtil } from "./k/l";
+import { VerifyCodeResponse } from "./e/m/n";
+import { VerifyCodeResultImpl } from "./o/p";
+import { RegisterUserRequest } from "./e/i/q";
+import { AGConnectAuthCredentialProvider } from "./r";
+import { SignInResponse } from "./e/m/s";
+import { SignInResultImpl } from "./o/t";
+import { ResetPasswordRequest } from "./e/i/u";
+import { ResetPasswordResponse } from "./e/m/v";
+import { SignInRequest } from "./e/i/w";
+import { PhoneAuthProvider } from "./x/y";
+import { EmailAuthProvider } from "./x/z";
+import { SignInAnonymousRequest } from "./e/i/a1";
+import { SignInAnonymousResponse } from "./e/m/b1";
+import { DeleteUserRequest } from "./e/i/c1";
+import { DeleteUserResponse } from "./e/m/d1";
+import { Logger } from "./e1/f1/g1";
+import { SignOutRequest } from "./e/i/h1";
+import { SignOutResponse } from "./e/m/i1";
+import { UserStored } from "./j1/k1";
+import { AGCAuthErrorCode } from "./c/l1";
+import { DecryptExclamationMark } from "./e1/m1/n1";
+import { replace } from "./e1/m1/o1";
+import Credential from "./e1/p1/q1/r1";
+import { HwIdAuthProvider } from "./s1/x/t1";
+import { HwIdAuthManager } from "./s1/u1";
+import { CloudCommonAuthProvider } from "./g/v1";
+const TAG = 'AuthImpl';
+export class AuthImpl {
+    static getInstance() {
+        if (!AuthImpl.instance) {
+            AuthImpl.instance = new AuthImpl();
+        }
+        return AuthImpl.instance;
+    }
+    static getAuthInstance() {
+        return AuthImpl.getInstance();
+    }
+    getAuthProvider() {
+        return new CloudCommonAuthProvider();
+    }
+    async requestVerifyCode(verifyCodeParam) {
+        let requestMaker = {
+            'phone': () => {
+                let phoneVerifyCode = verifyCodeParam.verifyCodeType;
+                let req = new VerifyCodeRequest();
+                req.setPhone(PhoneUtil.combinatePhone(phoneVerifyCode.countryCode, phoneVerifyCode.phoneNumber));
+                return req;
+            },
+            'email': () => {
+                let emailVerifyCode = verifyCodeParam.verifyCodeType;
+                let req = new VerifyCodeRequest();
+                req.setEmail(emailVerifyCode.email);
+                return req;
+            }
+        };
+        let req = requestMaker[verifyCodeParam.verifyCodeType.kind]();
+        req.setAction(verifyCodeParam.action);
+        req.setLang(verifyCodeParam.lang);
+        req.setSendInterval(verifyCodeParam.sendInterval ? verifyCodeParam.sendInterval : 0);
+        let verifyCodeResponse = await this.authBackend.post(req, new VerifyCodeResponse());
+        return new VerifyCodeResultImpl(verifyCodeResponse.shortestInterval, verifyCodeResponse.validityPeriod);
+    }
+    async createUser(credentialInfo) {
+        let requestMaker = {
+            'phone': () => {
+                let phoneInfo = credentialInfo;
+                let req = new RegisterUserRequest();
+                req.phone = PhoneUtil.combinatePhone(phoneInfo.countryCode, phoneInfo.phoneNumber);
+                req.password = phoneInfo.password;
+                req.verifyCode = phoneInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Phone_Provider;
+                return req;
+            },
+            'email': () => {
+                let emailInfo = credentialInfo;
+                let req = new RegisterUserRequest();
+                req.email = emailInfo.email;
+                req.password = emailInfo.password;
+                req.verifyCode = emailInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Email_Provider;
+                return req;
+            }
+        };
+        let request = requestMaker[credentialInfo.kind]();
+        let signInResponse = await this.authBackend.post(request, new SignInResponse());
+        let user = await this.userManager.makeUserInstance(this.convertToUserInfo(signInResponse));
+        return new SignInResultImpl(user);
+    }
+    async resetPassword(credentialInfo) {
+        let requestMaker = {
+            'phone': () => {
+                let req = new ResetPasswordRequest();
+                let phoneInfo = credentialInfo;
+                req.account = PhoneUtil.combinatePhone(phoneInfo.countryCode, phoneInfo.phoneNumber);
+                req.newPassword = phoneInfo.password;
+                req.verifyCode = phoneInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Phone_Provider;
+                return req;
+            },
+            'email': () => {
+                let req = new ResetPasswordRequest();
+                let emailInfo = credentialInfo;
+                req.account = emailInfo.email;
+                req.newPassword = emailInfo.password;
+                req.verifyCode = emailInfo.verifyCode;
+                req.provider = AGConnectAuthCredentialProvider.Email_Provider;
+                return req;
+            }
+        };
+        let request = requestMaker[credentialInfo.kind]();
+        await this.authBackend.post(request, new ResetPasswordResponse());
+        return Promise.resolve();
+    }
+    async signIn(param) {
+        let signInParam = { 'autoCreateUser': true, 'credentialInfo': param.credentialInfo };
+        let user = await this.userManager.currentUserInstance();
+        if (user) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.ALREADY_SIGN_IN_USER));
+        }
+        let credentialInfo = signInParam.credentialInfo;
+        if (!credentialInfo) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.CREDENTIAL_INVALID));
+        }
+        let requestMaker = {
+            'phone': () => {
+                let req = new SignInRequest();
+                let phoneCredentialInfo = credentialInfo;
+                let credential = PhoneAuthProvider.credentialWithPasswordAndVerifyCode(phoneCredentialInfo.countryCode, phoneCredentialInfo.phoneNumber, phoneCredentialInfo.password, phoneCredentialInfo.verifyCode);
+                credential.prepareUserAuthRequest(req);
+                req.setAutoCreateUser(signInParam.autoCreateUser);
+                return req;
+            },
+            'email': () => {
+                let req = new SignInRequest();
+                let emailInfo = credentialInfo;
+                let credential = EmailAuthProvider.credentialWithPasswordAndVerifyCode(emailInfo.email, emailInfo.password, emailInfo.verifyCode);
+                credential.prepareUserAuthRequest(req);
+                req.setAutoCreateUser(signInParam.autoCreateUser);
+                return req;
+            },
+            'hwid': async () => {
+                let req = new SignInRequest();
+                let authCode = await HwIdAuthManager.getAuthCode(false);
+                let credential = HwIdAuthProvider.credentialWithToken(authCode);
+                credential.prepareUserAuthRequest(req);
+                req.setAutoCreateUser(signInParam.autoCreateUser);
+                return req;
+            }
+        };
+        let request = await requestMaker[signInParam.credentialInfo.kind]();
+        let signInResponse = await this.authBackend.post(request, new SignInResponse());
+        let newUser = await this.userManager.makeUserInstance(this.convertToUserInfo(signInResponse));
+        return new SignInResultImpl(newUser);
+    }
+    async signInAnonymously() {
+        let user = await this.userManager.currentUserInstance();
+        if (user) {
+            if (user.isAnonymous()) {
+                return new SignInResultImpl(user);
+            }
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.ALREADY_SIGN_IN_USER));
+        }
+        let request = new SignInAnonymousRequest();
+        let signInAnonymousResponse = await this.authBackend?.post(request, new SignInAnonymousResponse());
+        let newUser = await this.userManager.makeUserInstance(this.convertToUserInfo(signInAnonymousResponse, true));
+        return new SignInResultImpl(newUser);
+    }
+    async deleteUser() {
+        let user = await this.userManager.currentUserInstance();
+        if (!user) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.NOT_SIGN_IN));
+        }
+        let deleteUserRequest = new DeleteUserRequest();
+        let icList = new List();
+        icList.add(user.createTokenInterceptor());
+        await this.authBackend.post(deleteUserRequest, new DeleteUserResponse(), icList);
+        await this.userManager.disposeUserInstance();
+        return Promise.resolve();
+    }
+    async signOut() {
+        let user = await this.userManager.currentUserInstance();
+        if (!user) {
+            Logger.info(TAG, 'no user login in');
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.NOT_SIGN_IN));
+        }
+        let signOutRequest = new SignOutRequest();
+        signOutRequest.bodyAccessToken = user.getAccessToken();
+        signOutRequest.refreshToken = user.getRefreshToken();
+        try {
+            await this.authBackend.post(signOutRequest, new SignOutResponse());
+        }
+        catch (e) {
+            Logger.info(TAG, `logout error ${JSON.stringify(e)}`);
+        }
+        await this.userManager.disposeUserInstance();
+        return Promise.resolve();
+    }
+    async getCurrentUser() {
+        let user = await this.userManager.currentUserInstance();
+        return user;
+    }
+    init(applicationContext, json) {
+        this.appContext = applicationContext;
+        let packageName = applicationContext.applicationInfo.name;
+        let jsonObject = JSON.parse(json);
+        let config = replace(packageName, jsonObject);
+        this.json = config;
+        this.authBackend = new AuthBackend();
+        this.userManager = new UserManagerBuilder()
+            .setAuthBackend(this.authBackend)
+            .setStoredManager(new UserStored(this.getRegion()))
+            .build();
+    }
+    async setRegion(region) {
+        let user = await this.userManager.currentUserInstance();
+        if (user) {
+            return Promise.reject(new AGCAuthError(AGCAuthErrorCode.ALREADY_SIGN_IN_USER));
+        }
+        if (this.getRegion() !== region) {
+            this.region = region;
+            this.userManager = new UserManagerBuilder()
+                .setAuthBackend(this.authBackend)
+                .setStoredManager(new UserStored(this.getRegion()))
+                .build();
+        }
+        return Promise.resolve();
+    }
+    getGrsConfig(type, region) {
+        if (!region) {
+            region = this.getRegion();
+        }
+        switch (type) {
+            case GRS_TYPE.AGC_GW:
+                return this.getString(`/agcgw_all/${region}`);
+            case GRS_TYPE.AGC_GW_BACK:
+                return this.getString(`/agcgw_all/${region}_back`);
+            case GRS_TYPE.WEBSOCKET_GW:
+                return this.getString(`/websocketgw_all/${region}`);
+            case GRS_TYPE.WEBSOCKET_GW_BACK:
+                return this.getString(`/websocketgw_all/${region}_back`);
+            case GRS_TYPE.STORAGE_GW:
+                return this.getString(`/service/cloudstorage/storage_url_${region.toLowerCase()}`);
+            case GRS_TYPE.STORAGE_GW_BACK:
+                return this.getString(`/service/cloudstorage/storage_url_${region.toLowerCase()}_back`);
+            default:
+                return this.getString(`agcgw/url`);
+        }
+    }
+    getProductId() {
+        let productId = this.getString('/client/product_id');
+        return productId ? productId : '';
+    }
+    getAppId() {
+        let appId = this.getString('/client/app_id');
+        return appId ? appId : '';
+    }
+    getClientId() {
+        if (this.clientId) {
+            return this.clientId;
+        }
+        this.clientId = this.getString('/client/client_id');
+        return this.clientId ? this.clientId : '';
+    }
+    setClientSecret(clientSecret) {
+        this.clientSecret = clientSecret;
+    }
+    setClientId(clientId) {
+        this.clientId = clientId;
+    }
+    async getClientSecret() {
+        if (this.clientSecret) {
+            return this.clientSecret;
+        }
+        this.clientSecret = await this.getDecryptString('/client/client_secret');
+        return this.clientSecret;
+    }
+    async getToken(refresh, region) {
+        if (!refresh) {
+            refresh = false;
+        }
+        if (!region) {
+            region = this.getDefaultRegion();
+        }
+        return Credential.getToken(refresh, region);
+    }
+    getRegion() {
+        if (this.region) {
+            return this.region;
+        }
+        return this.getDefaultRegion();
+    }
+    convertToUserInfo(response, isAnonymous = false) {
+        if (isAnonymous) {
+            let rsp = response;
+            return {
+                anonymous: true,
+                uid: rsp.getUserInfo().getUid(),
+                providerId: AGConnectAuthCredentialProvider.Anonymous.toString(),
+                accessToken: rsp.getAccessToken().getToken(),
+                accessTokenValidPeriod: rsp.getAccessToken().getValidPeriod(),
+                refreshToken: rsp.getRefreshToken().getToken(),
+                startTime: new Date().getTime()
+            };
+        }
+        let rsp = response;
+        return {
+            anonymous: false,
+            uid: rsp.getUserInfo().getUid(),
+            displayName: rsp.getUserInfo().getDisplayName(),
+            photoUrl: rsp.getUserInfo().getPhotoUrl(),
+            email: rsp.getUserInfo().getEmail(),
+            emailVerified: rsp.getUserInfo().getEmailVerified(),
+            passwordSetted: rsp.getUserInfo().getPasswordSetted(),
+            phone: rsp.getUserInfo().getPhone(),
+            providerId: rsp.getUserInfo().getProvider().toString(),
+            accessToken: rsp.getAccessToken().getToken(),
+            accessTokenValidPeriod: rsp.getAccessToken().getValidPeriod(),
+            refreshToken: rsp.getRefreshToken().getToken(),
+            providerInfo: rsp.getProviders(),
+            startTime: new Date().getTime()
+        };
+    }
+    getDefaultRegion() {
+        return this.getString('region');
+    }
+    getString(path) {
+        if (path.startsWith('/')) {
+            path = path.substring(1);
+        }
+        if (path.endsWith('/')) {
+            path = path.substring(0, path.length - 1);
+        }
+        let array = path.split('/');
+        let value = this.json;
+        if (value) {
+            for (let key = 0; key < array.length; key++) {
+                value = value[array[key]];
+            }
+            return value;
+        }
+        return '';
+    }
+    async getDecryptString(path) {
+        let originalValue = this.getString(path);
+        if (DecryptExclamationMark.isMatch(originalValue)) {
+            if (!this.decryptMark) {
+                this.decryptMark = new DecryptExclamationMark(this.json['code']['code1'], this.json['code']['code2'], this.json['code']['code3'], this.json['code']['code4']);
+            }
+            let decrypt = await this.decryptMark.decrypt(originalValue);
+            if (decrypt) {
+                return decrypt;
+            }
+        }
+        return originalValue;
+    }
+}
+export default AuthImpl.getAuthInstance();
+ÔrFÜ  ¯@ohos.util.List£./b¥./e/f¥./k/l¥./g/h£./r§./e/i/q§./e/i/j¥./o/t§./e/m/n¥./o/p§./e/m/s§./e/i/w§./e/m/v§./e/i/u¥./x/y¨./e/i/a1¥./x/z¨./e/i/c1¨./e/m/b1ª./e1/f1/g1¨./e/i/h1¨./e/m/d1§./j1/k1¦./c/l1¨./e/m/i1ª./e1/m1/n1ª./e1/m1/o1©./s1/x/t1­./e1/p1/q1/r1§./s1/u1¦./g/v1ÔrG—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙl hvigor_ignore__Applications_DevEco-Studio.app_Contents_sdk_default_openharmony_ets_api_@ohos.util.List.d.tsAÃªoh-resolveÂGAÂÙ—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/b.jsAÃªoh-resolveÂGAÂÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/f.jsAÃªoh-resolveÂGAÂÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/k/l.jsAÃªoh-resolveÂGAÂÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/g/h.jsAÃªoh-resolveÂGAÂÙ—/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/r.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/q.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/j.jsAÃªoh-resolveÂGAÂÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/o/t.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/n.jsAÃªoh-resolveÂGAÂÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/o/p.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/s.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/w.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/v.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/u.jsAÃªoh-resolveÂGAÂÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/x/y.jsAÃªoh-resolveÂGAÂÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/a1.jsAÃªoh-resolveÂGAÂÙ™/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/x/z.jsAÃªoh-resolveÂGAÂÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/c1.jsAÃªoh-resolveÂGAÂÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/b1.jsAÃªoh-resolveÂGAÂÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/f1/g1.jsAÃªoh-resolveÂGAÂÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/i/h1.jsAÃªoh-resolveÂGAÂÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/d1.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/j1/k1.jsAÃªoh-resolveÂGAÂÙš/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/c/l1.jsAÃªoh-resolveÂGAÂÙœ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e/m/i1.jsAÃªoh-resolveÂGAÂÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/m1/n1.jsAÃªoh-resolveÂGAÂÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/m1/o1.jsAÃªoh-resolveÂGAÂÙ/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/s1/x/t1.jsAÃªoh-resolveÂGAÂÙ¡/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/e1/p1/q1/r1.jsAÃªoh-resolveÂGAÂÙ›/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/s1/u1.jsAÃªoh-resolveÂGAÂÙš/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@hw-agconnect+auth@1.0.2/oh_modules/@hw-agconnect/auth/src/main/ets/g/v1.jsAÃªoh-resolveÂÂÔ  ÔrH”²dynamicImportCache¹exportAllDeclarationCache»exportNamedDeclarationCache«importCache‘ÔrI–¤type¥start£end«declarationªspecifiers¦source¶ExportNamedDeclarationÍ¡Í;cÔrJ–¤type¥start£end¢idªsuperClass¤body°ClassDeclarationÍ¨Í;cÔrK”¤type¥start£end¤nameªIdentifierÍ®Í¶¨AuthImplÀÔrL”¤type¥start£end¤body©ClassBodyÍ·Í;cÜ ÔrM˜¤type¥start£end¦static¨computed£key¤kind¥value°MethodDefinitionÍ½ÍWÃÂKªIdentifierÍÄÍÏ«getInstance¦methodÔrN™¤type¥start£end¢idªexpression©generator¥async¦params¤body²FunctionExpressionÍÏÍWÀÂÂÂL®BlockStatementÍÒÍW’ÔrO–¤type¥start£end¤testªconsequent©alternate«IfStatementÍÜÍ/ÔrP–¤type¥start£end¨operator¦prefix¨argument¯UnaryExpressionÍàÍò¡!ÃÔrQ—¤type¥start£end¦object¨property¨computed¨optional°MemberExpressionÍáÍòKªIdentifierÍáÍé¨AuthImplKªIdentifierÍêÍò¨instanceÂÂL®BlockStatementÍôÍ/‘ÔrR”¤type¥start£endªexpression³ExpressionStatementÍÍ%ÔrS–¤type¥start£end¨operator¤left¥right´AssignmentExpressionÍÍ$¡=Q°MemberExpressionÍÍKªIdentifierÍÍ
+¨AuthImplKªIdentifierÍÍ¨instanceÂÂÔrT•¤type¥start£end¦callee©arguments­NewExpressionÍÍ$KªIdentifierÍÍ"¨AuthImplÀÔrU”¤type¥start£end¨argument¯ReturnStatementÍ8ÍQQ°MemberExpressionÍ?ÍPKªIdentifierÍ?ÍG¨AuthImplKªIdentifierÍHÍP¨instanceÂÂM°MethodDefinitionÍ\Í£ÃÂKªIdentifierÍcÍr¯getAuthInstance¦methodN²FunctionExpressionÍrÍ£ÀÂÂÂL®BlockStatementÍuÍ£‘U¯ReturnStatementÍÍÔrV–¤type¥start£end¦callee©arguments¨optional®CallExpressionÍ†ÍœQ°MemberExpressionÍ†ÍšKªIdentifierÍ†Í¨AuthImplKªIdentifierÍÍš«getInstanceÂÂÂM°MethodDefinitionÍ¨ÍïÂÂKªIdentifierÍ¨Í·¯getAuthProvider¦methodN²FunctionExpressionÍ·ÍïÀÂÂÂL®BlockStatementÍºÍï‘U¯ReturnStatementÍÄÍéT­NewExpressionÍËÍèKªIdentifierÍÏÍæ·CloudCommonAuthProviderM°MethodDefinitionÍôÍAÂÂKªIdentifierÍúÍ±requestVerifyCode¦methodN²FunctionExpressionÍÍAÀÂÂÃ‘KªIdentifierÍÍ¯verifyCodeParamL®BlockStatementÍÍA—ÔrW•¤type¥start£end¬declarations¤kind³VariableDeclarationÍ'Í	n‘ÔrX•¤type¥start£end¢id¤init²VariableDeclaratorÍ+Í	mKªIdentifierÍ+Í7¬requestMakerÔrY”¤type¥start£endªproperties°ObjectExpressionÍ:Í	m’ÔrZ™¤type¥start£end¦method©shorthand¨computed£key¥value¤kind¨PropertyÍHÍmÂÂÂÔr[•¤type¥start£end¥value£raw§LiteralÍHÍO¥phone§'phone'N·ArrowFunctionExpressionÍQÍmÀÂÂÂL®BlockStatementÍWÍm”W³VariableDeclarationÍiÍ‘X²VariableDeclaratorÍmÍKªIdentifierÍmÍ|¯phoneVerifyCodeQ°MemberExpressionÍÍKªIdentifierÍÍ¯verifyCodeParamKªIdentifierÍÍ®verifyCodeTypeÂÂ£letW³VariableDeclarationÍ¯ÍÑ‘X²VariableDeclaratorÍ³ÍĞKªIdentifierÍ³Í¶£reqT­NewExpressionÍ¹ÍĞKªIdentifierÍ½ÍÎ±VerifyCodeRequest£letR³ExpressionStatementÍâÍCV®CallExpressionÍâÍBQ°MemberExpressionÍâÍîKªIdentifierÍâÍå£reqKªIdentifierÍæÍî¨setPhoneÂÂ‘V®CallExpressionÍïÍAQ°MemberExpressionÍïÍKªIdentifierÍïÍø©PhoneUtilKªIdentifierÍùÍ®combinatePhoneÂÂ’Q°MemberExpressionÍÍ#KªIdentifierÍÍ¯phoneVerifyCodeKªIdentifierÍÍ#«countryCodeÂÂQ°MemberExpressionÍ%Í@KªIdentifierÍ%Í4¯phoneVerifyCodeKªIdentifierÍ5Í@«phoneNumberÂÂÂÂU¯ReturnStatementÍTÍ_KªIdentifierÍ[Í^£req¤initZ¨PropertyÍ{Í	cÂÂÂ[§LiteralÍ{Í‚¥email§'email'N·ArrowFunctionExpressionÍ„Í	cÀÂÂÂL®BlockStatementÍŠÍ	c”W³VariableDeclarationÍœÍÑ‘X²VariableDeclaratorÍ ÍĞKªIdentifierÍ Í¯¯emailVerifyCodeQ°MemberExpressionÍ²ÍĞKªIdentifierÍ²ÍÁ¯verifyCodeParamKªIdentifierÍÂÍĞ®verifyCodeTypeÂÂ£letW³VariableDeclarationÍâÍ	‘X²VariableDeclaratorÍæÍ	KªIdentifierÍæÍé£reqT­NewExpressionÍìÍ	KªIdentifierÍğÍ	±VerifyCodeRequest£letR³ExpressionStatementÍ	Í	9V®CallExpressionÍ	Í	8Q°MemberExpressionÍ	Í	!KªIdentifierÍ	Í	£reqKªIdentifierÍ	Í	!¨setEmailÂÂ‘Q°MemberExpressionÍ	"Í	7KªIdentifierÍ	"Í	1¯emailVerifyCodeKªIdentifierÍ	2Í	7¥emailÂÂÂU¯ReturnStatementÍ	JÍ	UKªIdentifierÍ	QÍ	T£req¤init£letW³VariableDeclarationÍ	wÍ	µ‘X²VariableDeclaratorÍ	{Í	´KªIdentifierÍ	{Í	~£reqV®CallExpressionÍ	Í	´Q°MemberExpressionÍ	Í	²KªIdentifierÍ	Í	¬requestMakerQ°MemberExpressionÍ	Í	±Q°MemberExpressionÍ	Í	¬KªIdentifierÍ	Í	¯verifyCodeParamKªIdentifierÍ	Í	¬®verifyCodeTypeÂÂKªIdentifierÍ	­Í	±¤kindÂÂÃÂÂ£letR³ExpressionStatementÍ	¾Í	äV®CallExpressionÍ	¾Í	ãQ°MemberExpressionÍ	¾Í	ËKªIdentifierÍ	¾Í	Á£reqKªIdentifierÍ	ÂÍ	Ë©setActionÂÂ‘Q°MemberExpressionÍ	ÌÍ	âKªIdentifierÍ	ÌÍ	Û¯verifyCodeParamKªIdentifierÍ	ÜÍ	â¦actionÂÂÂR³ExpressionStatementÍ	íÍ
+V®CallExpressionÍ	íÍ
+Q°MemberExpressionÍ	íÍ	øKªIdentifierÍ	íÍ	ğ£reqKªIdentifierÍ	ñÍ	ø§setLangÂÂ‘Q°MemberExpressionÍ	ùÍ
+KªIdentifierÍ	ùÍ
+¯verifyCodeParamKªIdentifierÍ
+	Í
+¤langÂÂÂR³ExpressionStatementÍ
+Í
+mV®CallExpressionÍ
+Í
+lQ°MemberExpressionÍ
+Í
++KªIdentifierÍ
+Í
+£reqKªIdentifierÍ
+Í
++¯setSendIntervalÂÂ‘OµConditionalExpressionÍ
+,Í
+kQ°MemberExpressionÍ
+,Í
+HKªIdentifierÍ
+,Í
+;¯verifyCodeParamKªIdentifierÍ
+<Í
+H¬sendIntervalÂÂQ°MemberExpressionÍ
+KÍ
+gKªIdentifierÍ
+KÍ
+Z¯verifyCodeParamKªIdentifierÍ
+[Í
+g¬sendIntervalÂÂ[§LiteralÍ
+jÍ
+k ¡0ÂW³VariableDeclarationÍ
+vÍ
+Ê‘X²VariableDeclaratorÍ
+zÍ
+ÉKªIdentifierÍ
+zÍ
+Œ²verifyCodeResponseU¯AwaitExpressionÍ
+Í
+ÉV®CallExpressionÍ
+•Í
+ÉQ°MemberExpressionÍ
+•Í
+ªQ°MemberExpressionÍ
+•Í
+¥Ôr\“¤type¥start£end®ThisExpressionÍ
+•Í
+™KªIdentifierÍ
+šÍ
+¥«authBackendÂÂKªIdentifierÍ
+¦Í
+ª¤postÂÂ’KªIdentifierÍ
+«Í
+®£reqT­NewExpressionÍ
+°Í
+ÈKªIdentifierÍ
+´Í
+Æ²VerifyCodeResponseÂ£letU¯ReturnStatementÍ
+ÓÍ;T­NewExpressionÍ
+ÚÍ:KªIdentifierÍ
+ŞÍ
+ò´VerifyCodeResultImpl’Q°MemberExpressionÍ
+óÍKªIdentifierÍ
+óÍ²verifyCodeResponseKªIdentifierÍÍ°shortestIntervalÂÂQ°MemberExpressionÍÍ9KªIdentifierÍÍ*²verifyCodeResponseKªIdentifierÍ+Í9®validityPeriodÂÂM°MethodDefinitionÍFÍÂÂKªIdentifierÍLÍVªcreateUser¦methodN²FunctionExpressionÍVÍÀÂÂÃ‘KªIdentifierÍWÍe®credentialInfoL®BlockStatementÍgÍ•W³VariableDeclarationÍqÍì‘X²VariableDeclaratorÍuÍëKªIdentifierÍuÍ¬requestMakerY°ObjectExpressionÍ„Íë’Z¨PropertyÍ’ÍNÂÂÂ[§LiteralÍ’Í™¥phone§'phone'N·ArrowFunctionExpressionÍ›ÍNÀÂÂÂL®BlockStatementÍ¡ÍN—W³VariableDeclarationÍ³ÍÒ‘X²VariableDeclaratorÍ·ÍÑKªIdentifierÍ·ÍÀ©phoneInfoKªIdentifierÍÃÍÑ®credentialInfo£letW³VariableDeclarationÍãÍ‘X²VariableDeclaratorÍçÍKªIdentifierÍçÍê£reqT­NewExpressionÍíÍKªIdentifierÍñÍ³RegisterUserRequest£letR³ExpressionStatementÍÍkS´AssignmentExpressionÍÍj¡=Q°MemberExpressionÍÍ!KªIdentifierÍÍ£reqKªIdentifierÍÍ!¥phoneÂÂV®CallExpressionÍ$ÍjQ°MemberExpressionÍ$Í<KªIdentifierÍ$Í-©PhoneUtilKªIdentifierÍ.Í<®combinatePhoneÂÂ’Q°MemberExpressionÍ=ÍRKªIdentifierÍ=ÍF©phoneInfoKªIdentifierÍGÍR«countryCodeÂÂQ°MemberExpressionÍTÍiKªIdentifierÍTÍ]©phoneInfoKªIdentifierÍ^Íi«phoneNumberÂÂÂR³ExpressionStatementÍ|ÍS´AssignmentExpressionÍ|Í¡=Q°MemberExpressionÍ|ÍˆKªIdentifierÍ|Í£reqKªIdentifierÍ€Íˆ¨passwordÂÂQ°MemberExpressionÍ‹ÍKªIdentifierÍ‹Í”©phoneInfoKªIdentifierÍ•Í¨passwordÂÂR³ExpressionStatementÍ¯ÍÕS´AssignmentExpressionÍ¯ÍÔ¡=Q°MemberExpressionÍ¯Í½KªIdentifierÍ¯Í²£reqKªIdentifierÍ³Í½ªverifyCodeÂÂQ°MemberExpressionÍÀÍÔKªIdentifierÍÀÍÉ©phoneInfoKªIdentifierÍÊÍÔªverifyCodeÂÂR³ExpressionStatementÍæÍ$S´AssignmentExpressionÍæÍ#¡=Q°MemberExpressionÍæÍòKªIdentifierÍæÍé£reqKªIdentifierÍêÍò¨providerÂÂQ°MemberExpressionÍõÍ#KªIdentifierÍõÍ¿AGConnectAuthCredentialProviderKªIdentifierÍÍ#®Phone_ProviderÂÂU¯ReturnStatementÍ5Í@KªIdentifierÍ<Í?£req¤initZ¨PropertyÍ\ÍáÂÂÂ[§LiteralÍ\Íc¥email§'email'N·ArrowFunctionExpressionÍeÍáÀÂÂÂL®BlockStatementÍkÍá—W³VariableDeclarationÍ}Íœ‘X²VariableDeclaratorÍÍ›KªIdentifierÍÍŠ©emailInfoKªIdentifierÍÍ›®credentialInfo£letW³VariableDeclarationÍ­ÍÑ‘X²VariableDeclaratorÍ±ÍĞKªIdentifierÍ±Í´£reqT­NewExpressionÍ·ÍĞKªIdentifierÍ»ÍÎ³RegisterUserRequest£letR³ExpressionStatementÍâÍşS´AssignmentExpressionÍâÍı¡=Q°MemberExpressionÍâÍëKªIdentifierÍâÍå£reqKªIdentifierÍæÍë¥emailÂÂQ°MemberExpressionÍîÍıKªIdentifierÍîÍ÷©emailInfoKªIdentifierÍøÍı¥emailÂÂR³ExpressionStatementÍÍ1S´AssignmentExpressionÍÍ0¡=Q°MemberExpressionÍÍKªIdentifierÍÍ£reqKªIdentifierÍÍ¨passwordÂÂQ°MemberExpressionÍÍ0KªIdentifierÍÍ'©emailInfoKªIdentifierÍ(Í0¨passwordÂÂR³ExpressionStatementÍBÍhS´AssignmentExpressionÍBÍg¡=Q°MemberExpressionÍBÍPKªIdentifierÍBÍE£reqKªIdentifierÍFÍPªverifyCodeÂÂQ°MemberExpressionÍSÍgKªIdentifierÍSÍ\©emailInfoKªIdentifierÍ]ÍgªverifyCodeÂÂR³ExpressionStatementÍyÍ·S´AssignmentExpressionÍyÍ¶¡=Q°MemberExpressionÍyÍ…KªIdentifierÍyÍ|£reqKªIdentifierÍ}Í…¨providerÂÂQ°MemberExpressionÍˆÍ¶KªIdentifierÍˆÍ§¿AGConnectAuthCredentialProviderKªIdentifierÍ¨Í¶®Email_ProviderÂÂU¯ReturnStatementÍÈÍÓKªIdentifierÍÏÍÒ£req¤init£letW³VariableDeclarationÍõÍ'‘X²VariableDeclaratorÍùÍ&KªIdentifierÍùÍ §requestV®CallExpressionÍÍ&Q°MemberExpressionÍÍ$KªIdentifierÍÍ¬requestMakerQ°MemberExpressionÍÍ#KªIdentifierÍÍ®credentialInfoKªIdentifierÍÍ#¤kindÂÂÃÂÂ£letW³VariableDeclarationÍ0Í€‘X²VariableDeclaratorÍ4ÍKªIdentifierÍ4ÍB®signInResponseU¯AwaitExpressionÍEÍV®CallExpressionÍKÍQ°MemberExpressionÍKÍ`Q°MemberExpressionÍKÍ[\®ThisExpressionÍKÍOKªIdentifierÍPÍ[«authBackendÂÂKªIdentifierÍ\Í`¤postÂÂ’KªIdentifierÍaÍh§requestT­NewExpressionÍjÍ~KªIdentifierÍnÍ|®SignInResponseÂ£letW³VariableDeclarationÍ‰Íä‘X²VariableDeclaratorÍÍãKªIdentifierÍÍ‘¤userU¯AwaitExpressionÍ”ÍãV®CallExpressionÍšÍãQ°MemberExpressionÍšÍ»Q°MemberExpressionÍšÍª\®ThisExpressionÍšÍKªIdentifierÍŸÍª«userManagerÂÂKªIdentifierÍ«Í»°makeUserInstanceÂÂ‘V®CallExpressionÍ¼ÍâQ°MemberExpressionÍ¼ÍÒ\®ThisExpressionÍ¼ÍÀKªIdentifierÍÁÍÒ±convertToUserInfoÂÂ‘KªIdentifierÍÓÍá®signInResponseÂÂ£letU¯ReturnStatementÍíÍT­NewExpressionÍôÍKªIdentifierÍøÍ°SignInResultImpl‘KªIdentifierÍ	Í¤userM°MethodDefinitionÍÍ}ÂÂKªIdentifierÍ Í-­resetPassword¦methodN²FunctionExpressionÍ-Í}ÀÂÂÃ‘KªIdentifierÍ.Í<®credentialInfoL®BlockStatementÍ>Í}”W³VariableDeclarationÍHÍÏ‘X²VariableDeclaratorÍLÍÎKªIdentifierÍLÍX¬requestMakerY°ObjectExpressionÍ[ÍÎ’Z¨PropertyÍiÍ+ÂÂÂ[§LiteralÍiÍp¥phone§'phone'N·ArrowFunctionExpressionÍrÍ+ÀÂÂÂL®BlockStatementÍxÍ+—W³VariableDeclarationÍŠÍ¯‘X²VariableDeclaratorÍÍ®KªIdentifierÍÍ‘£reqT­NewExpressionÍ”Í®KªIdentifierÍ˜Í¬´ResetPasswordRequest£letW³VariableDeclarationÍÀÍß‘X²VariableDeclaratorÍÄÍŞKªIdentifierÍÄÍÍ©phoneInfoKªIdentifierÍĞÍŞ®credentialInfo£letR³ExpressionStatementÍğÍES´AssignmentExpressionÍğÍD¡=Q°MemberExpressionÍğÍûKªIdentifierÍğÍó£reqKªIdentifierÍôÍû§accountÂÂV®CallExpressionÍşÍDQ°MemberExpressionÍşÍKªIdentifierÍşÍ©PhoneUtilKªIdentifierÍÍ®combinatePhoneÂÂ’Q°MemberExpressionÍÍ,KªIdentifierÍÍ ©phoneInfoKªIdentifierÍ!Í,«countryCodeÂÂQ°MemberExpressionÍ.ÍCKªIdentifierÍ.Í7©phoneInfoKªIdentifierÍ8ÍC«phoneNumberÂÂÂR³ExpressionStatementÍVÍ{S´AssignmentExpressionÍVÍz¡=Q°MemberExpressionÍVÍeKªIdentifierÍVÍY£reqKªIdentifierÍZÍe«newPasswordÂÂQ°MemberExpressionÍhÍzKªIdentifierÍhÍq©phoneInfoKªIdentifierÍrÍz¨passwordÂÂR³ExpressionStatementÍŒÍ²S´AssignmentExpressionÍŒÍ±¡=Q°MemberExpressionÍŒÍšKªIdentifierÍŒÍ£reqKªIdentifierÍÍšªverifyCodeÂÂQ°MemberExpressionÍÍ±KªIdentifierÍÍ¦©phoneInfoKªIdentifierÍ§Í±ªverifyCodeÂÂR³ExpressionStatementÍÃÍS´AssignmentExpressionÍÃÍ ¡=Q°MemberExpressionÍÃÍÏKªIdentifierÍÃÍÆ£reqKªIdentifierÍÇÍÏ¨providerÂÂQ°MemberExpressionÍÒÍ KªIdentifierÍÒÍñ¿AGConnectAuthCredentialProviderKªIdentifierÍòÍ ®Phone_ProviderÂÂU¯ReturnStatementÍÍKªIdentifierÍÍ£req¤initZ¨PropertyÍ9ÍÄÂÂÂ[§LiteralÍ9Í@¥email§'email'N·ArrowFunctionExpressionÍBÍÄÀÂÂÂL®BlockStatementÍHÍÄ—W³VariableDeclarationÍZÍ‘X²VariableDeclaratorÍ^Í~KªIdentifierÍ^Ía£reqT­NewExpressionÍdÍ~KªIdentifierÍhÍ|´ResetPasswordRequest£letW³VariableDeclarationÍÍ¯‘X²VariableDeclaratorÍ”Í®KªIdentifierÍ”Í©emailInfoKªIdentifierÍ Í®®credentialInfo£letR³ExpressionStatementÍÀÍŞS´AssignmentExpressionÍÀÍİ¡=Q°MemberExpressionÍÀÍËKªIdentifierÍÀÍÃ£reqKªIdentifierÍÄÍË§accountÂÂQ°MemberExpressionÍÎÍİKªIdentifierÍÎÍ×©emailInfoKªIdentifierÍØÍİ¥emailÂÂR³ExpressionStatementÍïÍS´AssignmentExpressionÍïÍ¡=Q°MemberExpressionÍïÍşKªIdentifierÍïÍò£reqKªIdentifierÍóÍş«newPasswordÂÂQ°MemberExpressionÍÍKªIdentifierÍÍ
+©emailInfoKªIdentifierÍÍ¨passwordÂÂR³ExpressionStatementÍ%ÍKS´AssignmentExpressionÍ%ÍJ¡=Q°MemberExpressionÍ%Í3KªIdentifierÍ%Í(£reqKªIdentifierÍ)Í3ªverifyCodeÂÂQ°MemberExpressionÍ6ÍJKªIdentifierÍ6Í?©emailInfoKªIdentifierÍ@ÍJªverifyCodeÂÂR³ExpressionStatementÍ\ÍšS´AssignmentExpressionÍ\Í™¡=Q°MemberExpressionÍ\ÍhKªIdentifierÍ\Í_£reqKªIdentifierÍ`Íh¨providerÂÂQ°MemberExpressionÍkÍ™KªIdentifierÍkÍŠ¿AGConnectAuthCredentialProviderKªIdentifierÍ‹Í™®Email_ProviderÂÂU¯ReturnStatementÍ«Í¶KªIdentifierÍ²Íµ£req¤init£letW³VariableDeclarationÍØÍ
+‘X²VariableDeclaratorÍÜÍ	KªIdentifierÍÜÍã§requestV®CallExpressionÍæÍ	Q°MemberExpressionÍæÍKªIdentifierÍæÍò¬requestMakerQ°MemberExpressionÍóÍKªIdentifierÍóÍ®credentialInfoKªIdentifierÍÍ¤kindÂÂÃÂÂ£letR³ExpressionStatementÍÍUU¯AwaitExpressionÍÍTV®CallExpressionÍÍTQ°MemberExpressionÍÍ.Q°MemberExpressionÍÍ)\®ThisExpressionÍÍKªIdentifierÍÍ)«authBackendÂÂKªIdentifierÍ*Í.¤postÂÂ’KªIdentifierÍ/Í6§requestT­NewExpressionÍ8ÍSKªIdentifierÍ<ÍQµResetPasswordResponseÂU¯ReturnStatementÍ^ÍwV®CallExpressionÍeÍvQ°MemberExpressionÍeÍtKªIdentifierÍeÍl§PromiseKªIdentifierÍmÍt§resolveÂÂÂM°MethodDefinitionÍ‚ÍÂÂKªIdentifierÍˆÍ¦signIn¦methodN²FunctionExpressionÍÍÀÂÂÃ‘KªIdentifierÍÍ”¥paramL®BlockStatementÍ–ÍšW³VariableDeclarationÍ Íõ‘X²VariableDeclaratorÍ¤ÍôKªIdentifierÍ¤Í¯«signInParamY°ObjectExpressionÍ²Íô’Z¨PropertyÍ´ÍÊÂÂÂ[§LiteralÍ´ÍÄ®autoCreateUser°'autoCreateUser'[§LiteralÍÆÍÊÃ¤true¤initZ¨PropertyÍÌÍòÂÂÂ[§LiteralÍÌÍÜ®credentialInfo°'credentialInfo'Q°MemberExpressionÍŞÍòKªIdentifierÍŞÍã¥paramKªIdentifierÍäÍò®credentialInfoÂÂ¤init£letW³VariableDeclarationÍşÍ6‘X²VariableDeclaratorÍÍ5KªIdentifierÍÍ¤userU¯AwaitExpressionÍ	Í5V®CallExpressionÍÍ5Q°MemberExpressionÍÍ3Q°MemberExpressionÍÍ\®ThisExpressionÍÍKªIdentifierÍÍ«userManagerÂÂKªIdentifierÍ Í3³currentUserInstanceÂÂÂ£letO«IfStatementÍ?Í°KªIdentifierÍCÍG¤userL®BlockStatementÍIÍ°‘U¯ReturnStatementÍWÍ¦V®CallExpressionÍ^Í¥Q°MemberExpressionÍ^ÍlKªIdentifierÍ^Íe§PromiseKªIdentifierÍfÍl¦rejectÂÂ‘T­NewExpressionÍmÍ¤KªIdentifierÍqÍ}¬AGCAuthError‘Q°MemberExpressionÍ~Í£KªIdentifierÍ~Í°AGCAuthErrorCodeKªIdentifierÍÍ£´ALREADY_SIGN_IN_USERÂÂÂÀW³VariableDeclarationÍ¹Íé‘X²VariableDeclaratorÍ½ÍèKªIdentifierÍ½ÍË®credentialInfoQ°MemberExpressionÍÎÍèKªIdentifierÍÎÍÙ«signInParamKªIdentifierÍÚÍè®credentialInfoÂÂ£letO«IfStatementÍòÍlP¯UnaryExpressionÍöÍ¡!ÃKªIdentifierÍ÷Í®credentialInfoL®BlockStatementÍÍl‘U¯ReturnStatementÍÍbV®CallExpressionÍÍaQ°MemberExpressionÍÍ*KªIdentifierÍÍ#§PromiseKªIdentifierÍ$Í*¦rejectÂÂ‘T­NewExpressionÍ+Í`KªIdentifierÍ/Í;¬AGCAuthError‘Q°MemberExpressionÍ<Í_KªIdentifierÍ<ÍL°AGCAuthErrorCodeKªIdentifierÍMÍ_²CREDENTIAL_INVALIDÂÂÂÀW³VariableDeclarationÍuÍİ‘X²VariableDeclaratorÍyÍÜKªIdentifierÍyÍ…¬requestMakerY°ObjectExpressionÍˆÍÜ“Z¨PropertyÍ–ÍŒÂÂÂ[§LiteralÍ–Í¥phone§'phone'N·ArrowFunctionExpressionÍŸÍŒÀÂÂÂL®BlockStatementÍ¥ÍŒ–W³VariableDeclarationÍ·ÍÕ‘X²VariableDeclaratorÍ»ÍÔKªIdentifierÍ»Í¾£reqT­NewExpressionÍÁÍÔKªIdentifierÍÅÍÒ­SignInRequest£letW³VariableDeclarationÍæÍ‘X²VariableDeclaratorÍêÍKªIdentifierÍêÍı³phoneCredentialInfoKªIdentifierÍ Í®credentialInfo£letW³VariableDeclarationÍ Íç‘X²VariableDeclaratorÍ$ÍæKªIdentifierÍ$Í.ªcredentialV®CallExpressionÍ1ÍæQ°MemberExpressionÍ1ÍfKªIdentifierÍ1ÍB±PhoneAuthProviderKªIdentifierÍCÍfÙ#credentialWithPasswordAndVerifyCodeÂÂ”Q°MemberExpressionÍgÍ†KªIdentifierÍgÍz³phoneCredentialInfoKªIdentifierÍ{Í†«countryCodeÂÂQ°MemberExpressionÍˆÍ§KªIdentifierÍˆÍ›³phoneCredentialInfoKªIdentifierÍœÍ§«phoneNumberÂÂQ°MemberExpressionÍ©ÍÅKªIdentifierÍ©Í¼³phoneCredentialInfoKªIdentifierÍ½ÍÅ¨passwordÂÂQ°MemberExpressionÍÇÍåKªIdentifierÍÇÍÚ³phoneCredentialInfoKªIdentifierÍÛÍåªverifyCodeÂÂÂ£letR³ExpressionStatementÍøÍV®CallExpressionÍøÍQ°MemberExpressionÍøÍKªIdentifierÍøÍªcredentialKªIdentifierÍÍ¶prepareUserAuthRequestÂÂ‘KªIdentifierÍÍ£reqÂR³ExpressionStatementÍ0ÍbV®CallExpressionÍ0ÍaQ°MemberExpressionÍ0ÍEKªIdentifierÍ0Í3£reqKªIdentifierÍ4ÍE±setAutoCreateUserÂÂ‘Q°MemberExpressionÍFÍ`KªIdentifierÍFÍQ«signInParamKªIdentifierÍRÍ`®autoCreateUserÂÂÂU¯ReturnStatementÍsÍ~KªIdentifierÍzÍ}£req¤initZ¨PropertyÍšÍAÂÂÂ[§LiteralÍšÍ¡¥email§'email'N·ArrowFunctionExpressionÍ£ÍAÀÂÂÂL®BlockStatementÍ©ÍA–W³VariableDeclarationÍ»ÍÙ‘X²VariableDeclaratorÍ¿ÍØKªIdentifierÍ¿ÍÂ£reqT­NewExpressionÍÅÍØKªIdentifierÍÉÍÖ­SignInRequest£letW³VariableDeclarationÍêÍ	‘X²VariableDeclaratorÍîÍKªIdentifierÍîÍ÷©emailInfoKªIdentifierÍúÍ®credentialInfo£letW³VariableDeclarationÍÍœ‘X²VariableDeclaratorÍÍ›KªIdentifierÍÍ(ªcredentialV®CallExpressionÍ+Í›Q°MemberExpressionÍ+Í`KªIdentifierÍ+Í<±EmailAuthProviderKªIdentifierÍ=Í`Ù#credentialWithPasswordAndVerifyCodeÂÂ“Q°MemberExpressionÍaÍpKªIdentifierÍaÍj©emailInfoKªIdentifierÍkÍp¥emailÂÂQ°MemberExpressionÍrÍ„KªIdentifierÍrÍ{©emailInfoKªIdentifierÍ|Í„¨passwordÂÂQ°MemberExpressionÍ†ÍšKªIdentifierÍ†Í©emailInfoKªIdentifierÍÍšªverifyCodeÂÂÂ£letR³ExpressionStatementÍ­ÍÔV®CallExpressionÍ­ÍÓQ°MemberExpressionÍ­ÍÎKªIdentifierÍ­Í·ªcredentialKªIdentifierÍ¸ÍÎ¶prepareUserAuthRequestÂÂ‘KªIdentifierÍÏÍÒ£reqÂR³ExpressionStatementÍåÍV®CallExpressionÍåÍQ°MemberExpressionÍåÍúKªIdentifierÍåÍè£reqKªIdentifierÍéÍú±setAutoCreateUserÂÂ‘Q°MemberExpressionÍûÍKªIdentifierÍûÍ«signInParamKªIdentifierÍÍ®autoCreateUserÂÂÂU¯ReturnStatementÍ(Í3KªIdentifierÍ/Í2£req¤initZ¨PropertyÍOÍÒÂÂÂ[§LiteralÍOÍU¤hwid¦'hwid'N·ArrowFunctionExpressionÍWÍÒÀÂÂÃL®BlockStatementÍcÍÒ–W³VariableDeclarationÍuÍ“‘X²VariableDeclaratorÍyÍ’KªIdentifierÍyÍ|£reqT­NewExpressionÍÍ’KªIdentifierÍƒÍ­SignInRequest£letW³VariableDeclarationÍ¤ÍÜ‘X²VariableDeclaratorÍ¨ÍÛKªIdentifierÍ¨Í°¨authCodeU¯AwaitExpressionÍ³ÍÛV®CallExpressionÍ¹ÍÛQ°MemberExpressionÍ¹ÍÔKªIdentifierÍ¹ÍÈ¯HwIdAuthManagerKªIdentifierÍÉÍÔ«getAuthCodeÂÂ‘[§LiteralÍÕÍÚÂ¥falseÂ£letW³VariableDeclarationÍíÍ-‘X²VariableDeclaratorÍñÍ,KªIdentifierÍñÍûªcredentialV®CallExpressionÍşÍ,Q°MemberExpressionÍşÍ"KªIdentifierÍşÍ°HwIdAuthProviderKªIdentifierÍÍ"³credentialWithTokenÂÂ‘KªIdentifierÍ#Í+¨authCodeÂ£letR³ExpressionStatementÍ>ÍeV®CallExpressionÍ>ÍdQ°MemberExpressionÍ>Í_KªIdentifierÍ>ÍHªcredentialKªIdentifierÍIÍ_¶prepareUserAuthRequestÂÂ‘KªIdentifierÍ`Íc£reqÂR³ExpressionStatementÍvÍ¨V®CallExpressionÍvÍ§Q°MemberExpressionÍvÍ‹KªIdentifierÍvÍy£reqKªIdentifierÍzÍ‹±setAutoCreateUserÂÂ‘Q°MemberExpressionÍŒÍ¦KªIdentifierÍŒÍ—«signInParamKªIdentifierÍ˜Í¦®autoCreateUserÂÂÂU¯ReturnStatementÍ¹ÍÄKªIdentifierÍÀÍÃ£req¤init£letW³VariableDeclarationÍæÍ*‘X²VariableDeclaratorÍêÍ)KªIdentifierÍêÍñ§requestU¯AwaitExpressionÍôÍ)V®CallExpressionÍúÍ)Q°MemberExpressionÍúÍ'KªIdentifierÍúÍ¬requestMakerQ°MemberExpressionÍÍ&Q°MemberExpressionÍÍ!KªIdentifierÍÍ«signInParamKªIdentifierÍÍ!®credentialInfoÂÂKªIdentifierÍ"Í&¤kindÂÂÃÂÂ£letW³VariableDeclarationÍ3Íƒ‘X²VariableDeclaratorÍ7Í‚KªIdentifierÍ7ÍE®signInResponseU¯AwaitExpressionÍHÍ‚V®CallExpressionÍNÍ‚Q°MemberExpressionÍNÍcQ°MemberExpressionÍNÍ^\®ThisExpressionÍNÍRKªIdentifierÍSÍ^«authBackendÂÂKªIdentifierÍ_Íc¤postÂÂ’KªIdentifierÍdÍk§requestT­NewExpressionÍmÍKªIdentifierÍqÍ®SignInResponseÂ£letW³VariableDeclarationÍŒÍê‘X²VariableDeclaratorÍÍéKªIdentifierÍÍ—§newUserU¯AwaitExpressionÍšÍéV®CallExpressionÍ ÍéQ°MemberExpressionÍ ÍÁQ°MemberExpressionÍ Í°\®ThisExpressionÍ Í¤KªIdentifierÍ¥Í°«userManagerÂÂKªIdentifierÍ±ÍÁ°makeUserInstanceÂÂ‘V®CallExpressionÍÂÍèQ°MemberExpressionÍÂÍØ\®ThisExpressionÍÂÍÆKªIdentifierÍÇÍØ±convertToUserInfoÂÂ‘KªIdentifierÍÙÍç®signInResponseÂÂ£letU¯ReturnStatementÍóÍT­NewExpressionÍúÍKªIdentifierÍşÍ°SignInResultImpl‘KªIdentifierÍÍ§newUserM°MethodDefinitionÍ#ÍªÂÂKªIdentifierÍ)Í:±signInAnonymously¦methodN²FunctionExpressionÍ:ÍªÀÂÂÃL®BlockStatementÍ=Íª–W³VariableDeclarationÍGÍ‘X²VariableDeclaratorÍKÍ~KªIdentifierÍKÍO¤userU¯AwaitExpressionÍRÍ~V®CallExpressionÍXÍ~Q°MemberExpressionÍXÍ|Q°MemberExpressionÍXÍh\®ThisExpressionÍXÍ\KªIdentifierÍ]Íh«userManagerÂÂKªIdentifierÍiÍ|³currentUserInstanceÂÂÂ£letO«IfStatementÍˆÍ`KªIdentifierÍŒÍ¤userL®BlockStatementÍ’Í`’O«IfStatementÍ ÍúV®CallExpressionÍ¤Í¶Q°MemberExpressionÍ¤Í´KªIdentifierÍ¤Í¨¤userKªIdentifierÍ©Í´«isAnonymousÂÂÂL®BlockStatementÍ¸Íú‘U¯ReturnStatementÍÊÍìT­NewExpressionÍÑÍëKªIdentifierÍÕÍå°SignInResultImpl‘KªIdentifierÍæÍê¤userÀU¯ReturnStatementÍÍVV®CallExpressionÍÍUQ°MemberExpressionÍÍKªIdentifierÍÍ§PromiseKªIdentifierÍÍ¦rejectÂÂ‘T­NewExpressionÍÍTKªIdentifierÍ!Í-¬AGCAuthError‘Q°MemberExpressionÍ.ÍSKªIdentifierÍ.Í>°AGCAuthErrorCodeKªIdentifierÍ?ÍS´ALREADY_SIGN_IN_USERÂÂÂÀW³VariableDeclarationÍiÍ”‘X²VariableDeclaratorÍmÍ“KªIdentifierÍmÍt§requestT­NewExpressionÍwÍ“KªIdentifierÍ{Í‘¶SignInAnonymousRequest£letW³VariableDeclarationÍÍ ‘X²VariableDeclaratorÍ¡ÍÿKªIdentifierÍ¡Í¸·signInAnonymousResponseU¯AwaitExpressionÍ»ÍÿR¯ChainExpressionÍÁÍÿV®CallExpressionÍÁÍÿQ°MemberExpressionÍÁÍ×Q°MemberExpressionÍÁÍÑ\®ThisExpressionÍÁÍÅKªIdentifierÍÆÍÑ«authBackendÂÂKªIdentifierÍÓÍ×¤postÂÃ’KªIdentifierÍØÍß§requestT­NewExpressionÍáÍşKªIdentifierÍåÍü·SignInAnonymousResponseÂ£letW³VariableDeclarationÍ	Ív‘X²VariableDeclaratorÍÍuKªIdentifierÍÍ§newUserU¯AwaitExpressionÍÍuV®CallExpressionÍÍuQ°MemberExpressionÍÍ>Q°MemberExpressionÍÍ-\®ThisExpressionÍÍ!KªIdentifierÍ"Í-«userManagerÂÂKªIdentifierÍ.Í>°makeUserInstanceÂÂ‘V®CallExpressionÍ?ÍtQ°MemberExpressionÍ?ÍU\®ThisExpressionÍ?ÍCKªIdentifierÍDÍU±convertToUserInfoÂÂ’KªIdentifierÍVÍm·signInAnonymousResponse[§LiteralÍoÍsÃ¤trueÂÂ£letU¯ReturnStatementÍÍ¤T­NewExpressionÍ†Í£KªIdentifierÍŠÍš°SignInResultImpl‘KªIdentifierÍ›Í¢§newUserM°MethodDefinitionÍ¯Í!»ÂÂKªIdentifierÍµÍ¿ªdeleteUser¦methodN²FunctionExpressionÍ¿Í!»ÀÂÂÃL®BlockStatementÍÂÍ!»˜W³VariableDeclarationÍÌÍ ‘X²VariableDeclaratorÍĞÍ KªIdentifierÍĞÍÔ¤userU¯AwaitExpressionÍ×Í V®CallExpressionÍİÍ Q°MemberExpressionÍİÍ Q°MemberExpressionÍİÍí\®ThisExpressionÍİÍáKªIdentifierÍâÍí«userManagerÂÂKªIdentifierÍîÍ ³currentUserInstanceÂÂÂ£letO«IfStatementÍ Í vP¯UnaryExpressionÍ Í ¡!ÃKªIdentifierÍ Í ¤userL®BlockStatementÍ Í v‘U¯ReturnStatementÍ &Í lV®CallExpressionÍ -Í kQ°MemberExpressionÍ -Í ;KªIdentifierÍ -Í 4§PromiseKªIdentifierÍ 5Í ;¦rejectÂÂ‘T­NewExpressionÍ <Í jKªIdentifierÍ @Í L¬AGCAuthError‘Q°MemberExpressionÍ MÍ iKªIdentifierÍ MÍ ]°AGCAuthErrorCodeKªIdentifierÍ ^Í i«NOT_SIGN_INÂÂÂÀW³VariableDeclarationÍ Í ¯‘X²VariableDeclaratorÍ ƒÍ ®KªIdentifierÍ ƒÍ ”±deleteUserRequestT­NewExpressionÍ —Í ®KªIdentifierÍ ›Í ¬±DeleteUserRequest£letW³VariableDeclarationÍ ¸Í Ğ‘X²VariableDeclaratorÍ ¼Í ÏKªIdentifierÍ ¼Í Â¦icListT­NewExpressionÍ ÅÍ ÏKªIdentifierÍ ÉÍ Í¤List£letR³ExpressionStatementÍ ÙÍ!V®CallExpressionÍ ÙÍ!Q°MemberExpressionÍ ÙÍ ãKªIdentifierÍ ÙÍ ß¦icListKªIdentifierÍ àÍ ã£addÂÂ‘V®CallExpressionÍ äÍ!Q°MemberExpressionÍ äÍ ÿKªIdentifierÍ äÍ è¤userKªIdentifierÍ éÍ ÿ¶createTokenInterceptorÂÂÂÂR³ExpressionStatementÍ!Í!]U¯AwaitExpressionÍ!Í!\V®CallExpressionÍ!Í!\Q°MemberExpressionÍ!Í!'Q°MemberExpressionÍ!Í!"\®ThisExpressionÍ!Í!KªIdentifierÍ!Í!"«authBackendÂÂKªIdentifierÍ!#Í!'¤postÂÂ“KªIdentifierÍ!(Í!9±deleteUserRequestT­NewExpressionÍ!;Í!SKªIdentifierÍ!?Í!Q²DeleteUserResponseKªIdentifierÍ!UÍ![¦icListÂR³ExpressionStatementÍ!fÍ!“U¯AwaitExpressionÍ!fÍ!’V®CallExpressionÍ!lÍ!’Q°MemberExpressionÍ!lÍ!Q°MemberExpressionÍ!lÍ!|\®ThisExpressionÍ!lÍ!pKªIdentifierÍ!qÍ!|«userManagerÂÂKªIdentifierÍ!}Í!³disposeUserInstanceÂÂÂU¯ReturnStatementÍ!œÍ!µV®CallExpressionÍ!£Í!´Q°MemberExpressionÍ!£Í!²KªIdentifierÍ!£Í!ª§PromiseKªIdentifierÍ!«Í!²§resolveÂÂÂM°MethodDefinitionÍ!ÀÍ$ÂÂKªIdentifierÍ!ÆÍ!Í§signOut¦methodN²FunctionExpressionÍ!ÍÍ$ÀÂÂÃL®BlockStatementÍ!ĞÍ$˜W³VariableDeclarationÍ!ÚÍ"‘X²VariableDeclaratorÍ!ŞÍ"KªIdentifierÍ!ŞÍ!â¤userU¯AwaitExpressionÍ!åÍ"V®CallExpressionÍ!ëÍ"Q°MemberExpressionÍ!ëÍ"Q°MemberExpressionÍ!ëÍ!û\®ThisExpressionÍ!ëÍ!ïKªIdentifierÍ!ğÍ!û«userManagerÂÂKªIdentifierÍ!üÍ"³currentUserInstanceÂÂÂ£letO«IfStatementÍ"Í"¶P¯UnaryExpressionÍ"Í"$¡!ÃKªIdentifierÍ" Í"$¤userL®BlockStatementÍ"&Í"¶’R³ExpressionStatementÍ"4Í"YV®CallExpressionÍ"4Í"XQ°MemberExpressionÍ"4Í"?KªIdentifierÍ"4Í":¦LoggerKªIdentifierÍ";Í"?¤infoÂÂ’KªIdentifierÍ"@Í"C£TAG[§LiteralÍ"EÍ"W°no user login in²'no user login in'ÂU¯ReturnStatementÍ"fÍ"¬V®CallExpressionÍ"mÍ"«Q°MemberExpressionÍ"mÍ"{KªIdentifierÍ"mÍ"t§PromiseKªIdentifierÍ"uÍ"{¦rejectÂÂ‘T­NewExpressionÍ"|Í"ªKªIdentifierÍ"€Í"Œ¬AGCAuthError‘Q°MemberExpressionÍ"Í"©KªIdentifierÍ"Í"°AGCAuthErrorCodeKªIdentifierÍ"Í"©«NOT_SIGN_INÂÂÂÀW³VariableDeclarationÍ"¿Í"é‘X²VariableDeclaratorÍ"ÃÍ"èKªIdentifierÍ"ÃÍ"Ñ®signOutRequestT­NewExpressionÍ"ÔÍ"èKªIdentifierÍ"ØÍ"æ®SignOutRequest£letR³ExpressionStatementÍ"òÍ#)S´AssignmentExpressionÍ"òÍ#(¡=Q°MemberExpressionÍ"òÍ#KªIdentifierÍ"òÍ# ®signOutRequestKªIdentifierÍ#Í#¯bodyAccessTokenÂÂV®CallExpressionÍ#Í#(Q°MemberExpressionÍ#Í#&KªIdentifierÍ#Í#¤userKªIdentifierÍ#Í#&®getAccessTokenÂÂÂR³ExpressionStatementÍ#2Í#gS´AssignmentExpressionÍ#2Í#f¡=Q°MemberExpressionÍ#2Í#MKªIdentifierÍ#2Í#@®signOutRequestKªIdentifierÍ#AÍ#M¬refreshTokenÂÂV®CallExpressionÍ#PÍ#fQ°MemberExpressionÍ#PÍ#dKªIdentifierÍ#PÍ#T¤userKªIdentifierÍ#UÍ#d¯getRefreshTokenÂÂÂÔr]–¤type¥start£end¥block§handler©finalizer¬TryStatementÍ#pÍ$0L®BlockStatementÍ#tÍ#Ï‘R³ExpressionStatementÍ#‚Í#ÅU¯AwaitExpressionÍ#‚Í#ÄV®CallExpressionÍ#ˆÍ#ÄQ°MemberExpressionÍ#ˆÍ#Q°MemberExpressionÍ#ˆÍ#˜\®ThisExpressionÍ#ˆÍ#ŒKªIdentifierÍ#Í#˜«authBackendÂÂKªIdentifierÍ#™Í#¤postÂÂ’KªIdentifierÍ#Í#¬®signOutRequestT­NewExpressionÍ#®Í#ÃKªIdentifierÍ#²Í#Á¯SignOutResponseÂÔr^•¤type¥start£end¥param¤body«CatchClauseÍ#ØÍ$0KªIdentifierÍ#ßÍ#à¡eL®BlockStatementÍ#âÍ$0‘R³ExpressionStatementÍ#ğÍ$&V®CallExpressionÍ#ğÍ$%Q°MemberExpressionÍ#ğÍ#ûKªIdentifierÍ#ğÍ#ö¦LoggerKªIdentifierÍ#÷Í#û¤infoÂÂ’KªIdentifierÍ#üÍ#ÿ£TAGÔr_•¤type¥start£end«expressions¦quasis¯TemplateLiteralÍ$Í$$‘V®CallExpressionÍ$Í$"Q°MemberExpressionÍ$Í$KªIdentifierÍ$Í$¤JSONKªIdentifierÍ$Í$©stringifyÂÂ‘KªIdentifierÍ$ Í$!¡eÂ’Ôr`•¤type¥start£end¥value¤tail¯TemplateElementÍ$Í$Ôra’£raw¦cooked­logout error ­logout error Â`¯TemplateElementÍ$#Í$#a  ÃÂÀR³ExpressionStatementÍ$9Í$fU¯AwaitExpressionÍ$9Í$eV®CallExpressionÍ$?Í$eQ°MemberExpressionÍ$?Í$cQ°MemberExpressionÍ$?Í$O\®ThisExpressionÍ$?Í$CKªIdentifierÍ$DÍ$O«userManagerÂÂKªIdentifierÍ$PÍ$c³disposeUserInstanceÂÂÂU¯ReturnStatementÍ$oÍ$ˆV®CallExpressionÍ$vÍ$‡Q°MemberExpressionÍ$vÍ$…KªIdentifierÍ$vÍ$}§PromiseKªIdentifierÍ$~Í$…§resolveÂÂÂM°MethodDefinitionÍ$“Í%ÂÂKªIdentifierÍ$™Í$§®getCurrentUser¦methodN²FunctionExpressionÍ$§Í%ÀÂÂÃL®BlockStatementÍ$ªÍ%’W³VariableDeclarationÍ$´Í$ì‘X²VariableDeclaratorÍ$¸Í$ëKªIdentifierÍ$¸Í$¼¤userU¯AwaitExpressionÍ$¿Í$ëV®CallExpressionÍ$ÅÍ$ëQ°MemberExpressionÍ$ÅÍ$éQ°MemberExpressionÍ$ÅÍ$Õ\®ThisExpressionÍ$ÅÍ$ÉKªIdentifierÍ$ÊÍ$Õ«userManagerÂÂKªIdentifierÍ$ÖÍ$é³currentUserInstanceÂÂÂ£letU¯ReturnStatementÍ$õÍ%KªIdentifierÍ$üÍ% ¤userM°MethodDefinitionÍ%Í'ÂÂKªIdentifierÍ%Í%¤init¦methodN²FunctionExpressionÍ%Í'ÀÂÂÂ’KªIdentifierÍ%Í%#²applicationContextKªIdentifierÍ%%Í%)¤jsonL®BlockStatementÍ%+Í'—R³ExpressionStatementÍ%5Í%ZS´AssignmentExpressionÍ%5Í%Y¡=Q°MemberExpressionÍ%5Í%D\®ThisExpressionÍ%5Í%9KªIdentifierÍ%:Í%DªappContextÂÂKªIdentifierÍ%GÍ%Y²applicationContextW³VariableDeclarationÍ%cÍ%‘X²VariableDeclaratorÍ%gÍ%œKªIdentifierÍ%gÍ%r«packageNameQ°MemberExpressionÍ%uÍ%œQ°MemberExpressionÍ%uÍ%—KªIdentifierÍ%uÍ%‡²applicationContextKªIdentifierÍ%ˆÍ%—¯applicationInfoÂÂKªIdentifierÍ%˜Í%œ¤nameÂÂ£letW³VariableDeclarationÍ%¦Í%È‘X²VariableDeclaratorÍ%ªÍ%ÇKªIdentifierÍ%ªÍ%´ªjsonObjectV®CallExpressionÍ%·Í%ÇQ°MemberExpressionÍ%·Í%ÁKªIdentifierÍ%·Í%»¤JSONKªIdentifierÍ%¼Í%Á¥parseÂÂ‘KªIdentifierÍ%ÂÍ%Æ¤jsonÂ£letW³VariableDeclarationÍ%ÑÍ%ÿ‘X²VariableDeclaratorÍ%ÕÍ%şKªIdentifierÍ%ÕÍ%Û¦configV®CallExpressionÍ%ŞÍ%şKªIdentifierÍ%ŞÍ%å§replace’KªIdentifierÍ%æÍ%ñ«packageNameKªIdentifierÍ%óÍ%ıªjsonObjectÂ£letR³ExpressionStatementÍ&Í&S´AssignmentExpressionÍ&Í&¡=Q°MemberExpressionÍ&Í&\®ThisExpressionÍ&Í&KªIdentifierÍ&Í&¤jsonÂÂKªIdentifierÍ&Í&¦configR³ExpressionStatementÍ&$Í&IS´AssignmentExpressionÍ&$Í&H¡=Q°MemberExpressionÍ&$Í&4\®ThisExpressionÍ&$Í&(KªIdentifierÍ&)Í&4«authBackendÂÂT­NewExpressionÍ&7Í&HKªIdentifierÍ&;Í&F«AuthBackendR³ExpressionStatementÍ&RÍ'S´AssignmentExpressionÍ&RÍ' ¡=Q°MemberExpressionÍ&RÍ&b\®ThisExpressionÍ&RÍ&VKªIdentifierÍ&WÍ&b«userManagerÂÂV®CallExpressionÍ&eÍ' Q°MemberExpressionÍ&eÍ&şV®CallExpressionÍ&eÍ&ëQ°MemberExpressionÍ&eÍ&ÉV®CallExpressionÍ&eÍ&«Q°MemberExpressionÍ&eÍ&™T­NewExpressionÍ&eÍ&}KªIdentifierÍ&iÍ&{²UserManagerBuilderKªIdentifierÍ&‹Í&™®setAuthBackendÂÂ‘Q°MemberExpressionÍ&šÍ&ª\®ThisExpressionÍ&šÍ&KªIdentifierÍ&ŸÍ&ª«authBackendÂÂÂKªIdentifierÍ&¹Í&É°setStoredManagerÂÂ‘T­NewExpressionÍ&ÊÍ&êKªIdentifierÍ&ÎÍ&ØªUserStored‘V®CallExpressionÍ&ÙÍ&éQ°MemberExpressionÍ&ÙÍ&ç\®ThisExpressionÍ&ÙÍ&İKªIdentifierÍ&ŞÍ&ç©getRegionÂÂÂÂKªIdentifierÍ&ùÍ&ş¥buildÂÂÂM°MethodDefinitionÍ'Í)'ÂÂKªIdentifierÍ'Í'©setRegion¦methodN²FunctionExpressionÍ'Í)'ÀÂÂÃ‘KªIdentifierÍ'Í'"¦regionL®BlockStatementÍ'$Í)'”W³VariableDeclarationÍ'.Í'f‘X²VariableDeclaratorÍ'2Í'eKªIdentifierÍ'2Í'6¤userU¯AwaitExpressionÍ'9Í'eV®CallExpressionÍ'?Í'eQ°MemberExpressionÍ'?Í'cQ°MemberExpressionÍ'?Í'O\®ThisExpressionÍ'?Í'CKªIdentifierÍ'DÍ'O«userManagerÂÂKªIdentifierÍ'PÍ'c³currentUserInstanceÂÂÂ£letO«IfStatementÍ'oÍ'àKªIdentifierÍ'sÍ'w¤userL®BlockStatementÍ'yÍ'à‘U¯ReturnStatementÍ'‡Í'ÖV®CallExpressionÍ'Í'ÕQ°MemberExpressionÍ'Í'œKªIdentifierÍ'Í'•§PromiseKªIdentifierÍ'–Í'œ¦rejectÂÂ‘T­NewExpressionÍ'Í'ÔKªIdentifierÍ'¡Í'­¬AGCAuthError‘Q°MemberExpressionÍ'®Í'ÓKªIdentifierÍ'®Í'¾°AGCAuthErrorCodeKªIdentifierÍ'¿Í'Ó´ALREADY_SIGN_IN_USERÂÂÂÀO«IfStatementÍ'éÍ(ÿÔrb–¤type¥start£end¤left¨operator¥right°BinaryExpressionÍ'íÍ(V®CallExpressionÍ'íÍ'ıQ°MemberExpressionÍ'íÍ'û\®ThisExpressionÍ'íÍ'ñKªIdentifierÍ'òÍ'û©getRegionÂÂÂ£!==KªIdentifierÍ(Í(¦regionL®BlockStatementÍ(
+Í(ÿ’R³ExpressionStatementÍ(Í(-S´AssignmentExpressionÍ(Í(,¡=Q°MemberExpressionÍ(Í(#\®ThisExpressionÍ(Í(KªIdentifierÍ(Í(#¦regionÂÂKªIdentifierÍ(&Í(,¦regionR³ExpressionStatementÍ(:Í(õS´AssignmentExpressionÍ(:Í(ô¡=Q°MemberExpressionÍ(:Í(J\®ThisExpressionÍ(:Í(>KªIdentifierÍ(?Í(J«userManagerÂÂV®CallExpressionÍ(MÍ(ôQ°MemberExpressionÍ(MÍ(òV®CallExpressionÍ(MÍ(ÛQ°MemberExpressionÍ(MÍ(¹V®CallExpressionÍ(MÍ(—Q°MemberExpressionÍ(MÍ(…T­NewExpressionÍ(MÍ(eKªIdentifierÍ(QÍ(c²UserManagerBuilderKªIdentifierÍ(wÍ(…®setAuthBackendÂÂ‘Q°MemberExpressionÍ(†Í(–\®ThisExpressionÍ(†Í(ŠKªIdentifierÍ(‹Í(–«authBackendÂÂÂKªIdentifierÍ(©Í(¹°setStoredManagerÂÂ‘T­NewExpressionÍ(ºÍ(ÚKªIdentifierÍ(¾Í(ÈªUserStored‘V®CallExpressionÍ(ÉÍ(ÙQ°MemberExpressionÍ(ÉÍ(×\®ThisExpressionÍ(ÉÍ(ÍKªIdentifierÍ(ÎÍ(×©getRegionÂÂÂÂKªIdentifierÍ(íÍ(ò¥buildÂÂÂÀU¯ReturnStatementÍ)Í)!V®CallExpressionÍ)Í) Q°MemberExpressionÍ)Í)KªIdentifierÍ)Í)§PromiseKªIdentifierÍ)Í)§resolveÂÂÂM°MethodDefinitionÍ),Í,ÏÂÂKªIdentifierÍ),Í)8¬getGrsConfig¦methodN²FunctionExpressionÍ)8Í,ÏÀÂÂÂ’KªIdentifierÍ)9Í)=¤typeKªIdentifierÍ)?Í)E¦regionL®BlockStatementÍ)GÍ,Ï’O«IfStatementÍ)QÍ)P¯UnaryExpressionÍ)UÍ)\¡!ÃKªIdentifierÍ)VÍ)\¦regionL®BlockStatementÍ)^Í)‘R³ExpressionStatementÍ)lÍ)†S´AssignmentExpressionÍ)lÍ)…¡=KªIdentifierÍ)lÍ)r¦regionV®CallExpressionÍ)uÍ)…Q°MemberExpressionÍ)uÍ)ƒ\®ThisExpressionÍ)uÍ)yKªIdentifierÍ)zÍ)ƒ©getRegionÂÂÂÀÔrc•¤type¥start£end¬discriminant¥cases¯SwitchStatementÍ)™Í,ÉKªIdentifierÍ)¡Í)¥¤type—Ôrd•¤type¥start£endªconsequent¤testªSwitchCaseÍ)µÍ*	‘U¯ReturnStatementÍ)ÛÍ*	V®CallExpressionÍ)âÍ*Q°MemberExpressionÍ)âÍ)ğ\®ThisExpressionÍ)âÍ)æKªIdentifierÍ)çÍ)ğ©getStringÂÂ‘_¯TemplateLiteralÍ)ñÍ*‘KªIdentifierÍ)ÿÍ*¦region’`¯TemplateElementÍ)òÍ)ıa«/agcgw_all/«/agcgw_all/Â`¯TemplateElementÍ*Í*a  ÃÂQ°MemberExpressionÍ)ºÍ)ÉKªIdentifierÍ)ºÍ)Â¨GRS_TYPEKªIdentifierÍ)ÃÍ)É¦AGC_GWÂÂdªSwitchCaseÍ*Í*t‘U¯ReturnStatementÍ*AÍ*tV®CallExpressionÍ*HÍ*sQ°MemberExpressionÍ*HÍ*V\®ThisExpressionÍ*HÍ*LKªIdentifierÍ*MÍ*V©getStringÂÂ‘_¯TemplateLiteralÍ*WÍ*r‘KªIdentifierÍ*eÍ*k¦region’`¯TemplateElementÍ*XÍ*ca«/agcgw_all/«/agcgw_all/Â`¯TemplateElementÍ*lÍ*qa¥_back¥_backÃÂQ°MemberExpressionÍ*Í*/KªIdentifierÍ*Í*#¨GRS_TYPEKªIdentifierÍ*$Í*/«AGC_GW_BACKÂÂdªSwitchCaseÍ*Í*á‘U¯ReturnStatementÍ*­Í*áV®CallExpressionÍ*´Í*àQ°MemberExpressionÍ*´Í*Â\®ThisExpressionÍ*´Í*¸KªIdentifierÍ*¹Í*Â©getStringÂÂ‘_¯TemplateLiteralÍ*ÃÍ*ß‘KªIdentifierÍ*×Í*İ¦region’`¯TemplateElementÍ*ÄÍ*Õa±/websocketgw_all/±/websocketgw_all/Â`¯TemplateElementÍ*ŞÍ*Şa  ÃÂQ°MemberExpressionÍ*†Í*›KªIdentifierÍ*†Í*¨GRS_TYPEKªIdentifierÍ*Í*›¬WEBSOCKET_GWÂÂdªSwitchCaseÍ*îÍ+X‘U¯ReturnStatementÍ+Í+XV®CallExpressionÍ+&Í+WQ°MemberExpressionÍ+&Í+4\®ThisExpressionÍ+&Í+*KªIdentifierÍ++Í+4©getStringÂÂ‘_¯TemplateLiteralÍ+5Í+V‘KªIdentifierÍ+IÍ+O¦region’`¯TemplateElementÍ+6Í+Ga±/websocketgw_all/±/websocketgw_all/Â`¯TemplateElementÍ+PÍ+Ua¥_back¥_backÃÂQ°MemberExpressionÍ*óÍ+KªIdentifierÍ*óÍ*û¨GRS_TYPEKªIdentifierÍ*üÍ+±WEBSOCKET_GW_BACKÂÂdªSwitchCaseÍ+eÍ+â‘U¯ReturnStatementÍ+Í+âV®CallExpressionÍ+–Í+áQ°MemberExpressionÍ+–Í+¤\®ThisExpressionÍ+–Í+šKªIdentifierÍ+›Í+¤©getStringÂÂ‘_¯TemplateLiteralÍ+¥Í+à‘V®CallExpressionÍ+ÊÍ+ŞQ°MemberExpressionÍ+ÊÍ+ÜKªIdentifierÍ+ÊÍ+Ğ¦regionKªIdentifierÍ+ÑÍ+Ü«toLowerCaseÂÂÂ’`¯TemplateElementÍ+¦Í+ÈaÙ"/service/cloudstorage/storage_url_Ù"/service/cloudstorage/storage_url_Â`¯TemplateElementÍ+ßÍ+ßa  ÃÂQ°MemberExpressionÍ+jÍ+}KªIdentifierÍ+jÍ+r¨GRS_TYPEKªIdentifierÍ+sÍ+}ªSTORAGE_GWÂÂdªSwitchCaseÍ+ïÍ,v‘U¯ReturnStatementÍ,Í,vV®CallExpressionÍ,%Í,uQ°MemberExpressionÍ,%Í,3\®ThisExpressionÍ,%Í,)KªIdentifierÍ,*Í,3©getStringÂÂ‘_¯TemplateLiteralÍ,4Í,t‘V®CallExpressionÍ,YÍ,mQ°MemberExpressionÍ,YÍ,kKªIdentifierÍ,YÍ,_¦regionKªIdentifierÍ,`Í,k«toLowerCaseÂÂÂ’`¯TemplateElementÍ,5Í,WaÙ"/service/cloudstorage/storage_url_Ù"/service/cloudstorage/storage_url_Â`¯TemplateElementÍ,nÍ,sa¥_back¥_backÃÂQ°MemberExpressionÍ+ôÍ,KªIdentifierÍ+ôÍ+ü¨GRS_TYPEKªIdentifierÍ+ıÍ,¯STORAGE_GW_BACKÂÂdªSwitchCaseÍ,ƒÍ,¿‘U¯ReturnStatementÍ,œÍ,¿V®CallExpressionÍ,£Í,¾Q°MemberExpressionÍ,£Í,±\®ThisExpressionÍ,£Í,§KªIdentifierÍ,¨Í,±©getStringÂÂ‘_¯TemplateLiteralÍ,²Í,½‘`¯TemplateElementÍ,³Í,¼a©agcgw/url©agcgw/urlÃÂÀM°MethodDefinitionÍ,ÔÍ-SÂÂKªIdentifierÍ,ÔÍ,à¬getProductId¦methodN²FunctionExpressionÍ,àÍ-SÀÂÂÂL®BlockStatementÍ,ãÍ-S’W³VariableDeclarationÍ,íÍ-"‘X²VariableDeclaratorÍ,ñÍ-!KªIdentifierÍ,ñÍ,ú©productIdV®CallExpressionÍ,ıÍ-!Q°MemberExpressionÍ,ıÍ-\®ThisExpressionÍ,ıÍ-KªIdentifierÍ-Í-©getStringÂÂ‘[§LiteralÍ-Í- ²/client/product_id´'/client/product_id'Â£letU¯ReturnStatementÍ-+Í-MOµConditionalExpressionÍ-2Í-LKªIdentifierÍ-2Í-;©productIdKªIdentifierÍ->Í-G©productId[§LiteralÍ-JÍ-L ¢''M°MethodDefinitionÍ-XÍ-ÃÂÂKªIdentifierÍ-XÍ-`¨getAppId¦methodN²FunctionExpressionÍ-`Í-ÃÀÂÂÂL®BlockStatementÍ-cÍ-Ã’W³VariableDeclarationÍ-mÍ-š‘X²VariableDeclaratorÍ-qÍ-™KªIdentifierÍ-qÍ-v¥appIdV®CallExpressionÍ-yÍ-™Q°MemberExpressionÍ-yÍ-‡\®ThisExpressionÍ-yÍ-}KªIdentifierÍ-~Í-‡©getStringÂÂ‘[§LiteralÍ-ˆÍ-˜®/client/app_id°'/client/app_id'Â£letU¯ReturnStatementÍ-£Í-½OµConditionalExpressionÍ-ªÍ-¼KªIdentifierÍ-ªÍ-¯¥appIdKªIdentifierÍ-²Í-·¥appId[§LiteralÍ-ºÍ-¼ ¢''M°MethodDefinitionÍ-ÈÍ.–ÂÂKªIdentifierÍ-ÈÍ-Ó«getClientId¦methodN²FunctionExpressionÍ-ÓÍ.–ÀÂÂÂL®BlockStatementÍ-ÖÍ.–“O«IfStatementÍ-àÍ. Q°MemberExpressionÍ-äÍ-ñ\®ThisExpressionÍ-äÍ-èKªIdentifierÍ-éÍ-ñ¨clientIdÂÂL®BlockStatementÍ-óÍ. ‘U¯ReturnStatementÍ.Í.Q°MemberExpressionÍ.Í.\®ThisExpressionÍ.Í.KªIdentifierÍ.Í.¨clientIdÂÂÀR³ExpressionStatementÍ.)Í.]S´AssignmentExpressionÍ.)Í.\¡=Q°MemberExpressionÍ.)Í.6\®ThisExpressionÍ.)Í.-KªIdentifierÍ..Í.6¨clientIdÂÂV®CallExpressionÍ.9Í.\Q°MemberExpressionÍ.9Í.G\®ThisExpressionÍ.9Í.=KªIdentifierÍ.>Í.G©getStringÂÂ‘[§LiteralÍ.HÍ.[±/client/client_id³'/client/client_id'ÂU¯ReturnStatementÍ.fÍ.OµConditionalExpressionÍ.mÍ.Q°MemberExpressionÍ.mÍ.z\®ThisExpressionÍ.mÍ.qKªIdentifierÍ.rÍ.z¨clientIdÂÂQ°MemberExpressionÍ.}Í.Š\®ThisExpressionÍ.}Í.KªIdentifierÍ.‚Í.Š¨clientIdÂÂ[§LiteralÍ.Í. ¢''M°MethodDefinitionÍ.›Í.êÂÂKªIdentifierÍ.›Í.ª¯setClientSecret¦methodN²FunctionExpressionÍ.ªÍ.êÀÂÂÂ‘KªIdentifierÍ.«Í.·¬clientSecretL®BlockStatementÍ.¹Í.ê‘R³ExpressionStatementÍ.ÃÍ.äS´AssignmentExpressionÍ.ÃÍ.ã¡=Q°MemberExpressionÍ.ÃÍ.Ô\®ThisExpressionÍ.ÃÍ.ÇKªIdentifierÍ.ÈÍ.Ô¬clientSecretÂÂKªIdentifierÍ.×Í.ã¬clientSecretM°MethodDefinitionÍ.ïÍ/.ÂÂKªIdentifierÍ.ïÍ.ú«setClientId¦methodN²FunctionExpressionÍ.úÍ/.ÀÂÂÂ‘KªIdentifierÍ.ûÍ/¨clientIdL®BlockStatementÍ/Í/.‘R³ExpressionStatementÍ/Í/(S´AssignmentExpressionÍ/Í/'¡=Q°MemberExpressionÍ/Í/\®ThisExpressionÍ/Í/KªIdentifierÍ/Í/¨clientIdÂÂKªIdentifierÍ/Í/'¨clientIdM°MethodDefinitionÍ/3Í0ÂÂKªIdentifierÍ/9Í/H¯getClientSecret¦methodN²FunctionExpressionÍ/HÍ0ÀÂÂÃL®BlockStatementÍ/KÍ0“O«IfStatementÍ/UÍ/Q°MemberExpressionÍ/YÍ/j\®ThisExpressionÍ/YÍ/]KªIdentifierÍ/^Í/j¬clientSecretÂÂL®BlockStatementÍ/lÍ/‘U¯ReturnStatementÍ/zÍ/“Q°MemberExpressionÍ/Í/’\®ThisExpressionÍ/Í/…KªIdentifierÍ/†Í/’¬clientSecretÂÂÀR³ExpressionStatementÍ/¦Í/ïS´AssignmentExpressionÍ/¦Í/î¡=Q°MemberExpressionÍ/¦Í/·\®ThisExpressionÍ/¦Í/ªKªIdentifierÍ/«Í/·¬clientSecretÂÂU¯AwaitExpressionÍ/ºÍ/îV®CallExpressionÍ/ÀÍ/îQ°MemberExpressionÍ/ÀÍ/Õ\®ThisExpressionÍ/ÀÍ/ÄKªIdentifierÍ/ÅÍ/Õ°getDecryptStringÂÂ‘[§LiteralÍ/ÖÍ/íµ/client/client_secret·'/client/client_secret'ÂU¯ReturnStatementÍ/øÍ0Q°MemberExpressionÍ/ÿÍ0\®ThisExpressionÍ/ÿÍ0KªIdentifierÍ0Í0¬clientSecretÂÂM°MethodDefinitionÍ0Í1ÂÂKªIdentifierÍ0"Í0*¨getToken¦methodN²FunctionExpressionÍ0*Í1ÀÂÂÃ’KªIdentifierÍ0+Í02§refreshKªIdentifierÍ04Í0:¦regionL®BlockStatementÍ0<Í1“O«IfStatementÍ0FÍ0|P¯UnaryExpressionÍ0JÍ0R¡!ÃKªIdentifierÍ0KÍ0R§refreshL®BlockStatementÍ0TÍ0|‘R³ExpressionStatementÍ0bÍ0rS´AssignmentExpressionÍ0bÍ0q¡=KªIdentifierÍ0bÍ0i§refresh[§LiteralÍ0lÍ0qÂ¥falseÀO«IfStatementÍ0…Í0ËP¯UnaryExpressionÍ0‰Í0¡!ÃKªIdentifierÍ0ŠÍ0¦regionL®BlockStatementÍ0’Í0Ë‘R³ExpressionStatementÍ0 Í0ÁS´AssignmentExpressionÍ0 Í0À¡=KªIdentifierÍ0 Í0¦¦regionV®CallExpressionÍ0©Í0ÀQ°MemberExpressionÍ0©Í0¾\®ThisExpressionÍ0©Í0­KªIdentifierÍ0®Í0¾°getDefaultRegionÂÂÂÀU¯ReturnStatementÍ0ÔÍ1 V®CallExpressionÍ0ÛÍ0ÿQ°MemberExpressionÍ0ÛÍ0îKªIdentifierÍ0ÛÍ0åªCredentialKªIdentifierÍ0æÍ0î¨getTokenÂÂ’KªIdentifierÍ0ïÍ0ö§refreshKªIdentifierÍ0øÍ0ş¦regionÂM°MethodDefinitionÍ1Í1‹ÂÂKªIdentifierÍ1Í1©getRegion¦methodN²FunctionExpressionÍ1Í1‹ÀÂÂÂL®BlockStatementÍ1Í1‹’O«IfStatementÍ1!Í1]Q°MemberExpressionÍ1%Í10\®ThisExpressionÍ1%Í1)KªIdentifierÍ1*Í10¦regionÂÂL®BlockStatementÍ12Í1]‘U¯ReturnStatementÍ1@Í1SQ°MemberExpressionÍ1GÍ1R\®ThisExpressionÍ1GÍ1KKªIdentifierÍ1LÍ1R¦regionÂÂÀU¯ReturnStatementÍ1fÍ1…V®CallExpressionÍ1mÍ1„Q°MemberExpressionÍ1mÍ1‚\®ThisExpressionÍ1mÍ1qKªIdentifierÍ1rÍ1‚°getDefaultRegionÂÂÂM°MethodDefinitionÍ1Í7ÂÂKªIdentifierÍ1Í1¡±convertToUserInfo¦methodN²FunctionExpressionÍ1¡Í7ÀÂÂÂ’KªIdentifierÍ1¢Í1ª¨responseÔre•¤type¥start£end¤left¥right±AssignmentPatternÍ1¬Í1¿KªIdentifierÍ1¬Í1·«isAnonymous[§LiteralÍ1ºÍ1¿Â¥falseL®BlockStatementÍ1ÁÍ7“O«IfStatementÍ1ËÍ3ÌKªIdentifierÍ1ÏÍ1Ú«isAnonymousL®BlockStatementÍ1ÜÍ3Ì’W³VariableDeclarationÍ1êÍ1ı‘X²VariableDeclaratorÍ1îÍ1üKªIdentifierÍ1îÍ1ñ£rspKªIdentifierÍ1ôÍ1ü¨response£letU¯ReturnStatementÍ2
+Í3ÂY°ObjectExpressionÍ2Í3Á—Z¨PropertyÍ2#Í22ÂÂÂKªIdentifierÍ2#Í2,©anonymous[§LiteralÍ2.Í22Ã¤true¤initZ¨PropertyÍ2DÍ2cÂÂÂKªIdentifierÍ2DÍ2G£uidV®CallExpressionÍ2IÍ2cQ°MemberExpressionÍ2IÍ2aV®CallExpressionÍ2IÍ2ZQ°MemberExpressionÍ2IÍ2XKªIdentifierÍ2IÍ2L£rspKªIdentifierÍ2MÍ2X«getUserInfoÂÂÂKªIdentifierÍ2[Í2a¦getUidÂÂÂ¤initZ¨PropertyÍ2uÍ2µÂÂÂKªIdentifierÍ2uÍ2ªproviderIdV®CallExpressionÍ2Í2µQ°MemberExpressionÍ2Í2³Q°MemberExpressionÍ2Í2ªKªIdentifierÍ2Í2 ¿AGConnectAuthCredentialProviderKªIdentifierÍ2¡Í2ª©AnonymousÂÂKªIdentifierÍ2«Í2³¨toStringÂÂÂ¤initZ¨PropertyÍ2ÇÍ2óÂÂÂKªIdentifierÍ2ÇÍ2Ò«accessTokenV®CallExpressionÍ2ÔÍ2óQ°MemberExpressionÍ2ÔÍ2ñV®CallExpressionÍ2ÔÍ2èQ°MemberExpressionÍ2ÔÍ2æKªIdentifierÍ2ÔÍ2×£rspKªIdentifierÍ2ØÍ2æ®getAccessTokenÂÂÂKªIdentifierÍ2éÍ2ñ¨getTokenÂÂÂ¤initZ¨PropertyÍ3Í3BÂÂÂKªIdentifierÍ3Í3¶accessTokenValidPeriodV®CallExpressionÍ3Í3BQ°MemberExpressionÍ3Í3@V®CallExpressionÍ3Í31Q°MemberExpressionÍ3Í3/KªIdentifierÍ3Í3 £rspKªIdentifierÍ3!Í3/®getAccessTokenÂÂÂKªIdentifierÍ32Í3@®getValidPeriodÂÂÂ¤initZ¨PropertyÍ3TÍ3‚ÂÂÂKªIdentifierÍ3TÍ3`¬refreshTokenV®CallExpressionÍ3bÍ3‚Q°MemberExpressionÍ3bÍ3€V®CallExpressionÍ3bÍ3wQ°MemberExpressionÍ3bÍ3uKªIdentifierÍ3bÍ3e£rspKªIdentifierÍ3fÍ3u¯getRefreshTokenÂÂÂKªIdentifierÍ3xÍ3€¨getTokenÂÂÂ¤initZ¨PropertyÍ3”Í3³ÂÂÂKªIdentifierÍ3”Í3©startTimeV®CallExpressionÍ3ŸÍ3³Q°MemberExpressionÍ3ŸÍ3±T­NewExpressionÍ3ŸÍ3©KªIdentifierÍ3£Í3§¤DateKªIdentifierÍ3ªÍ3±§getTimeÂÂÂ¤initÀW³VariableDeclarationÍ3ÕÍ3è‘X²VariableDeclaratorÍ3ÙÍ3çKªIdentifierÍ3ÙÍ3Ü£rspKªIdentifierÍ3ßÍ3ç¨response£letU¯ReturnStatementÍ3ñÍ7Y°ObjectExpressionÍ3øÍ7Z¨PropertyÍ4Í4ÂÂÂKªIdentifierÍ4Í4©anonymous[§LiteralÍ4Í4Â¥false¤initZ¨PropertyÍ4$Í4CÂÂÂKªIdentifierÍ4$Í4'£uidV®CallExpressionÍ4)Í4CQ°MemberExpressionÍ4)Í4AV®CallExpressionÍ4)Í4:Q°MemberExpressionÍ4)Í48KªIdentifierÍ4)Í4,£rspKªIdentifierÍ4-Í48«getUserInfoÂÂÂKªIdentifierÍ4;Í4A¦getUidÂÂÂ¤initZ¨PropertyÍ4QÍ4€ÂÂÂKªIdentifierÍ4QÍ4\«displayNameV®CallExpressionÍ4^Í4€Q°MemberExpressionÍ4^Í4~V®CallExpressionÍ4^Í4oQ°MemberExpressionÍ4^Í4mKªIdentifierÍ4^Í4a£rspKªIdentifierÍ4bÍ4m«getUserInfoÂÂÂKªIdentifierÍ4pÍ4~®getDisplayNameÂÂÂ¤initZ¨PropertyÍ4Í4·ÂÂÂKªIdentifierÍ4Í4–¨photoUrlV®CallExpressionÍ4˜Í4·Q°MemberExpressionÍ4˜Í4µV®CallExpressionÍ4˜Í4©Q°MemberExpressionÍ4˜Í4§KªIdentifierÍ4˜Í4›£rspKªIdentifierÍ4œÍ4§«getUserInfoÂÂÂKªIdentifierÍ4ªÍ4µ«getPhotoUrlÂÂÂ¤initZ¨PropertyÍ4ÅÍ4èÂÂÂKªIdentifierÍ4ÅÍ4Ê¥emailV®CallExpressionÍ4ÌÍ4èQ°MemberExpressionÍ4ÌÍ4æV®CallExpressionÍ4ÌÍ4İQ°MemberExpressionÍ4ÌÍ4ÛKªIdentifierÍ4ÌÍ4Ï£rspKªIdentifierÍ4ĞÍ4Û«getUserInfoÂÂÂKªIdentifierÍ4ŞÍ4æ¨getEmailÂÂÂ¤initZ¨PropertyÍ4öÍ5)ÂÂÂKªIdentifierÍ4öÍ5­emailVerifiedV®CallExpressionÍ5Í5)Q°MemberExpressionÍ5Í5'V®CallExpressionÍ5Í5Q°MemberExpressionÍ5Í5KªIdentifierÍ5Í5£rspKªIdentifierÍ5	Í5«getUserInfoÂÂÂKªIdentifierÍ5Í5'°getEmailVerifiedÂÂÂ¤initZ¨PropertyÍ57Í5lÂÂÂKªIdentifierÍ57Í5E®passwordSettedV®CallExpressionÍ5GÍ5lQ°MemberExpressionÍ5GÍ5jV®CallExpressionÍ5GÍ5XQ°MemberExpressionÍ5GÍ5VKªIdentifierÍ5GÍ5J£rspKªIdentifierÍ5KÍ5V«getUserInfoÂÂÂKªIdentifierÍ5YÍ5j±getPasswordSettedÂÂÂ¤initZ¨PropertyÍ5zÍ5ÂÂÂKªIdentifierÍ5zÍ5¥phoneV®CallExpressionÍ5Í5Q°MemberExpressionÍ5Í5›V®CallExpressionÍ5Í5’Q°MemberExpressionÍ5Í5KªIdentifierÍ5Í5„£rspKªIdentifierÍ5…Í5«getUserInfoÂÂÂKªIdentifierÍ5“Í5›¨getPhoneÂÂÂ¤initZ¨PropertyÍ5«Í5áÂÂÂKªIdentifierÍ5«Í5µªproviderIdV®CallExpressionÍ5·Í5áQ°MemberExpressionÍ5·Í5ßV®CallExpressionÍ5·Í5ÖQ°MemberExpressionÍ5·Í5ÔV®CallExpressionÍ5·Í5ÈQ°MemberExpressionÍ5·Í5ÆKªIdentifierÍ5·Í5º£rspKªIdentifierÍ5»Í5Æ«getUserInfoÂÂÂKªIdentifierÍ5ÉÍ5Ô«getProviderÂÂÂKªIdentifierÍ5×Í5ß¨toStringÂÂÂ¤initZ¨PropertyÍ5ïÍ6ÂÂÂKªIdentifierÍ5ïÍ5ú«accessTokenV®CallExpressionÍ5üÍ6Q°MemberExpressionÍ5üÍ6V®CallExpressionÍ5üÍ6Q°MemberExpressionÍ5üÍ6KªIdentifierÍ5üÍ5ÿ£rspKªIdentifierÍ6 Í6®getAccessTokenÂÂÂKªIdentifierÍ6Í6¨getTokenÂÂÂ¤initZ¨PropertyÍ6)Í6fÂÂÂKªIdentifierÍ6)Í6?¶accessTokenValidPeriodV®CallExpressionÍ6AÍ6fQ°MemberExpressionÍ6AÍ6dV®CallExpressionÍ6AÍ6UQ°MemberExpressionÍ6AÍ6SKªIdentifierÍ6AÍ6D£rspKªIdentifierÍ6EÍ6S®getAccessTokenÂÂÂKªIdentifierÍ6VÍ6d®getValidPeriodÂÂÂ¤initZ¨PropertyÍ6tÍ6¢ÂÂÂKªIdentifierÍ6tÍ6€¬refreshTokenV®CallExpressionÍ6‚Í6¢Q°MemberExpressionÍ6‚Í6 V®CallExpressionÍ6‚Í6—Q°MemberExpressionÍ6‚Í6•KªIdentifierÍ6‚Í6…£rspKªIdentifierÍ6†Í6•¯getRefreshTokenÂÂÂKªIdentifierÍ6˜Í6 ¨getTokenÂÂÂ¤initZ¨PropertyÍ6°Í6ĞÂÂÂKªIdentifierÍ6°Í6¼¬providerInfoV®CallExpressionÍ6¾Í6ĞQ°MemberExpressionÍ6¾Í6ÎKªIdentifierÍ6¾Í6Á£rspKªIdentifierÍ6ÂÍ6Î¬getProvidersÂÂÂ¤initZ¨PropertyÍ6ŞÍ6ıÂÂÂKªIdentifierÍ6ŞÍ6ç©startTimeV®CallExpressionÍ6éÍ6ıQ°MemberExpressionÍ6éÍ6ûT­NewExpressionÍ6éÍ6óKªIdentifierÍ6íÍ6ñ¤DateKªIdentifierÍ6ôÍ6û§getTimeÂÂÂ¤initM°MethodDefinitionÍ7Í7VÂÂKªIdentifierÍ7Í7#°getDefaultRegion¦methodN²FunctionExpressionÍ7#Í7VÀÂÂÂL®BlockStatementÍ7&Í7V‘U¯ReturnStatementÍ70Í7PV®CallExpressionÍ77Í7OQ°MemberExpressionÍ77Í7E\®ThisExpressionÍ77Í7;KªIdentifierÍ7<Í7E©getStringÂÂ‘[§LiteralÍ7FÍ7N¦region¨'region'ÂM°MethodDefinitionÍ7[Í9-ÂÂKªIdentifierÍ7[Í7d©getString¦methodN²FunctionExpressionÍ7dÍ9-ÀÂÂÂ‘KªIdentifierÍ7eÍ7i¤pathL®BlockStatementÍ7kÍ9-–O«IfStatementÍ7uÍ7ÀV®CallExpressionÍ7yÍ7Q°MemberExpressionÍ7yÍ7ˆKªIdentifierÍ7yÍ7}¤pathKªIdentifierÍ7~Í7ˆªstartsWithÂÂ‘[§LiteralÍ7‰Í7Œ¡/£'/'ÂL®BlockStatementÍ7Í7À‘R³ExpressionStatementÍ7Í7¶S´AssignmentExpressionÍ7Í7µ¡=KªIdentifierÍ7Í7¡¤pathV®CallExpressionÍ7¤Í7µQ°MemberExpressionÍ7¤Í7²KªIdentifierÍ7¤Í7¨¤pathKªIdentifierÍ7©Í7²©substringÂÂ‘[§LiteralÍ7³Í7´¡1ÂÀO«IfStatementÍ7ÉÍ8#V®CallExpressionÍ7ÍÍ7ßQ°MemberExpressionÍ7ÍÍ7ÚKªIdentifierÍ7ÍÍ7Ñ¤pathKªIdentifierÍ7ÒÍ7Ú¨endsWithÂÂ‘[§LiteralÍ7ÛÍ7Ş¡/£'/'ÂL®BlockStatementÍ7áÍ8#‘R³ExpressionStatementÍ7ïÍ8S´AssignmentExpressionÍ7ïÍ8¡=KªIdentifierÍ7ïÍ7ó¤pathV®CallExpressionÍ7öÍ8Q°MemberExpressionÍ7öÍ8KªIdentifierÍ7öÍ7ú¤pathKªIdentifierÍ7ûÍ8©substringÂÂ’[§LiteralÍ8Í8 ¡0b°BinaryExpressionÍ8Í8Q°MemberExpressionÍ8Í8KªIdentifierÍ8Í8¤pathKªIdentifierÍ8Í8¦lengthÂÂ¡-[§LiteralÍ8Í8¡1ÂÀW³VariableDeclarationÍ8,Í8H‘X²VariableDeclaratorÍ80Í8GKªIdentifierÍ80Í85¥arrayV®CallExpressionÍ88Í8GQ°MemberExpressionÍ88Í8BKªIdentifierÍ88Í8<¤pathKªIdentifierÍ8=Í8B¥splitÂÂ‘[§LiteralÍ8CÍ8F¡/£'/'Â£letW³VariableDeclarationÍ8QÍ8g‘X²VariableDeclaratorÍ8UÍ8fKªIdentifierÍ8UÍ8Z¥valueQ°MemberExpressionÍ8]Í8f\®ThisExpressionÍ8]Í8aKªIdentifierÍ8bÍ8f¤jsonÂÂ£letO«IfStatementÍ8pÍ9KªIdentifierÍ8tÍ8y¥valueL®BlockStatementÍ8{Í9’Ôrf—¤type¥start£end¤init¤test¦update¤body¬ForStatementÍ8‰Í8ğW³VariableDeclarationÍ8Í8™‘X²VariableDeclaratorÍ8’Í8™KªIdentifierÍ8’Í8•£key[§LiteralÍ8˜Í8™ ¡0£letb°BinaryExpressionÍ8›Í8­KªIdentifierÍ8›Í8£key¡<Q°MemberExpressionÍ8¡Í8­KªIdentifierÍ8¡Í8¦¥arrayKªIdentifierÍ8§Í8­¦lengthÂÂP°UpdateExpressionÍ8¯Í8´¢++ÂKªIdentifierÍ8¯Í8²£keyL®BlockStatementÍ8¶Í8ğ‘R³ExpressionStatementÍ8ÈÍ8âS´AssignmentExpressionÍ8ÈÍ8á¡=KªIdentifierÍ8ÈÍ8Í¥valueQ°MemberExpressionÍ8ĞÍ8áKªIdentifierÍ8ĞÍ8Õ¥valueQ°MemberExpressionÍ8ÖÍ8àKªIdentifierÍ8ÖÍ8Û¥arrayKªIdentifierÍ8ÜÍ8ß£keyÃÂÃÂU¯ReturnStatementÍ8ıÍ9
+KªIdentifierÍ9Í9	¥valueÀU¯ReturnStatementÍ9Í9'[§LiteralÍ9$Í9& ¢''M°MethodDefinitionÍ92Í;aÂÂKªIdentifierÍ98Í9H°getDecryptString¦methodN²FunctionExpressionÍ9HÍ;aÀÂÂÃ‘KªIdentifierÍ9IÍ9M¤pathL®BlockStatementÍ9OÍ;a“W³VariableDeclarationÍ9YÍ9‚‘X²VariableDeclaratorÍ9]Í9KªIdentifierÍ9]Í9j­originalValueV®CallExpressionÍ9mÍ9Q°MemberExpressionÍ9mÍ9{\®ThisExpressionÍ9mÍ9qKªIdentifierÍ9rÍ9{©getStringÂÂ‘KªIdentifierÍ9|Í9€¤pathÂ£letO«IfStatementÍ9‹Í;=V®CallExpressionÍ9Í9¼Q°MemberExpressionÍ9Í9­KªIdentifierÍ9Í9¥¶DecryptExclamationMarkKªIdentifierÍ9¦Í9­§isMatchÂÂ‘KªIdentifierÍ9®Í9»­originalValueÂL®BlockStatementÍ9¾Í;=“O«IfStatementÍ9ÌÍ:¡P¯UnaryExpressionÍ9ĞÍ9á¡!ÃQ°MemberExpressionÍ9ÑÍ9á\®ThisExpressionÍ9ÑÍ9ÕKªIdentifierÍ9ÖÍ9á«decryptMarkÂÂL®BlockStatementÍ9ãÍ:¡‘R³ExpressionStatementÍ9õÍ:“S´AssignmentExpressionÍ9õÍ:’¡=Q°MemberExpressionÍ9õÍ:\®ThisExpressionÍ9õÍ9ùKªIdentifierÍ9úÍ:«decryptMarkÂÂT­NewExpressionÍ:Í:’KªIdentifierÍ:Í:"¶DecryptExclamationMark”Q°MemberExpressionÍ:#Í:=Q°MemberExpressionÍ:#Í:4Q°MemberExpressionÍ:#Í:,\®ThisExpressionÍ:#Í:'KªIdentifierÍ:(Í:,¤jsonÂÂ[§LiteralÍ:-Í:3¤code¦'code'ÃÂ[§LiteralÍ:5Í:<¥code1§'code1'ÃÂQ°MemberExpressionÍ:?Í:YQ°MemberExpressionÍ:?Í:PQ°MemberExpressionÍ:?Í:H\®ThisExpressionÍ:?Í:CKªIdentifierÍ:DÍ:H¤jsonÂÂ[§LiteralÍ:IÍ:O¤code¦'code'ÃÂ[§LiteralÍ:QÍ:X¥code2§'code2'ÃÂQ°MemberExpressionÍ:[Í:uQ°MemberExpressionÍ:[Í:lQ°MemberExpressionÍ:[Í:d\®ThisExpressionÍ:[Í:_KªIdentifierÍ:`Í:d¤jsonÂÂ[§LiteralÍ:eÍ:k¤code¦'code'ÃÂ[§LiteralÍ:mÍ:t¥code3§'code3'ÃÂQ°MemberExpressionÍ:wÍ:‘Q°MemberExpressionÍ:wÍ:ˆQ°MemberExpressionÍ:wÍ:€\®ThisExpressionÍ:wÍ:{KªIdentifierÍ:|Í:€¤jsonÂÂ[§LiteralÍ:Í:‡¤code¦'code'ÃÂ[§LiteralÍ:‰Í:¥code4§'code4'ÃÂÀW³VariableDeclarationÍ:®Í:ê‘X²VariableDeclaratorÍ:²Í:éKªIdentifierÍ:²Í:¹§decryptU¯AwaitExpressionÍ:¼Í:éV®CallExpressionÍ:ÂÍ:éQ°MemberExpressionÍ:ÂÍ:ÚQ°MemberExpressionÍ:ÂÍ:Ò\®ThisExpressionÍ:ÂÍ:ÆKªIdentifierÍ:ÇÍ:Ò«decryptMarkÂÂKªIdentifierÍ:ÓÍ:Ú§decryptÂÂ‘KªIdentifierÍ:ÛÍ:è­originalValueÂ£letO«IfStatementÍ:÷Í;3KªIdentifierÍ:ûÍ;§decryptL®BlockStatementÍ;Í;3‘U¯ReturnStatementÍ;Í;%KªIdentifierÍ;Í;$§decryptÀÀU¯ReturnStatementÍ;FÍ;[KªIdentifierÍ;MÍ;Z­originalValueÀÜ  Ôrg•¤type¥start£endªspecifiers¦source±ImportDeclaration .’Ôrh•¤type¥start£end¨imported¥local¯ImportSpecifier	KªIdentifier	¬AGCAuthErrorKªIdentifier	¬AGCAuthErrorh¯ImportSpecifierKªIdentifier¨GRS_TYPEKªIdentifier¨GRS_TYPE[§Literal(-£./b¥"./b"g±ImportDeclaration/ÌR‘Ôri”¤type¥start£end¥local¶ImportDefaultSpecifier6:KªIdentifier6:¤List[§LiteralÌ@ÌQ¯@ohos.util.List±'@ohos.util.List'g±ImportDeclarationÌSÌw‘h¯ImportSpecifierÌ\ÌgKªIdentifierÌ\Ìg«AuthBackendKªIdentifierÌ\Ìg«AuthBackend[§LiteralÌoÌv¥./e/f§"./e/f"g±ImportDeclarationÌxÌ£‘h¯ImportSpecifierÌÌ“KªIdentifierÌÌ“²UserManagerBuilderKªIdentifierÌÌ“²UserManagerBuilder[§LiteralÌ›Ì¢¥./g/h§"./g/h"g±ImportDeclarationÌ¤ÌĞ‘h¯ImportSpecifierÌ­Ì¾KªIdentifierÌ­Ì¾±VerifyCodeRequestKªIdentifierÌ­Ì¾±VerifyCodeRequest[§LiteralÌÆÌÏ§./e/i/j©"./e/i/j"g±ImportDeclarationÌÑÌó‘h¯ImportSpecifierÌÚÌãKªIdentifierÌÚÌã©PhoneUtilKªIdentifierÌÚÌã©PhoneUtil[§LiteralÌëÌò¥./k/l§"./k/l"g±ImportDeclarationÌôÍ!‘h¯ImportSpecifierÌıÍKªIdentifierÌıÍ²VerifyCodeResponseKªIdentifierÌıÍ²VerifyCodeResponse[§LiteralÍÍ §./e/m/n©"./e/m/n"g±ImportDeclarationÍ"ÍO‘h¯ImportSpecifierÍ+Í?KªIdentifierÍ+Í?´VerifyCodeResultImplKªIdentifierÍ+Í?´VerifyCodeResultImpl[§LiteralÍGÍN¥./o/p§"./o/p"g±ImportDeclarationÍPÍ~‘h¯ImportSpecifierÍYÍlKªIdentifierÍYÍl³RegisterUserRequestKªIdentifierÍYÍl³RegisterUserRequest[§LiteralÍtÍ}§./e/i/q©"./e/i/q"g±ImportDeclarationÍÍµ‘h¯ImportSpecifierÍˆÍ§KªIdentifierÍˆÍ§¿AGConnectAuthCredentialProviderKªIdentifierÍˆÍ§¿AGConnectAuthCredentialProvider[§LiteralÍ¯Í´£./r¥"./r"g±ImportDeclarationÍ¶Íß‘h¯ImportSpecifierÍ¿ÍÍKªIdentifierÍ¿ÍÍ®SignInResponseKªIdentifierÍ¿ÍÍ®SignInResponse[§LiteralÍÕÍŞ§./e/m/s©"./e/m/s"g±ImportDeclarationÍàÍ	‘h¯ImportSpecifierÍéÍùKªIdentifierÍéÍù°SignInResultImplKªIdentifierÍéÍù°SignInResultImpl[§LiteralÍÍ¥./o/t§"./o/t"g±ImportDeclarationÍ
+Í9‘h¯ImportSpecifierÍÍ'KªIdentifierÍÍ'´ResetPasswordRequestKªIdentifierÍÍ'´ResetPasswordRequest[§LiteralÍ/Í8§./e/i/u©"./e/i/u"g±ImportDeclarationÍ:Íj‘h¯ImportSpecifierÍCÍXKªIdentifierÍCÍXµResetPasswordResponseKªIdentifierÍCÍXµResetPasswordResponse[§LiteralÍ`Íi§./e/m/v©"./e/m/v"g±ImportDeclarationÍkÍ“‘h¯ImportSpecifierÍtÍKªIdentifierÍtÍ­SignInRequestKªIdentifierÍtÍ­SignInRequest[§LiteralÍ‰Í’§./e/i/w©"./e/i/w"g±ImportDeclarationÍ”Í¾‘h¯ImportSpecifierÍÍ®KªIdentifierÍÍ®±PhoneAuthProviderKªIdentifierÍÍ®±PhoneAuthProvider[§LiteralÍ¶Í½¥./x/y§"./x/y"g±ImportDeclarationÍ¿Íé‘h¯ImportSpecifierÍÈÍÙKªIdentifierÍÈÍÙ±EmailAuthProviderKªIdentifierÍÈÍÙ±EmailAuthProvider[§LiteralÍáÍè¥./x/z§"./x/z"g±ImportDeclarationÍêÍ‘h¯ImportSpecifierÍóÍ	KªIdentifierÍóÍ	¶SignInAnonymousRequestKªIdentifierÍóÍ	¶SignInAnonymousRequest[§LiteralÍÍ¨./e/i/a1ª"./e/i/a1"g±ImportDeclarationÍÍP‘h¯ImportSpecifierÍ&Í=KªIdentifierÍ&Í=·SignInAnonymousResponseKªIdentifierÍ&Í=·SignInAnonymousResponse[§LiteralÍEÍO¨./e/m/b1ª"./e/m/b1"g±ImportDeclarationÍQÍ~‘h¯ImportSpecifierÍZÍkKªIdentifierÍZÍk±DeleteUserRequestKªIdentifierÍZÍk±DeleteUserRequest[§LiteralÍsÍ}¨./e/i/c1ª"./e/i/c1"g±ImportDeclarationÍÍ­‘h¯ImportSpecifierÍˆÍšKªIdentifierÍˆÍš²DeleteUserResponseKªIdentifierÍˆÍš²DeleteUserResponse[§LiteralÍ¢Í¬¨./e/m/d1ª"./e/m/d1"g±ImportDeclarationÍ®ÍÒ‘h¯ImportSpecifierÍ·Í½KªIdentifierÍ·Í½¦LoggerKªIdentifierÍ·Í½¦Logger[§LiteralÍÅÍÑª./e1/f1/g1¬"./e1/f1/g1"g±ImportDeclarationÍÓÍı‘h¯ImportSpecifierÍÜÍêKªIdentifierÍÜÍê®SignOutRequestKªIdentifierÍÜÍê®SignOutRequest[§LiteralÍòÍü¨./e/i/h1ª"./e/i/h1"g±ImportDeclarationÍşÍ)‘h¯ImportSpecifierÍÍKªIdentifierÍÍ¯SignOutResponseKªIdentifierÍÍ¯SignOutResponse[§LiteralÍÍ(¨./e/m/i1ª"./e/m/i1"g±ImportDeclarationÍ*ÍO‘h¯ImportSpecifierÍ3Í=KªIdentifierÍ3Í=ªUserStoredKªIdentifierÍ3Í=ªUserStored[§LiteralÍEÍN§./j1/k1©"./j1/k1"g±ImportDeclarationÍPÍz‘h¯ImportSpecifierÍYÍiKªIdentifierÍYÍi°AGCAuthErrorCodeKªIdentifierÍYÍi°AGCAuthErrorCode[§LiteralÍqÍy¦./c/l1¨"./c/l1"g±ImportDeclarationÍ{Í¯‘h¯ImportSpecifierÍ„ÍšKªIdentifierÍ„Íš¶DecryptExclamationMarkKªIdentifierÍ„Íš¶DecryptExclamationMark[§LiteralÍ¢Í®ª./e1/m1/n1¬"./e1/m1/n1"g±ImportDeclarationÍ°ÍÕ‘h¯ImportSpecifierÍ¹ÍÀKªIdentifierÍ¹ÍÀ§replaceKªIdentifierÍ¹ÍÀ§replace[§LiteralÍÈÍÔª./e1/m1/o1¬"./e1/m1/o1"g±ImportDeclarationÍÖÍı‘i¶ImportDefaultSpecifierÍİÍçKªIdentifierÍİÍçªCredential[§LiteralÍíÍü­./e1/p1/q1/r1¯"./e1/p1/q1/r1"g±ImportDeclarationÍşÍ+‘h¯ImportSpecifierÍÍKªIdentifierÍÍ°HwIdAuthProviderKªIdentifierÍÍ°HwIdAuthProvider[§LiteralÍÍ*©./s1/x/t1«"./s1/x/t1"g±ImportDeclarationÍ,ÍV‘h¯ImportSpecifierÍ5ÍDKªIdentifierÍ5ÍD¯HwIdAuthManagerKªIdentifierÍ5ÍD¯HwIdAuthManager[§LiteralÍLÍU§./s1/u1©"./s1/u1"g±ImportDeclarationÍWÍˆ‘h¯ImportSpecifierÍ`ÍwKªIdentifierÍ`Íw·CloudCommonAuthProviderKªIdentifierÍ`Íw·CloudCommonAuthProvider[§LiteralÍÍ‡¦./g/v1¨"./g/v1"

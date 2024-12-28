@@ -1,0 +1,11 @@
+[
+    {
+        "Name": "PhotoView",
+        "License": "Apache-2.0 License",
+        "License File": " LICENSE ",
+        "Version Number": "2.3.0",
+        "Owner" : "xiafeng@huawei.com",
+        "Upstream URL": "https://github.com/Baseflow/PhotoView",
+        "Description": "Implementation of ImageView for Android that supports zooming, by various touch gestures."
+    }
+]

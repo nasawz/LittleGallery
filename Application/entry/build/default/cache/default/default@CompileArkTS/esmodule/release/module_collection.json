@@ -1,0 +1,16 @@
+{
+  "entry/src/main/ets/pages/AlbumDetail.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction"
+  ],
+  "entry/src/main/ets/pages/Index.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction",
+    "ohos.hilog",
+    "hms.core.deviceCloudGateway.cloudCommon"
+  ],
+  "entry/src/main/ets/components/AlbumItem.ets": [
+    "hms.core.deviceCloudGateway.cloudStorage",
+    "ohos.arkui.StateManagement"
+  ]
+}

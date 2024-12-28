@@ -1,0 +1,6 @@
+{
+  "entry/src/main/ets/frame/pages/FrameCard.ets": [
+    "Stack",
+    "Image"
+  ]
+}

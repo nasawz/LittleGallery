@@ -1,0 +1,30 @@
+export declare class UserInfo {
+    private uid;
+    private displayName;
+    private photoUrl;
+    private phone;
+    private email;
+    private provider;
+    private openId;
+    private emailVerified;
+    private passwordSetted;
+    constructor();
+    getUid(): string;
+    setUid(uid: string): void;
+    getDisplayName(): string;
+    setDisplayName(displayName: string): void;
+    getPhotoUrl(): string;
+    setPhotoUrl(k3: string): void;
+    getPhone(): string;
+    setPhone(phone: string): void;
+    getEmail(): string;
+    setEmail(email: string): void;
+    getProvider(): number;
+    setProvider(j3: number): void;
+    getOpenId(): string;
+    setOpenId(i3: string): void;
+    getEmailVerified(): number;
+    setEmailVerified(h3: number): void;
+    getPasswordSetted(): number;
+    setPasswordSetted(g3: number): void;
+}

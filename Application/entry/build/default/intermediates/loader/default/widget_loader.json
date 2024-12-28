@@ -1,0 +1,97 @@
+{
+  "modulePathMap": {
+    "entry": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry"
+  },
+  "compileMode": "esmodule",
+  "projectRootPath": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application",
+  "nodeModulesPath": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/loader_out/default/node_modules",
+  "byteCodeHarInfo": {
+    "@lidary/markdown": {
+      "abcPath": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@lidary+markdown@1.0.16/oh_modules/@lidary/markdown/ets/modules.abc",
+      "sourceMapsPath": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/oh_modules/.ohpm/@lidary+markdown@1.0.16/oh_modules/@lidary/markdown/ets/sourceMaps.map"
+    }
+  },
+  "declarationEntry": [],
+  "moduleName": "entry",
+  "hspNameOhmMap": {},
+  "harNameOhmMap": {},
+  "packageManagerType": "ohpm",
+  "compileEntry": [
+    "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AddChild.ets",
+    "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AddCategory.ets",
+    "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AddAlbum.ets",
+    "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AddPicture.ets",
+    "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AlbumDetail.ets",
+    "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/ListChild.ets",
+    "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/ListAlbum.ets",
+    "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/ListCategory.ets",
+    "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/PictureDetail.ets"
+  ],
+  "otherCompileFiles": [],
+  "dynamicImportLibInfo": {},
+  "routerMap": [
+    {
+      "ohmurl": "@normalized:N&&&entry/src/main/ets/pages/AddChild&",
+      "name": "addChild",
+      "pageSourceFile": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AddChild.ets",
+      "buildFunction": "PageBuilder"
+    },
+    {
+      "ohmurl": "@normalized:N&&&entry/src/main/ets/pages/AddCategory&",
+      "name": "addCategory",
+      "pageSourceFile": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AddCategory.ets",
+      "buildFunction": "PageBuilder"
+    },
+    {
+      "ohmurl": "@normalized:N&&&entry/src/main/ets/pages/AddAlbum&",
+      "name": "addAlbum",
+      "pageSourceFile": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AddAlbum.ets",
+      "buildFunction": "PageBuilder"
+    },
+    {
+      "ohmurl": "@normalized:N&&&entry/src/main/ets/pages/AddPicture&",
+      "name": "addPicture",
+      "pageSourceFile": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AddPicture.ets",
+      "buildFunction": "PageBuilder"
+    },
+    {
+      "ohmurl": "@normalized:N&&&entry/src/main/ets/pages/AlbumDetail&",
+      "name": "albumDetail",
+      "pageSourceFile": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/AlbumDetail.ets",
+      "buildFunction": "PageBuilder"
+    },
+    {
+      "ohmurl": "@normalized:N&&&entry/src/main/ets/pages/ListChild&",
+      "name": "listChild",
+      "pageSourceFile": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/ListChild.ets",
+      "buildFunction": "PageBuilder"
+    },
+    {
+      "ohmurl": "@normalized:N&&&entry/src/main/ets/pages/ListAlbum&",
+      "name": "listAlbum",
+      "pageSourceFile": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/ListAlbum.ets",
+      "buildFunction": "PageBuilder"
+    },
+    {
+      "ohmurl": "@normalized:N&&&entry/src/main/ets/pages/ListCategory&",
+      "name": "listCategory",
+      "pageSourceFile": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/ListCategory.ets",
+      "buildFunction": "PageBuilder"
+    },
+    {
+      "ohmurl": "@normalized:N&&&entry/src/main/ets/pages/PictureDetail&",
+      "name": "pictureDetail",
+      "pageSourceFile": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/src/main/ets/pages/PictureDetail.ets",
+      "buildFunction": "PageBuilder"
+    }
+  ],
+  "hspResourcesMap": {},
+  "updateVersionInfo": {
+    "@lidary/markdown": {}
+  },
+  "anBuildOutPut": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/loader_out/default/an/arm64-v8a",
+  "anBuildMode": "type",
+  "patchConfig": {
+    "changedFileList": "/Users/wangzhe/DevEcoStudioProjects/LittleGallery/Application/entry/build/default/intermediates/patch/default/changedFileList.json"
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "objectTypeName": "Picture",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": true
+    },
+    {
+      "fieldName": "userId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive":false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "imageUrl",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "tags",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "[]",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createTime",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "albumId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": false,
+      "defaultValue": ""
+    },
+    {
+      "fieldName": "categoryId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": false,
+      "defaultValue": ""
+    },
+    {
+      "fieldName": "childId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": false,
+      "defaultValue": ""
+    },
+    {
+      "fieldName": "sort",
+      "fieldType": "Integer",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": false,
+      "defaultValue": 0
+    }
+  ],
+  "indexes": [
+    {
+      "indexName": "createTime",
+      "indexList": [{ "fieldName": "createTime", "sortType": "DESC" }]
+    },
+    {
+      "indexName": "albumId",
+      "indexList": [{ "fieldName": "albumId", "sortType": "ASC" }]
+    },
+    {
+      "indexName": "categoryId",
+      "indexList": [{ "fieldName": "categoryId", "sortType": "ASC" }]
+    },
+    {
+      "indexName": "childId",
+      "indexList": [{ "fieldName": "childId", "sortType": "ASC" }]
+    },
+    {
+      "indexName": "sort",
+      "indexList": [{ "fieldName": "sort", "sortType": "DESC" }]
+    }
+  ],
+  "permissions": [
+    {
+      "role": "World", "rights": ["Read"]
+    },
+    {
+      "role": "Authenticated", "rights": ["Read"]
+    },
+    {
+      "role": "Creator", "rights": ["Read", "Upsert", "Delete"]
+    },
+    {
+      "role": "Administrator", "rights": ["Read", "Upsert", "Delete"]
+    }
+  ]
+} 

@@ -1,0 +1,96 @@
+{
+  "entry/src/main/ets/pages/AddPicture.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction",
+    "ohos.util",
+    "hms.core.deviceCloudGateway.cloudDatabase",
+    "hms.core.deviceCloudGateway.cloudStorage",
+    "ohos.hilog",
+    "ohos.file.photoAccessHelper",
+    "ohos.file.fs",
+    "ohos.multimedia.image"
+  ],
+  "entry/src/main/ets/pages/AddChild.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction",
+    "hms.core.deviceCloudGateway.cloudDatabase",
+    "ohos.util"
+  ],
+  "entry/src/main/ets/pages/AddCategory.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction",
+    "hms.core.deviceCloudGateway.cloudDatabase",
+    "ohos.util"
+  ],
+  "entry/src/main/ets/pages/AddAlbum.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction",
+    "hms.core.deviceCloudGateway.cloudDatabase",
+    "ohos.util"
+  ],
+  "entry/src/main/ets/pages/ListChild.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction",
+    "hms.core.deviceCloudGateway.cloudDatabase"
+  ],
+  "entry/src/main/ets/pages/AlbumDetail.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction"
+  ],
+  "entry/src/main/ets/pages/ListAlbum.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction"
+  ],
+  "entry/src/main/ets/pages/ListCategory.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction"
+  ],
+  "entry/src/main/ets/pages/PictureDetail.ets": [
+    "ohos.arkui.StateManagement"
+  ],
+  "entry/src/main/ets/entryability/EntryAbility.ets": [
+    "ohos.abilityAccessCtrl",
+    "ohos.app.ability.UIAbility",
+    "ohos.app.ability.AbilityConstant",
+    "ohos.app.ability.Want",
+    "ohos.hilog",
+    "ohos.window",
+    "ohos.buffer",
+    "hms.core.deviceCloudGateway.cloudFunction"
+  ],
+  "entry/src/main/ets/entryformability/EntryFormAbility.ets": [
+    "ohos.app.form.formBindingData",
+    "ohos.app.form.FormExtensionAbility",
+    "ohos.app.form.formInfo"
+  ],
+  "entry/src/main/ets/pages/Index.ets": [
+    "ohos.arkui.StateManagement",
+    "ohos.promptAction",
+    "ohos.hilog",
+    "hms.core.deviceCloudGateway.cloudCommon"
+  ],
+  "entry/src/main/ets/module/Picture.ts": [
+    "hms.core.deviceCloudGateway.cloudDatabase"
+  ],
+  "entry/src/main/ets/module/Child.ts": [
+    "hms.core.deviceCloudGateway.cloudDatabase"
+  ],
+  "entry/src/main/ets/module/Category.ts": [
+    "hms.core.deviceCloudGateway.cloudDatabase"
+  ],
+  "entry/src/main/ets/module/Album.ts": [
+    "hms.core.deviceCloudGateway.cloudDatabase"
+  ],
+  "entry/src/main/ets/services/CoreService.ets": [
+    "hms.core.deviceCloudGateway.cloudDatabase",
+    "hms.core.deviceCloudGateway.cloudStorage"
+  ],
+  "entry/src/main/ets/components/PictureItem.ets": [
+    "hms.core.deviceCloudGateway.cloudStorage",
+    "ohos.arkui.StateManagement"
+  ],
+  "entry/src/main/ets/components/AlbumItem.ets": [
+    "hms.core.deviceCloudGateway.cloudStorage",
+    "ohos.arkui.StateManagement"
+  ]
+}

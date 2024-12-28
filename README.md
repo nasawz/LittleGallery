@@ -5,10 +5,10 @@
 
 
 >  **#端云一体化开发# 《小小画廊》创意方案分享**
-> https://developer.huawei.com/consumer/cn/forum/topic/0201168792253680832?fid=0102822233052010012
+> https://developer.huawei.com/consumer/cn/forum/topic/0201168792253680832
 >
 > **#端云一体化开发# 《小小画廊》技术方案分享**
-> https://developer.huawei.com/consumer/cn/forum/topic/0208168783942934914?fid=0102822233052010012
+> https://developer.huawei.com/consumer/cn/forum/topic/0208168783942934914
 
 
 ## 效果预览
